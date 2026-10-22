@@ -14,7 +14,11 @@
     "test": "turbo run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:generate": "pnpm --filter @pme/db db:generate",
+    "db:check": "pnpm --filter @pme/db db:check",
+    "db:migrate": "pnpm --filter @pme/db db:migrate",
+    "db:seed": "pnpm --filter @pme/db db:seed"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

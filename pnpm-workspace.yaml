@@ -6,4 +6,5 @@ packages:
 savePrefix: ''
 
 # Packages allowed to run install scripts (pnpm blocks all others).
-allowBuilds: {}
+allowBuilds:
+  esbuild: true

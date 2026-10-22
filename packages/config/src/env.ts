@@ -29,6 +29,18 @@ export function defineEnv<TShape extends z.ZodRawShape>(
   return result.data;
 }
 
+/**
+ * Applies a default outside production only, so a fresh clone runs against the
+ * docker-compose services with no .env file while production must set every value.
+ */
+export function devDefault<TSchema extends z.ZodType>(
+  schema: TSchema,
+  value: z.util.NoUndefined<z.input<TSchema>>,
+  nodeEnv: string | undefined = process.env.NODE_ENV,
+): TSchema | z.ZodDefault<TSchema> {
+  return nodeEnv === 'production' ? schema : schema.default(value as never);
+}
+
 /** Building blocks shared by app env schemas. */
 export const envSchemas = {
   nodeEnv: z.enum(['development', 'test', 'production']).default('development'),
