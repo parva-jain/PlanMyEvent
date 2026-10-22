@@ -6,9 +6,9 @@ The workload is small in raw throughput but bursty and dependent on outside prov
 
 It follows the PRD (Plan My Event — PRD) and the stack agreed in chat: TypeScript monorepo, Next.js web, NestJS API and worker, PostgreSQL, Redis, BullMQ, Socket.io, Cloudflare R2, Docker.
 
-## Decisions assumed
+## Decisions confirmed
 
-These defaults were proposed in chat and not yet confirmed; change any of them and the affected sections will be revised.
+These defaults were proposed in chat and confirmed on Oct 15, 2026.
 
 | # | Question | Assumed decision |
 | --- | --- | --- |
@@ -137,7 +137,7 @@ All figures are planning assumptions for year one, not measurements. Revisit the
 
 ## Step 3a — API design
 
-The API is a versioned REST service under /v1 with OpenAPI docs, plus one Socket.io namespace for live signals; every write is idempotent and version-checked so retries and simultaneous edits never corrupt data.
+The API is a versioned REST service under /v1 with OpenAPI docs, plus one Socket.io namespace for live signals; every write is idempotent and version-checked so retries and simultaneous edits never corrupt data. The full contract is in docs/APIDesign.md; where they differ, that doc wins.
 
 ### Conventions
 
@@ -152,7 +152,7 @@ The API is a versioned REST service under /v1 with OpenAPI docs, plus one Socket
 | Concurrent edits | Every row has a version number; PATCH sends If-Match: version and gets 409 Conflict if someone changed it first |
 | Pagination | Cursor-based (?cursor=&limit=, max 100), stable under inserts |
 | Filtering | Query params per resource, e.g. ?status=open&assignee=me&subEventId= |
-| Errors | RFC 7807 problem+json: type, title, status, detail, plus field errors |
+| Errors | RFC 9457 problem+json: type, title, status, detail, plus field errors |
 | Rate limits | Per user and per IP in Redis; headers report limit and remaining; 429 with Retry-After |
 | Async work | Long operations return 202 Accepted with a job id; progress arrives over the socket |
 
@@ -188,8 +188,8 @@ The API is a versioned REST service under /v1 with OpenAPI docs, plus one Socket
 
 | Method | Path | Purpose | Protection |
 | --- | --- | --- | --- |
-| GET | /v1/invites/{token} | Invitation, sub-events, venues | Hashed token lookup; per-IP rate limit; cached |
-| POST | /v1/invites/{token}/rsvp | Submit or change response and party size | Rate limit; idempotency key |
+| GET | /v1/public/invites/{token} | Invitation, sub-events, venues | Hashed token lookup; per-IP rate limit; cached |
+| POST | /v1/public/invites/{token}/rsvp | Submit or change response and party size | Rate limit; idempotency key |
 | GET | /v1/public/events/{slug} | Public event page data | CDN cached |
 | POST | /v1/public/events/{slug}/registrations | Register for open sub-events | Turnstile; rate limit; capacity check |
 
@@ -238,7 +238,7 @@ One PostgreSQL database holds all domain data, keyed so that almost every query 
 | sub\_events | event\_id, name, starts\_at, ends\_at, venue\_id, capacity, visibility, response\_mode, group\_label | index(event\_id, starts\_at) |
 | members | event\_id, user\_id, status, phone | unique(event\_id, user\_id); index(user\_id) |
 | roles | event\_id, name, is\_standard, is\_owner, permissions text\[\] | unique(event\_id, name) |
-| role\_assignments | member\_id, role\_id, scope\_sub\_event\_ids uuid\[\] (empty = whole event) | unique(member\_id, role\_id); index(role\_id) |
+| role\_assignments | event\_id, member\_id, role\_id; scopes in a role\_assignment\_scopes join table (no rows = whole event) | unique(member\_id, role\_id); index(role\_id) |
 | member\_invites | event\_id, token\_hash, role\_ids, expires\_at, max\_uses, used\_count | unique(token\_hash) |
 | tasks | event\_id, sub\_event\_id, parent\_task\_id, title, status, priority, category, due\_on, position | index(event\_id, status, due\_on); index(event\_id, sub\_event\_id) |
 | task\_assignees | task\_id, member\_id | primary key(task\_id, member\_id); index(member\_id) for "my tasks" |
@@ -246,7 +246,7 @@ One PostgreSQL database holds all domain data, keyed so that almost every query 
 | expenses | event\_id, category\_id, sub\_event\_id, vendor\_name, amount\_paise, paid\_by\_member\_id, payment\_status, due\_on, receipt\_media\_id, transaction\_ref | index(event\_id, category\_id); unique(event\_id, transaction\_ref) where not null |
 | contacts | event\_id, household\_id, name, phone, email, tags text\[\] | index(event\_id, household\_id); GIN(tags); trigram index on name for search |
 | households | event\_id, name, expected\_count | index(event\_id) |
-| invitations | event\_id, household\_id, contact\_id, sub\_event\_ids uuid\[\], token\_hash, delivery\_status, distributor\_member\_id | unique(token\_hash); index(event\_id, delivery\_status); check(exactly one of household\_id, contact\_id) |
+| invitations | event\_id, household\_id, contact\_id, token\_hash, token\_version (sub-events in an invitation\_sub\_events join table), delivery\_status, distributor\_member\_id | unique(token\_hash); index(event\_id, delivery\_status); check(exactly one of household\_id, contact\_id) |
 | attendance | event\_id, sub\_event\_id (null = whole event), household\_id, contact\_id, source, status, party\_size, answers jsonb, qr\_token\_hash, checked\_in\_at | unique(sub\_event\_id, household\_id, contact\_id) nulls not distinct; index(event\_id, sub\_event\_id, status); unique(qr\_token\_hash) |
 | media | event\_id, kind, storage\_key, mime, bytes, width, height, album, status, uploaded\_by | index(event\_id, kind, created\_at) |
 | activity\_log | event\_id, actor\_member\_id, channel, action, entity\_type, entity\_id, before jsonb, after jsonb, undone\_by | index(event\_id, created\_at desc); index(entity\_type, entity\_id); partition by month later |
@@ -276,7 +276,7 @@ One PostgreSQL database holds all domain data, keyed so that almost every query 
 
 ### Why these choices
 
-- **Arrays for scopes and sub-event lists** keep permission resolution to one query; a join table can replace them if scopes grow complex.
+- **Scopes and invitation sub-events use join tables** (see docs/DatabaseDesign.md), so foreign keys clean them up when a sub-event is deleted.
 - **Token hashes, not tokens**, so a database leak does not expose working magic links.
 - **The unique attendance key** makes RSVP and registration naturally idempotent: a second submit updates the same row.
 - **The unique transaction\_ref** blocks duplicate payment screenshots at the database level, not just in code.
@@ -286,7 +286,50 @@ One PostgreSQL database holds all domain data, keyed so that almost every query 
 
 Requests flow top to bottom: clients reach Cloudflare's edge, the Next.js web renders pages, and the NestJS API is the only service that writes data; workers take everything slow or external off the request path.
 
-&#91;embedded content: high-level architecture · clients, edge, web and API, data stores, workers, providers\]
+```mermaid
+flowchart TB
+    subgraph Clients
+        ORG[Organizer web / PWA]
+        GUEST[Guest phones: magic links]
+        MOB[React Native app - later]
+    end
+    EDGE[Cloudflare edge: DNS, CDN cache, Turnstile]
+    WEB[Next.js web]
+    API[NestJS API, 2+ containers<br/>REST /v1, Socket.io, webhooks, auth, core actions]
+    subgraph Data stores
+        PG[(PostgreSQL<br/>domain data, activity log, outbox)]
+        REDIS[(Redis<br/>cache, pub/sub, BullMQ queues)]
+        R2[(Cloudflare R2<br/>photos and receipts)]
+    end
+    subgraph Workers
+        RELAY[Outbox relay]
+        FAST[Fast pool<br/>email, notifications]
+        SLOW[Slow pool<br/>media, imports, AI - V2]
+    end
+    subgraph External providers
+        EMAIL[Email - Resend]
+        WA[WhatsApp API - V2]
+        AI[AI provider - V2]
+        SENTRY[Sentry]
+    end
+    ORG --> EDGE
+    GUEST --> EDGE
+    MOB --> EDGE
+    EDGE --> WEB
+    EDGE --> API
+    WEB --> API
+    API --> PG
+    API --> REDIS
+    API -. presigned URLs .-> R2
+    PG <--> RELAY
+    RELAY --> REDIS
+    REDIS <--> FAST
+    REDIS <--> SLOW
+    SLOW --> R2
+    FAST --> EMAIL
+    FAST --> WA
+    SLOW --> AI
+```
 
 Dashed boxes are later or V2. Browsers also upload files straight to R2 with presigned URLs, and Meta's WhatsApp webhooks (V2) arrive at the API, which stores them and hands them to workers.
 
@@ -399,7 +442,7 @@ Rules every job follows:
 ### 5.6 Magic links and public pages
 
 - Tokens are 32 random bytes, base64url-encoded; only their SHA-256 hash is stored and looked up.
-- GET /v1/invites/{token} is rate-limited per IP and cached; guessing tokens is infeasible and throttled.
+- GET /v1/public/invites/{token} is rate-limited per IP and cached; guessing tokens is infeasible and throttled.
 - RSVP is an upsert on the unique attendance key: submitting twice updates the same row.
 - Open registration with capacity locks the sub-event row (SELECT … FOR UPDATE) while counting, so two people cannot take the last seat.
 - Public routes have their own rate-limit buckets and stay served from cache if the database is slow; later they can move to a separate API deployment.
@@ -526,7 +569,7 @@ Razorpay is the common choice in India for UPI, cards, subscriptions and hosted 
 
 ## Open questions
 
-- [ ] Confirm or change the twelve assumed decisions at the top.
+- [x] Confirm the twelve decisions at the top (done Oct 15, 2026).
 - [ ] Choose specific hosting providers for containers, Postgres and Redis after checking current free-tier limits.
 - [ ] Choose the email provider's plan and confirm its sending rate limit for the email queues.
 - [ ] Decide free-plan limits (photos per event, AI calls, members) so usage checks have numbers.
