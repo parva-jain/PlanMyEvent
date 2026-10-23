@@ -512,7 +512,7 @@ These four tables carry no user-facing data; they exist so that writes, retries 
 | id | bigint | PK, generated always as identity | Monotonic order for the relay |
 | event\_id | uuid |  | For logging and per-event fairness; no FK |
 | topic | text | NN | entity.changed, email.send, media.process, ... |
-| dedupe\_key | text | NN | Becomes the BullMQ job id, e.g. invite-email:\<invitationId>:\<templateVersion> |
+| dedupe\_key | text | NN | Becomes the BullMQ job id, e.g. invite-email-\<invitationId>-\<templateVersion>; parts joined with `-`, never `:` (decision 005) |
 | payload | jsonb | NN |  |
 | available\_at | timestamptz | NN, default now() | Later values delay publishing |
 | attempts | integer | NN, default 0 |  |

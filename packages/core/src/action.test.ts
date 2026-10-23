@@ -1,3 +1,4 @@
+import { jobId } from '@pme/contracts';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -58,7 +59,7 @@ const completeTask: ActionDefinition<{ taskId: string }, { version: number }, Fa
       activity: [
         { action: 'update', entityType: 'task', entityId: input.taskId, before: {}, after: {} },
       ],
-      outbox: [{ topic: 'entity.changed', dedupeKey: `task:${input.taskId}:2`, payload: {} }],
+      outbox: [{ topic: 'entity.changed', dedupeKey: jobId('task', input.taskId, 2), payload: {} }],
     });
   },
 };

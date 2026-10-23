@@ -416,7 +416,7 @@ Every slow or external task runs in BullMQ, in queues separated by urgency, so a
 
 Rules every job follows:
 
-1. **Deterministic job ids**, e.g. invite-email:{invitationId}:{templateVersion}, so a repeated outbox row cannot send twice.
+1. **Deterministic job ids**, e.g. invite-email-{invitationId}-{templateVersion}, so a repeated outbox row cannot send twice. Parts are joined with `-`, never `:`, which BullMQ rejects in custom ids (see decision 005).
 2. **Fairness by chunking.** A 5,000-guest blast becomes 50 jobs of 100, queued with a small delay between them, so other events' jobs interleave.
 3. **Dead-letter handling.** Jobs that exhaust retries stay in the failed set, raise a Sentry alert and appear on the organizer's screen when they affect them (e.g. 12 emails failed).
 4. **Graceful shutdown.** On deploy, workers stop taking jobs, finish the current ones within 30 seconds, then exit; unfinished jobs return to the queue.

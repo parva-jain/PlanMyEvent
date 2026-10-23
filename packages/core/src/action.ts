@@ -10,7 +10,7 @@ export interface ActivityEntry {
   after: unknown;
 }
 
-/** outbox row an action asks to write; dedupeKey becomes the BullMQ job id. */
+/** outbox row an action asks to write; dedupeKey becomes the BullMQ job id (build it with `jobId()`). */
 export interface OutboxMessage {
   topic: string;
   dedupeKey: string;
