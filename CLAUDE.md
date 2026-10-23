@@ -19,6 +19,7 @@ Status: design complete; implementation starting with milestone 1 (scaffolding).
 | Visual design tokens, components, layout, motion, voice | `docs/DESIGN.md` |
 | Logo files and brand rules | `brand/` (`brand/BRAND.md`) |
 | Why key choices were made | `docs/decisions/` |
+| Current progress, milestone checklist, decisions in flight | `docs/STATUS.md` (update at the end of every step) |
 
 Precedence when docs disagree: APIDesign and DatabaseDesign win over SystemDesign; ask before changing any doc. When a decision changes, update the doc in the same commit and add a decision record.
 
