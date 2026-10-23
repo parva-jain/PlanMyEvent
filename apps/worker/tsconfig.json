@@ -1,0 +1,5 @@
+{
+  "extends": "@pme/config/tsconfig/nest.json",
+  "compilerOptions": { "outDir": "dist", "declaration": false, "declarationMap": false },
+  "include": ["src", "test", "*.ts"]
+}
