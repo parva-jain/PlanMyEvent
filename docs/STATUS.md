@@ -8,7 +8,11 @@ Last updated: Oct 23, 2026 · Updated at the end of every working step.
 
 Working style: small steps, each explained and reviewed before moving on; learning notes in [`docs/learning/`](learning/).
 
-**Next step:** item 8 (web app), on hold until you say go. Planned as five small steps: design tokens → Button → app shell → i18n → health status widget.
+**Agreed order for the rest of milestone 1 (backend first):** item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → 8 (web, built from the Stitch screens) → milestone 2 (auth).
+
+**Next step:** item 9, Docker Compose.
+
+**Stitch:** most screens are designed in Stitch. They're used as references for item 8 (CLAUDE.md rule 14: rebuild with our tokens, components and translation keys, never paste the generated code).
 
 ## Milestone 1 checklist
 
@@ -21,7 +25,7 @@ Working style: small steps, each explained and reviewed before moving on; learni
 | 5 | `packages/core`: `ActionContext`, `runAction` with placeholder permission/activity/outbox hooks, tests | Done | `050da31` |
 | 6 | `apps/api`: env config, pino + request ids, `/v1` prefix, health live/ready, problem+json filter, Zod validation, OpenAPI 3.1 at `/v1/docs`, CORS, graceful shutdown, optional Sentry, `/live` gateway stub | Done | `5eaf00c` |
 | 7 | `apps/worker`: BullMQ connection, sample queue/producer/processor, graceful shutdown | Done | `7e5f995` |
-| 8 | `apps/web`: tokens, fonts, shadcn components, Lucide, Motion, next-intl, TanStack Query, favicons, app shell, `/dev/ui`, status widget | Not started (on hold) | |
+| 8 | `apps/web`: tokens, fonts, shadcn components, Lucide, Motion, next-intl, TanStack Query, favicons, app shell, `/dev/ui`, status widget | Not started; after item 12, from the Stitch screens | |
 | 9 | `infra/`: docker-compose (Postgres 17, Redis 7, SeaweedFS + bucket, Mailpit), Dockerfiles, `.env.example` | Not started (`.env.example` done for api and worker) | |
 | 10 | CI: GitHub Actions with install cache, lint, typecheck, test, build, Postgres/Redis services, migration check | Not started | |
 | 11 | Tests: Vitest in packages, api, worker; Playwright smoke test of the shell at phone and desktop sizes | Partly: core has 3 tests | |
@@ -64,7 +68,7 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 
 ## Open questions
 
-- None blocking. Item 8 needs your Stitch designs if you want dark mode matched now rather than later.
+- None blocking. Before item 8: Stitch exports added to the repo, and tokens extracted and compared with DESIGN.md.
 
 ## Known warnings (harmless)
 
