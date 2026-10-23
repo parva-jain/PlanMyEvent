@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const HealthLiveSchema = z.object({ status: z.literal('ok') }).meta({ id: 'HealthLive' });
+export const HealthLiveSchema = z.object({ status: z.literal('ok') });
 
 export const DependencyCheckSchema = z.object({
   status: z.enum(['up', 'down']),
@@ -8,15 +8,13 @@ export const DependencyCheckSchema = z.object({
   error: z.string().optional(),
 });
 
-export const HealthReadySchema = z
-  .object({
-    status: z.enum(['ok', 'error']),
-    checks: z.object({
-      postgres: DependencyCheckSchema,
-      redis: DependencyCheckSchema,
-    }),
-  })
-  .meta({ id: 'HealthReady' });
+export const HealthReadySchema = z.object({
+  status: z.enum(['ok', 'error']),
+  checks: z.object({
+    postgres: DependencyCheckSchema,
+    redis: DependencyCheckSchema,
+  }),
+});
 
 export type HealthLive = z.infer<typeof HealthLiveSchema>;
 export type DependencyCheck = z.infer<typeof DependencyCheckSchema>;

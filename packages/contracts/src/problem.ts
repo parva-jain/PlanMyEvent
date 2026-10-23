@@ -57,8 +57,7 @@ export const ProblemSchema = z
     requestId: z.string().optional(),
     fields: z.array(FieldErrorSchema).optional(),
   })
-  .loose()
-  .meta({ id: 'Problem' });
+  .loose();
 
 export type FieldError = z.infer<typeof FieldErrorSchema>;
 export type Problem = z.infer<typeof ProblemSchema>;
