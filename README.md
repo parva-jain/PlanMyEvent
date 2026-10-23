@@ -1,6 +1,8 @@
+<p align="center"><img src="brand/logo/lockup-horizontal.svg" alt="Plan My Event" width="360"></p>
+
 # Plan My Event
 
-**Plan any event as a team, in one place.** Sub-events, tasks, budget, guests, invitations and RSVPs, with live updates for everyone involved.
+**Your whole event team, on the same page.** Sub-events, tasks, budget, guests, invitations and RSVPs, with live updates for everyone involved.
 
 Most events in India are organized through WhatsApp groups, spreadsheets and phone calls. Nobody knows the real headcount, who paid the caterer, or which tasks are still open. Plan My Event replaces that with one shared event space that a whole family, committee or team can work in at once.
 
@@ -63,7 +65,17 @@ Clients ─▶ Cloudflare edge ─▶ Next.js web ─▶ NestJS API ─▶ Postg
                                Resend · R2 · WhatsApp (V2) · AI (V2)
 ```
 
-Full details: [docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md).
+Full details: [docs/SystemDesign.md](docs/SystemDesign.md).
+
+## Documentation
+
+- [Product requirements](docs/PRD.md)
+- [System design](docs/SystemDesign.md)
+- [Database design](docs/DatabaseDesign.md)
+- [API design](docs/APIDesign.md)
+- [Design system](docs/DESIGN.md)
+- [Brand and logo](brand/BRAND.md)
+- [Architecture decision records](docs/decisions/)
 
 ## Author
 
