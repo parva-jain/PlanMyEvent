@@ -16,13 +16,13 @@ Working style: small steps, each explained and reviewed before moving on; learni
 | B | Motion tokens (`src/lib/motion.ts`, `src/styles/motion.css`) | Done |
 | C | `MotionConfig reducedMotion="user"` + `LazyMotion`, reduced-motion override on `/dev/ui` | Done |
 | D | Motion components (MOTION.md §4) on `/dev/ui` with a reduced-motion toggle | Done |
-| E | Base UI components: Button, Badge, Card, Tabs, Accordion | Next |
-| F | Home page, one section per commit, with its MOTION.md §6.2 motion | |
+| E | Base UI components: Button, Badge, Card, Tabs, Accordion | Done |
+| F | Home page, one section per commit, with its MOTION.md §6.2 motion | Next |
 | G | Playwright (normal + reduced motion), Lighthouse mobile ≥ 90, no layout shift | |
 
 After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
 
-**Next step:** E, base UI components.
+**Next step:** F, home page sections (starting with the header and hero).
 
 **Stitch:** read directly through the Stitch MCP server (project "Plan My Event Design System"). Screens are references, rebuilt with our tokens, components and translation keys (CLAUDE.md rule 14).
 
@@ -93,13 +93,21 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | canvas-confetti 1.9.4 loaded on first use; once-per-milestone keys in localStorage | Keeps it out of the initial bundle; MOTION.md principle 5 | `src/components/motion/confetti.tsx` |
 | Typewriter caret blinks every 1 s and is removed 2 s after typing ends | Nothing blinks indefinitely (WCAG 2.2.2); added to MOTION.md §4 | `docs/MOTION.md` |
 | Effects that start animations wait for hydration | Otherwise they start with `reduced = false` and freeze mid-way when the real value arrives | LogoMark, AmbientFloat |
+| UI components written by hand on `radix-ui` 1.8.1, styled with our tokens; shadcn CLI used only to read sources (`add --view`); `components.json` kept for future `add` runs | shadcn's generated classes and colour variables don't match DESIGN.md | `src/components/ui/` |
+| `cn()` extends tailwind-merge with our type scale, radii and shadows | Otherwise `text-h1` is dropped next to `text-fg` | `src/lib/utils.ts` |
+| Tabs pill animated with clip-path and two `snappy` springs, not `layoutId` | No `domMax` bundle on the home page; keeps rounded ends | `src/components/ui/tabs.tsx` |
+| `reduce-motion:` Tailwind variant; overrides use `!` | Attribute-scoped animation classes outrank a plain variant | `src/styles/globals.css`, `accordion.tsx` |
+| Derived `--event-*-text` tokens (accent + 30% ink in light, + 45% white in dark) for event badges | Raw accents as text fail WCAG AA on their tints | `globals.css` (marked provisional) |
 | Playwright 1.64.1 added to apps/web now | Used to verify motion behaviour (computed styles mid-animation) before step G's smoke tests | `apps/web/package.json` |
 | Home page: softened feature claims, placeholder pricing, "© 2026 Plan My Event", flat indigo banner, `surface-muted` instead of peach, served at `/` | Stitch copy and styling conflicted with PRD and DESIGN.md | Step F |
 | MOTION.md §6.2 adapted to the Stitch layout; `AmbientFloat` and `Typewriter` added to §4 | Stitch has no device mockups, marquee strip or sticky showcase | `docs/MOTION.md` |
 
 ## Open questions
 
-- None blocking. Before item 8: Stitch exports added to the repo, and tokens extracted and compared with DESIGN.md.
+- **Three DESIGN.md colour pairs fall below WCAG AA (4.5:1).** Proposed minimal fixes, not applied (doc change needs approval):
+  - `accent-text` #B4710C on `accent-tint` #FFF7E6: 3.71 → **#9F650D** (4.54)
+  - `fg-muted` #8E857A (light) on `background`: 3.42, and on the input fill `surface-muted`: 3.0 → **#736C62** (4.89 / 4.53)
+  - White on dark-mode primary #6366F1: 4.47 → **#6265F0** (4.53)
 
 ## Known warnings (harmless)
 
@@ -109,4 +117,4 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 
 ## Learning notes
 
-[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md) · [10 Motion components](learning/10-motion-components.md)
+[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md) · [10 Motion components](learning/10-motion-components.md) · [11 Base UI components](learning/11-base-ui-components.md)
