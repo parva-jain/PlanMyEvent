@@ -76,3 +76,32 @@
     height: 0;
   }
 }
+
+/*
+ * Page-load entrance for above-the-fold content (hero). The same rise and fade as Reveal,
+ * but in CSS so it starts at first paint instead of after hydration: the hero headline is
+ * the page's largest paint (LCP), and a JS entrance would keep it invisible until React
+ * loads. Set --rise (px) and --delay per element. Reduced motion: opacity only, `fast`.
+ */
+.rise-in {
+  animation: rise-in var(--dur-deliberate) var(--ease-out) var(--delay, 0s) both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--rise, 12px) * var(--motion)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-reduced-motion='never']) .rise-in {
+    animation-duration: var(--dur-fast);
+    animation-delay: 0s;
+  }
+}
+
+:root[data-reduced-motion='always'] .rise-in {
+  animation-duration: var(--dur-fast);
+  animation-delay: 0s;
+}

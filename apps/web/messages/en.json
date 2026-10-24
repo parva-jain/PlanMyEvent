@@ -4,8 +4,61 @@
     "description": "One plan for everyone behind your event."
   },
   "home": {
-    "placeholderTitle": "Your whole event team, on the same page.",
-    "placeholderBody": "The home page is being built. Design tokens are on /dev/ui."
+    "header": {
+      "brand": "Plan My Event",
+      "navLabel": "Main",
+      "skipToContent": "Skip to content",
+      "features": "Features",
+      "useCases": "Use cases",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "signIn": "Sign in",
+      "startFree": "Start free",
+      "startPlanning": "Start planning, free"
+    },
+    "hero": {
+      "eyebrow": "Live multi-user event planner",
+      "headlineLead": "Your whole event team, on the",
+      "headlineEmphasis": "same page.",
+      "subheading": "Tasks, budget, guests and schedule in one shared plan that updates live for everyone involved.",
+      "primaryCta": "Start planning, free",
+      "secondaryCta": "See how it works",
+      "eventTypes": {
+        "label": "Built for every gathering",
+        "weddings": "Weddings",
+        "conferences": "Conferences",
+        "collegeFests": "College fests",
+        "exhibitions": "Exhibitions",
+        "meetups": "Meetups",
+        "celebrations": "Celebrations"
+      },
+      "plan": {
+        "summary": "Preview of a live event plan: DevFest Bhopal 2026, 78% ready, with tasks being ticked off and registrations arriving.",
+        "live": "Live planning",
+        "event": "DevFest Bhopal 2026",
+        "dates": "Oct 24–25",
+        "milestone": "Milestone target",
+        "ready": "{percent}% ready",
+        "taskDone": "Finalize keynote stage",
+        "taskDoneBy": "RS",
+        "taskDue": "Confirm badge print run",
+        "dueToday": "Due today",
+        "done": "Done",
+        "rahulUpdated": "Rahul just updated this",
+        "registrations": "+<count></count> registrations today",
+        "attendees": "Track B · 1,180 attendees confirmed"
+      },
+      "floating": {
+        "completedTitle": "Rahul marked completed",
+        "completedDetail": "“Book main hall AV setup” · 2m ago",
+        "paid": "Catering advance paid ₹45,000",
+        "rsvpLabel": "Digital RSVP",
+        "rsvpEvent": "Ananya & Sid’s Sangeet",
+        "rsvpDetail": "Fri, 7:00 PM · Taj Lake Palace",
+        "rsvpYes": "Yes",
+        "rsvpDecline": "Decline"
+      }
+    }
   },
   "devUi": {
     "title": "UI foundation",
