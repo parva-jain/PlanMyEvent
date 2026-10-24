@@ -1,6 +1,6 @@
 'use client';
 
-import { animate, m, useMotionTemplate, useMotionValue } from 'motion/react';
+import { animate, frame, m, useMotionTemplate, useMotionValue } from 'motion/react';
 import { Tabs as TabsPrimitive } from 'radix-ui';
 import { useCallback, useEffect, useLayoutEffect, useRef, type ComponentProps } from 'react';
 
@@ -8,6 +8,9 @@ import { useShouldReduceMotion } from '@/components/motion/motion-provider';
 import { duration, ease, spring } from '@/lib/motion';
 import { useHydrated } from '@/lib/use-hydrated';
 import { cn } from '@/lib/utils';
+
+/** The list's inner padding (p-1): the widest the sliding layer gets. */
+const PAD = 4;
 
 function Tabs({ className, ...props }: ComponentProps<typeof TabsPrimitive.Root>) {
   return (
@@ -22,7 +25,9 @@ function Tabs({ className, ...props }: ComponentProps<typeof TabsPrimitive.Root>
 /**
  * Segmented control with a sliding active pill (MOTION.md 6.2: indicator slides with the
  * `snappy` spring). The pill is one layer revealed with an animated clip-path, so it needs
- * no layout animations (and no extra Motion bundle) and keeps its rounded ends.
+ * no layout animations (and no extra Motion bundle) and keeps its rounded ends. At rest the
+ * layer's box matches the active tab exactly; it widens to the whole list only while sliding,
+ * so nothing sits under inactive tabs (contrast checkers ignore clip-path).
  * Before hydration the active tab paints its own background, so it never looks blank.
  * Reduced motion: the pill jumps.
  */
@@ -35,6 +40,8 @@ function TabsList({ className, children, ...props }: ComponentProps<typeof TabsP
   const reduced = useShouldReduceMotion();
   const hydrated = useHydrated();
   const placed = useRef(false);
+  // Bumped on every placement, so a finished slide only collapses the layer if it's still current.
+  const generation = useRef(0);
 
   const place = useCallback(
     (animated: boolean) => {
@@ -42,14 +49,39 @@ function TabsList({ className, children, ...props }: ComponentProps<typeof TabsP
       const layer = layerRef.current;
       const active = list?.querySelector<HTMLElement>('[role="tab"][data-state="active"]');
       if (!list || !layer || !active) return;
-      const nextLeft = active.offsetLeft - layer.offsetLeft;
-      const nextRight = layer.offsetWidth - (nextLeft + active.offsetWidth);
+      const run = ++generation.current;
+      const setBox = (boxLeft: number, boxWidth: number) => {
+        layer.style.left = `${boxLeft}px`;
+        layer.style.width = `${boxWidth}px`;
+      };
+      const target = { left: active.offsetLeft, right: active.offsetLeft + active.offsetWidth };
+
       if (!animated || !placed.current || reduced) {
-        left.jump(nextLeft);
-        right.jump(nextRight);
+        setBox(target.left, target.right - target.left);
+        left.jump(0);
+        right.jump(0);
       } else {
-        animate(left, nextLeft, spring.snappy);
-        animate(right, nextRight, spring.snappy);
+        // Where the pill is drawn now (it may be mid-slide), in list coordinates.
+        const from = {
+          left: layer.offsetLeft + left.get(),
+          right: layer.offsetLeft + layer.offsetWidth - right.get(),
+        };
+        const full = { left: list.clientLeft + PAD, right: list.clientWidth - PAD };
+        setBox(full.left, full.right - full.left);
+        left.jump(from.left - full.left);
+        right.jump(full.right - from.right);
+        void Promise.all([
+          animate(left, target.left - full.left, spring.snappy),
+          animate(right, full.right - target.right, spring.snappy),
+        ]).then(() => {
+          if (run !== generation.current) return;
+          left.jump(0);
+          right.jump(0);
+          // Motion applies the clip reset in its render step; resize the box in that same frame.
+          frame.render(() => {
+            if (run === generation.current) setBox(target.left, target.right - target.left);
+          });
+        });
       }
       placed.current = true;
     },
@@ -89,7 +121,7 @@ function TabsList({ className, children, ...props }: ComponentProps<typeof TabsP
         <m.span
           ref={layerRef}
           aria-hidden
-          className="absolute inset-1 rounded-full bg-primary"
+          className="absolute inset-y-1 rounded-full bg-primary"
           style={{ clipPath, WebkitClipPath: clipPath }}
         />
         {children}

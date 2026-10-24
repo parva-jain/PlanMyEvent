@@ -126,6 +126,8 @@ Build these once in `apps/web/src/components/motion/` and use them everywhere; s
 | `Skeleton` | Soft opacity pulse 0.6 ↔ 1 | 1.2 s loop; static at 0.8 with reduced motion |
 | `Confetti` | Short marigold burst from a given element | 40 particles, 1 s, once per milestone per user |
 | `LogoMark` | Plays the logo sequence once: tile pop, tick draw, sparkle pop | 1.2 s total (BRAND.md) |
+| `AmbientFloat` | Gentle vertical drift loop (marketing only); pauses on hover and focus, stops off-screen | y ±6 px over 6 s, per-item offset; static with reduced motion |
+| `Typewriter` | Types a sentence once when in view, with a blinking caret | 35 ms per character; caret blinks every 1 s and is removed 2 s after the text completes (nothing blinks indefinitely); full text immediately with reduced motion |
 
 ## 5. Reduced motion
 
@@ -170,14 +172,13 @@ Also follow WCAG 2.2.2: anything that moves or auto-updates for more than 5 seco
 | Header | Transparent over the hero; after 8 px of scroll, background and bottom border fade in (`base`). Logo mark plays `LogoMark` once on first visit (session) |
 | Hero headline | Words rise in with 60 ms stagger, `riseLarge`, `deliberate`; subheading and buttons follow (+150 ms) |
 | Hero event-type pills | Highlight moves pill to pill every 2.2 s for one full loop, then stops on "Conferences"; pause on hover |
-| Hero device mockups | Laptop and phone rise in (+300 ms). After 1 s, a scripted "live" sequence plays once: a task row ticks (`CheckDraw`), "+24 registrations today" counts up, a `LiveHighlight` with "Rahul just updated this" appears |
+| Hero dashboard card | The DevFest Bhopal live-planning card rises in (+300 ms). After 1 s, a scripted "live" sequence plays once: a task row ticks (`CheckDraw`), "+24 registrations today" counts up, a `LiveHighlight` with "Rahul just updated this" appears |
 | Hero floating cards | Enter one by one (`staggerSection`), then drift gently (y ±6 px over 6 s, offset per card); ambient loop stops when the hero leaves the viewport |
-| Event-type strip | Slow marquee (40 s per loop), pauses on hover and focus; static wrapped row on reduced motion |
-| Problem to solution | Scroll-linked over the section's height: chat bubbles, sheet fragments and sticky notes drift toward the center and fade as the dashboard card scales 0.92 → 1. Reduced motion: final state |
-| How it works | Three steps reveal with `staggerSection`; the connector line between them draws left to right (`pathLength`, 600 ms) |
-| Features (desktop) | Sticky showcase: text blocks scroll on the left; the device on the right crossfades (`inOut`, 300 ms) to the matching screen when each block crosses the middle of the viewport. Phone: plain `Reveal` cards |
+| Problem to solution | Scroll-linked over the section's height: the WhatsApp chat bubbles drift toward the synced-plan card and fade as that card scales 0.92 → 1. Reduced motion: final state |
+| How it works | Three steps reveal with `staggerSection`; on desktop a thin connector line behind the step icons draws left to right (`pathLength`, 600 ms) |
+| Features | Six-card grid revealed with `RevealGroup` (`staggerSection`) on every screen size; cards use `HoverLift` |
 | Use cases tabs | Active tab indicator slides (`snappy`); preview crossfades (`base`) and the event accent color transitions (`fast`) |
-| Guest experience | When in view: phone rises in, the invitation cover unfolds (scaleY 0.96 → 1 from the top, `gentle`), then greeting and schedule rows stagger in |
+| Guest experience | When in view: the invitation card rises in and unfolds (scaleY 0.96 → 1 from the top, `gentle`), then its title, details and RSVP buttons stagger in |
 | Coming soon (AI teaser) | When in view, once: the sentence types out (35 ms per character, blinking caret), then three result cards pop in with `bouncy`, 120 ms apart |
 | Pricing cards | `HoverLift`; "Coming soon" badge static |
 | FAQ | Accordion height animates (`moderate`, `out`); chevron rotates 180° |
@@ -247,9 +248,72 @@ Also follow WCAG 2.2.2: anything that moves or auto-updates for more than 5 seco
 | Send reply | Button spinner; RSVP card crossfades into the confirmation card |
 | Confirmed | Green check draws (`CheckDraw`, 400 ms), "See you there!" rises, `Confetti` in the event accent, once per invitation |
 
-### 6.9 Later sections (apply the same patterns)
+### 6.9 My events and event switching
 
-Team, budget, people, gallery and public pages use the patterns in section 4: `ListPresence` for list changes, `SidePanel`/`Sheet` for details, `CountUp` and `ProgressFill` for totals, `LiveHighlight` for others' changes, `Confetti` only for milestones (budget fully planned, first 100 responses). Add their specific rows to this file when they're designed.
+| Moment | Motion |
+| --- | --- |
+| First load | Event cards appear with `RevealGroup` (`stagger.list`); task progress bars use `ProgressFill` |
+| Accept a team invite | Invitation card collapses (`ListPresence`); the new event card enters at the top with a short `LiveHighlight` (800 ms) |
+| Decline a team invite | Invitation card collapses with an `UndoSnackbar` |
+| Open an event | The event card expands into the event header (`SharedElement`); the rest of the page fades out (`base`) |
+| Past events toggle | Section height expands or collapses (`moderate`, `out`) |
+| Event switcher | Desktop popover per 6.1; phone uses `Sheet`. Typing in its search filters the list with `ListPresence`; choosing an event crossfades the content area (`base`) |
+| Phone "More" screen | Slides in 24 px from the right with fade (`moderate`); back reverses it. Rows hidden by role are simply absent, never animated away |
+
+### 6.10 Team and roles
+
+| Moment | Motion |
+| --- | --- |
+| Team list load | `RevealGroup` (`stagger.list`); online dots appear without animation |
+| Someone joins (socket) | New member row enters with `ListPresence` + `LiveHighlight`; matching pending invite row collapses |
+| Invite dialog | `Dialog` on desktop, `Sheet` on phone; tab indicator slides (`snappy`), tab content crossfades (`base`) |
+| Email chips | Added chips pop (`overshoot`, `fast`); removed chips shrink and collapse (`fast`) |
+| "Only some sessions" | Session checklist expands (`moderate`) |
+| Copy link | Button label crossfades to "Copied" with `CheckDraw`, returns after 1.5 s |
+| Send invites | Saving state on the button; dialog closes; new pending invite rows enter with `ListPresence`; toast |
+| Revoke invite / remove member | Row collapses with `UndoSnackbar` |
+| Member panel | `SidePanel` / full page on phone; adding or removing a role uses `ListPresence`; the "What Vikram can do" list updates with `ListPresence`, new ticks pop (`overshoot`, `fast`) |
+| Roles list | Static rows; `HoverLift` not used (dense list) |
+| Role editor toggles | Switch thumb uses `snappy`; the sticky "People with this role can…" summary updates with `ListPresence`; disabled toggles show their tooltip on hover or focus (`fast` fade), no shake |
+| Owner role view | Static; lock banner `Reveal` once |
+| Invite opened while signed in | Card scales in (`gentle`); "Join event" shows saving, then crossfades to "You're in" with `Confetti` in the event accent (same as 6.3) |
+| Invite expired or used up | Static card, no celebration |
+
+### 6.11 Activity log and undo
+
+| Moment | Motion |
+| --- | --- |
+| Load | First 8 entries with `RevealGroup` (`stagger.list`), the rest appear together |
+| New entries (socket) | If the reader is at the top: entries slide in with `ListPresence` + `LiveHighlight`. If they've scrolled down: nothing moves; a "3 new changes" pill fades in at the top and scrolls smoothly to the top when tapped |
+| Filters | Matching entries reflow with `ListPresence`; day headers fade |
+| Undo | Button shows saving; the entry fades to muted (`fast`) while a strikethrough draws left to right (200 ms); the "Undone by …" note rises in (`rise`, `base`); the undone item, wherever it's visible, gets `LiveHighlight` |
+| Undo blocked | `Dialog`; comparison columns static |
+
+### 6.12 Live collaboration and conflicts
+
+| Moment | Motion |
+| --- | --- |
+| Someone else changed an item | `LiveHighlight` with their avatar label; the label fades out with the glow |
+| Presence ("Vikram is viewing") | Avatar slides in from the right (`fast`); switching to "is editing" crossfades text and color (`fast`) |
+| Version conflict (409) | Banner slides down inside the panel (height + fade, `moderate`); comparison rows stagger (`stagger.list`). On "Use theirs" or "Keep mine" the banner collapses and the resulting values get a short `LiveHighlight` |
+| Item deleted by someone else | Panel content fades to 50% opacity (`base`); banner slides down. "Restore" fades content back to full and shows a toast |
+| Save button | Spinner only after 300 ms; "Saved" with `CheckDraw`, crossfades back to "Save" after 1.2 s |
+| Undo snackbar | `UndoSnackbar` (section 4) |
+
+### 6.13 Global states
+
+| Moment | Motion |
+| --- | --- |
+| Not found, no access, something went wrong | Illustration and text `Reveal` once; no loops |
+| "Try again" | Button saving state; on success the page crossfades to the content (`base`) |
+| Offline and back online | Bar per 6.1; "Back online" shows in green for 2 s, then slides up |
+| Session expired | `Dialog` over a static app |
+| Free plan limit | `Dialog` |
+| Loading | `Skeleton` blocks in the exact layout of the content; content crossfades in (`base`) with no layout shift |
+
+### 6.14 Later sections (apply the same patterns)
+
+Budget, people, gallery, notifications, profile and public pages use the patterns in section 4: `ListPresence` for list changes, `SidePanel`/`Sheet` for details, `CountUp` and `ProgressFill` for totals, `LiveHighlight` for others' changes, `Confetti` only for milestones (budget fully planned, first 100 responses). Add their specific rows to this file when they're designed.
 
 ## 7. Quality checks
 

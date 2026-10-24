@@ -12,6 +12,8 @@ const CARET_LINGER_MS = 2000;
 interface TypewriterProps {
   text: string;
   className?: string;
+  /** Called once the full text is shown: after typing, or at once when nothing types. */
+  onDone?: () => void;
 }
 
 /**
@@ -20,13 +22,18 @@ interface TypewriterProps {
  * - An invisible copy reserves the final size, so typing never shifts layout.
  * - Reduced motion, or text already on screen at load: the full text, no typing.
  */
-export function Typewriter({ text, className }: TypewriterProps) {
+export function Typewriter({ text, className, onDone }: TypewriterProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.5 });
   const reduced = useShouldReduceMotion();
   const [count, setCount] = useState(text.length);
   const [caret, setCaret] = useState(false);
   const pending = useRef(false);
+  const onDoneRef = useRef(onDone);
+
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  });
 
   // Before the first paint after hydration: only hide text that starts off-screen.
   useLayoutEffect(() => {
@@ -42,7 +49,11 @@ export function Typewriter({ text, className }: TypewriterProps) {
   }, []);
 
   useEffect(() => {
-    if (reduced || !pending.current || !inView) return;
+    if (reduced || !pending.current) {
+      onDoneRef.current?.();
+      return;
+    }
+    if (!inView) return;
     pending.current = false;
     let typed = 0;
     let lingerTimer: ReturnType<typeof setTimeout> | undefined;
@@ -52,6 +63,7 @@ export function Typewriter({ text, className }: TypewriterProps) {
       setCaret(true);
       if (typed >= text.length) {
         clearInterval(typeTimer);
+        onDoneRef.current?.();
         lingerTimer = setTimeout(() => setCaret(false), CARET_LINGER_MS);
       }
     }, CHAR_MS);
@@ -72,7 +84,9 @@ export function Typewriter({ text, className }: TypewriterProps) {
       </span>
       <span aria-hidden className="col-start-1 row-start-1">
         {shown}
-        {showCaret && <span className="typewriter-caret" />}
+        {/* A new caret element per character: a moving element counts as a layout shift,
+            a newly inserted one doesn't. */}
+        {showCaret && <span key={shown.length} className="typewriter-caret" />}
       </span>
       <span className="sr-only">{text}</span>
     </span>

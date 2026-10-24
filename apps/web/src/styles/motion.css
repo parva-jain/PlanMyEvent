@@ -127,3 +127,33 @@
 .drift-card {
   scale: calc(1 - (1 - var(--drift, 1)) * 0.08 * var(--motion));
 }
+
+/*
+ * Home page use-case tabs: the event accent fades between tabs (`fast`). Registered so the
+ * variables themselves transition; tab panels remount on change, so element transitions
+ * alone would never run. Colour only, so it stays under reduced motion.
+ */
+@property --case {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --case-tint {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --case-text {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+.case-accent {
+  transition:
+    --case var(--dur-fast) var(--ease-out),
+    --case-tint var(--dur-fast) var(--ease-out),
+    --case-text var(--dur-fast) var(--ease-out);
+}

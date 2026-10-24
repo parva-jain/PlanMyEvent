@@ -16,11 +16,13 @@ const jakarta = Plus_Jakarta_Sans({
   display: 'swap',
 });
 
-// Display font: event names on invitations and public pages only (DESIGN.md).
+// Display font: event names on invitations and public pages only (DESIGN.md). Not preloaded:
+// it never appears in the first screen, so it shouldn't compete with the hero for bandwidth.
 const fraunces = Fraunces({
   subsets: ['latin'],
   variable: '--font-fraunces',
   display: 'swap',
+  preload: false,
 });
 
 export async function generateMetadata(): Promise<Metadata> {

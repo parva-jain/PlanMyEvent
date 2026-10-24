@@ -17,14 +17,14 @@ Working style: small steps, each explained and reviewed before moving on; learni
 | C | `MotionConfig reducedMotion="user"` + `LazyMotion`, reduced-motion override on `/dev/ui` | Done |
 | D | Motion components (MOTION.md §4) on `/dev/ui` with a reduced-motion toggle | Done |
 | E | Base UI components: Button, Badge, Card, Tabs, Accordion | Done |
-| F | Home page, one section per commit, with its MOTION.md §6.2 motion | In progress: header + hero (`4a638d3`), problem-to-solution (`34f4b71`) |
-| G | Playwright (normal + reduced motion), Lighthouse mobile ≥ 90, no layout shift | |
+| F | Home page with its MOTION.md §6.2 motion (header + hero `4a638d3`, problem `34f4b71`, palette `e8a4c27`, remaining sections in one commit at your request) | Done |
+| G | Playwright (normal + reduced motion), Lighthouse mobile ≥ 90, no layout shift | Next |
 
 After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
 
-**Next step:** F, how-it-works section (three steps with a connector line that draws on desktop).
+**Next step:** G, Playwright smoke tests of the home page (normal and reduced motion) and a Lighthouse run on a quiet machine.
 
-Hero measured on a production build: Lighthouse mobile performance 90–98 over five runs (median 96), CLS 0, no console errors; observed LCP 100–190 ms (the 2–3 s LCP Lighthouse shows is its simulated slow-phone estimate). Re-measured with the full page in step G. A run after the problem section scored 73–78 under heavy machine load (load average 12–20, the unchanged React chunk took 2.7× longer); the section adds about 4.5 KB of JavaScript, so step G re-measures on a quiet machine.
+Full home page measured on a production build (Oct 24): Lighthouse mobile accessibility, best practices and SEO 100 in light and dark; CLS 0 in normal and reduced motion; performance 89–94 at load average ~5 and 87–90 at ~7 (the unchanged React chunk's CPU time varied 40% between runs), observed LCP 130–210 ms. The ≥ 90 target is borderline on this machine and is re-checked in step G. Earlier, hero only: Lighthouse mobile performance 90–98 over five runs (median 96), CLS 0, no console errors; observed LCP 100–190 ms (the 2–3 s LCP Lighthouse shows is its simulated slow-phone estimate). Re-measured with the full page in step G. A run after the problem section scored 73–78 under heavy machine load (load average 12–20, the unchanged React chunk took 2.7× longer); the section adds about 4.5 KB of JavaScript, so step G re-measures on a quiet machine.
 
 **Stitch:** read directly through the Stitch MCP server (project "Plan My Event Design System"). Screens are references, rebuilt with our tokens, components and translation keys (CLAUDE.md rule 14).
 
@@ -112,6 +112,15 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | Pill highlight starts and ends on Conferences; live card goes from a "before" state (task due, +18) to "after" (ticked, +24) | Server HTML and reduced motion show a sensible state with no jump | `event-type-pills.tsx`, `live-plan-card.tsx` |
 | Scroll-linked effects write progress to a CSS variable and let CSS apply it, scaled by `--motion` | One code path for reduced motion and the `/dev/ui` override; Motion doesn't remove styles it already wrote, so a JS `reduced` switch left the section frozen mid-drift | `problem-solution.tsx`, `motion.css` |
 | Problem section: the dietary row ("12 Jain meals, auto-tallied") became "Guest list · 412 guests, updated live" | Dietary tracking isn't in the PRD | `messages/en.json` |
+| Remaining home sections built in one commit: how it works, features, use cases, guest experience, AI teaser, pricing, FAQ, final call to action, footer | Your request after the palette change | `src/components/home/` |
+| Feature copy limited to the PRD MVP (no vendor logins, QR check-in, photo proof, task dependencies, `.ics` invites, custom branding, CSV export); AI and WhatsApp marked as coming | Marketing must not promise features that aren't planned for launch | `messages/en.json` |
+| Pricing: Free ₹0 and Pro ₹1,499 placeholders with a "may change" note; Pro button is "Start free, upgrade later" (no waitlist exists) | PRD leaves prices open | `pricing.tsx` |
+| How it works: numbered step markers above the cards on desktop, connector drawn between them | A line behind the cards would only show in the 24 px gaps | `how-it-works.tsx`, `step-connector.tsx` |
+| Use-case accent fades via `@property`-registered colour variables | Tab panels remount, so element transitions never run | `motion.css` (`.case-accent`) |
+| Tabs pill layer matches the active tab at rest, widens only while sliding | Contrast checkers ignore clip-path and flagged inactive tabs (false positive) | `src/components/ui/tabs.tsx` |
+| Typewriter gained `onDone`; its caret is a new element per character | Result cards follow the typing; a moving caret counted as layout shift | `typewriter.tsx` |
+| Fraunces not preloaded | Only used below the fold; preloading competed with the hero (LCP) | `src/app/layout.tsx` |
+| Footer has product and use-case links only | Privacy, terms and company pages don't exist yet | `site-footer.tsx` |
 | Floating hero cards on desktop only | No room around the card on phones | `hero.tsx` |
 
 ## Open questions
@@ -120,6 +129,8 @@ None right now.
 
 ## Follow-ups
 
+- Only home-page messages need to reach the browser; today all namespaces (including `devUi`) are sent. Trim if step G needs the bytes.
+- Footer privacy and terms links once those pages exist.
 - Logo SVG/PNG files and app icons still use the warm ink #1F1B16 and warm white #FAF8F5 (BRAND.md note); regenerate in a brand pass.
 
 ## Known warnings (harmless)
@@ -130,4 +141,4 @@ None right now.
 
 ## Learning notes
 
-[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md) · [10 Motion components](learning/10-motion-components.md) · [11 Base UI components](learning/11-base-ui-components.md) · [12 Home header and hero](learning/12-home-header-hero.md) · [13 Scroll-linked motion](learning/13-scroll-linked-motion.md)
+[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md) · [10 Motion components](learning/10-motion-components.md) · [11 Base UI components](learning/11-base-ui-components.md) · [12 Home header and hero](learning/12-home-header-hero.md) · [13 Scroll-linked motion](learning/13-scroll-linked-motion.md) · [14 Home page complete](learning/14-home-page-complete.md)

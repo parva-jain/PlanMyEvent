@@ -8,6 +8,8 @@ import { useRef, type CSSProperties } from 'react';
 import { Reveal } from '@/components/motion/reveal';
 import { Badge } from '@/components/ui/badge';
 
+import { SectionHeading } from './section-heading';
+
 const BUBBLES = ['bubble1', 'bubble2', 'bubble3'] as const;
 
 const ROWS = [
@@ -38,19 +40,13 @@ export function ProblemSolution() {
       style={{ '--drift': scrollYProgress } as unknown as CSSProperties}
     >
       <div className="mx-auto max-w-content px-4 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <Reveal rise="riseLarge">
-            <p className="text-caption font-semibold tracking-wide text-danger-text uppercase">
-              {t('eyebrow')}
-            </p>
-            <h2 id="problem-title" className="mt-3 text-h1-phone text-balance sm:text-h1">
-              {t('title')}
-            </h2>
-          </Reveal>
-          <Reveal delay={0.15}>
-            <p className="mt-4 text-body-lg text-fg-secondary">{t('body')}</p>
-          </Reveal>
-        </div>
+        <SectionHeading
+          id="problem-title"
+          eyebrow={t('eyebrow')}
+          title={t('title')}
+          body={t('body')}
+          tone="danger"
+        />
 
         <div className="mt-12 grid items-stretch gap-4 lg:mt-16 lg:grid-cols-[1fr_auto_1fr] lg:gap-6">
           <Reveal className="flex">
