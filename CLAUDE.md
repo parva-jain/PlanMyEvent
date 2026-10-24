@@ -16,7 +16,8 @@ Status: design complete; implementation starting with milestone 1 (scaffolding).
 | Architecture, estimates, caching, queues, scaling, failure modes | `docs/SystemDesign.md` |
 | Tables, columns, constraints, indexes, key queries, migrations | `docs/DatabaseDesign.md` |
 | Endpoints, auth, errors, pagination, idempotency, sockets | `docs/APIDesign.md` |
-| Visual design tokens, components, layout, motion, voice | `docs/DESIGN.md` |
+| Visual design tokens, components, layout, voice | `docs/DESIGN.md` |
+| Animation tokens, patterns, reduced motion, every animation per screen | `docs/MOTION.md` |
 | Logo files and brand rules | `brand/` (`brand/BRAND.md`) |
 | Why key choices were made | `docs/decisions/` |
 | Current progress, milestone checklist, decisions in flight | `docs/STATUS.md` (update at the end of every step) |
@@ -51,7 +52,7 @@ TypeScript everywhere. pnpm workspaces + Turborepo.
 11. **Sockets carry no data**, only `entity.changed`-style signals; clients re-fetch through the API.
 12. **Redis is never the source of truth**; every cache read falls back to Postgres.
 13. **Slow or external work goes to BullMQ queues**, never inline in a request.
-14. **UI:** tokens and components follow `docs/DESIGN.md`; phone and desktop are both first-class; all UI strings go through translation keys; Stitch designs are references, not code to paste.
+14. **UI:** tokens and components follow `docs/DESIGN.md` and animations follow `docs/MOTION.md` (use its tokens and shared motion components, never ad-hoc durations; always handle reduced motion); phone and desktop are both first-class; all UI strings go through translation keys; Stitch designs are references, not code to paste.
 
 ## Conventions
 

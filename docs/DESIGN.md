@@ -124,9 +124,9 @@ Tap targets at least 48px. Primary action reachable by thumb on phone.
 - **Empty states:** small illustration, one-line headline, one sentence, one button.
 - **Loading:** skeleton blocks, never full-page spinners.
 
-## Motion (implemented in code)
+## Motion
 
-Fast and purposeful: 150–250 ms, springs for drag, nothing over 600 ms, respects reduced motion. Task tick draws, milestone confetti in marigold once, live-update glow 1.5 s, numbers count up on dashboard load, bottom sheets spring up, event card expands into the event header.
+All motion (tokens, tools, reusable patterns, reduced-motion rules and every animation per screen) is specified in [MOTION.md](MOTION.md). Summary: fast and purposeful, 150–250 ms, springs for drag, nothing over 600 ms except one-time hero and logo sequences, always respects reduced motion.
 
 ## Voice
 
