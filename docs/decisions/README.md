@@ -9,6 +9,7 @@ Short records of significant decisions: the context, what was decided, and the c
 | [003](003-transactional-outbox.md) | Transactional outbox for every write | Accepted |
 | [004](004-cloudflare-r2-storage.md) | Cloudflare R2 for file storage | Accepted |
 | [005](005-job-id-format.md) | Dash-separated deterministic job ids | Accepted |
+| [006](006-aa-contrast-tokens.md) | Text colours adjusted to meet WCAG AA | Accepted |
 
 Template:
 

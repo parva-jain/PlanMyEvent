@@ -138,7 +138,7 @@ export function LivePlanCard({ className }: { className?: string }) {
                 count: () => <CountUp value={registrations} from={REGISTRATIONS.before} />,
               })}
             </p>
-            <p className="truncate text-caption text-on-primary/80">{t('attendees')}</p>
+            <p className="truncate text-caption">{t('attendees')}</p>
           </div>
         </div>
       </div>

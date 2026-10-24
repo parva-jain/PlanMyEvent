@@ -34,7 +34,7 @@
   --on-primary: #ffffff;
   --accent: #f5a524; /* marigold: progress, milestones, logo; never text or backgrounds */
   --accent-tint: #fff7e6;
-  --accent-text: #b4710c;
+  --accent-text: #9f650d;
 
   /* Warm neutrals */
   --background: #faf8f5;
@@ -44,7 +44,7 @@
   --border-strong: #d6cec3;
   --fg: #1f1b16;
   --fg-secondary: #6b635a;
-  --fg-muted: #8e857a;
+  --fg-muted: #736c62;
 
   /* Status: solid, tint, text on tint */
   --success: #16a34a;
@@ -90,7 +90,7 @@
 
 .dark {
   /* From DESIGN.md "Dark mode" and the Stitch dark UI kit */
-  --primary: #6366f1;
+  --primary: #6265f0; /* white text 4.53:1 (#6366F1 was 4.47) */
   --primary-hover: #4f46e5;
   --primary-tint: #2d2a45;
   --primary-text: #a5b4fc;
@@ -104,7 +104,7 @@
   --border-strong: #4d453c;
   --fg: #f5f1ea;
   --fg-secondary: #b8afa4;
-  --fg-muted: #8e857a;
+  --fg-muted: #9e958a; /* AA on surface and surface-muted (Stitch's #8E857A was 4.18 on cards) */
 
   /*
    * Provisional: DESIGN.md and Stitch define no dark values for these. Derived for

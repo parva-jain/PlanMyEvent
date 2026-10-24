@@ -20,9 +20,11 @@ A shared event-planning app for teams: weddings, conferences, college fests, fai
 | primary-tint | #EEF2FF | Selected rows, active chips, info backgrounds |
 | accent (marigold) | #F5A524 | Progress fills, milestone highlights, logo; never for text or body backgrounds |
 | accent-tint | #FFF7E6 | Celebration banners, "next up" highlight |
-| accent-text | #B4710C | Text on accent-tint |
+| accent-text | #9F650D | Text on accent-tint |
 
 ### Neutrals (warm)
+
+Every text colour meets WCAG AA (4.5:1) on each surface it is used on, in both themes (decision 006).
 
 | Token | Hex | Use |
 | --- | --- | --- |
@@ -33,7 +35,7 @@ A shared event-planning app for teams: weddings, conferences, college fests, fai
 | border-strong | #D6CEC3 | Input borders |
 | text | #1F1B16 | Primary text |
 | text-secondary | #6B635A | Supporting text |
-| text-muted | #8E857A | Placeholders, captions |
+| text-muted | #736C62 | Placeholders, captions |
 
 ### Status
 
@@ -66,7 +68,8 @@ Each event has one accent set by its type. Used only in the event header strip, 
 | border | #3A342D |
 | text | #F5F1EA |
 | text-secondary | #B8AFA4 |
-| primary (buttons) | #6366F1 |
+| text-muted | #9E958A |
+| primary (buttons) | #6265F0 |
 | primary (links, text) | #A5B4FC |
 | accent | #F5A524 |
 

@@ -73,7 +73,7 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | TypeScript 6.0.3, not 7 | typescript-eslint and @nestjs/swagger don't support TS 7 yet | This file |
 | pnpm 12.14.0 installed via npm, corepack's pnpm shim disabled | Corepack (≤ 0.36) can't launch pnpm 12's new package layout | This file |
 | Node 22 in `.nvmrc`, engines `>=22.12.0` | Your choice; vitest and nestjs-pino need ≥ 22.12 | `.nvmrc` |
-| SeaweedFS replaces MinIO locally | MinIO community images discontinued (Oct 2025), repo archived | Decision 006, to be written with item 9 |
+| SeaweedFS replaces MinIO locally | MinIO community images discontinued (Oct 2025), repo archived | Decision 007, to be written with item 9 |
 | Event accents keyed by DB `event_type`; `custom` = #7C3AED; "College fest" is a template using `custom` | DESIGN.md, BRAND.md and DatabaseDesign disagreed | DESIGN.md fix due with item 8 |
 | Dark-mode tokens missing from DESIGN.md derived in code only, provisional | To be revisited against your Stitch designs | Item 8 |
 | Job ids joined with `-` via `jobId()`, never `:` | BullMQ rejects most ids containing `:` | [Decision 005](decisions/005-job-id-format.md) |
@@ -102,6 +102,7 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | Derived `--event-*-text` tokens (accent + 30% ink in light, + 45% white in dark) for event badges | Raw accents as text fail WCAG AA on their tints | `globals.css` (marked provisional) |
 | Playwright 1.64.1 added to apps/web now | Used to verify motion behaviour (computed styles mid-animation) before step G's smoke tests | `apps/web/package.json` |
 | Home page: softened feature claims, placeholder pricing, "© 2026 Plan My Event", flat indigo banner, `surface-muted` instead of peach, served at `/` | Stitch copy and styling conflicted with PRD and DESIGN.md | Step F |
+| Four text colours adjusted for WCAG AA: accent-text #9F650D, text-muted #736C62 (light) and #9E958A (dark), dark primary #6265F0 | Below 4.5:1 on their surfaces | [Decision 006](decisions/006-aa-contrast-tokens.md), DESIGN.md |
 | MOTION.md §6.2 adapted to the Stitch layout; `AmbientFloat` and `Typewriter` added to §4 | Stitch has no device mockups, marquee strip or sticky showcase | `docs/MOTION.md` |
 | Hero entrance in CSS (`.rise-in` in `motion.css`, token durations, `--motion` switch), not the JS `Reveal` | The headline is the LCP element; a JS entrance keeps it invisible until hydration. Below-the-fold sections keep `Reveal` | `src/styles/motion.css` |
 | Header on phone: logo + "Start free" only (no menu); nav links from `lg` | One-page site; Stitch's phone header overflowed. Revisit if more pages arrive | `src/components/home/site-header.tsx` |
@@ -112,10 +113,7 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 
 ## Open questions
 
-- **Three DESIGN.md colour pairs fall below WCAG AA (4.5:1).** Proposed minimal fixes, not applied (doc change needs approval):
-  - `accent-text` #B4710C on `accent-tint` #FFF7E6: 3.71 → **#9F650D** (4.54)
-  - `fg-muted` #8E857A (light) on `background`: 3.42, and on the input fill `surface-muted`: 3.0 → **#736C62** (4.89 / 4.53)
-  - White on dark-mode primary #6366F1: 4.47 → **#6265F0** (4.53)
+None right now.
 
 ## Known warnings (harmless)
 
