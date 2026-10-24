@@ -27,7 +27,7 @@ export function Pricing() {
     <section
       id="pricing"
       aria-labelledby="pricing-title"
-      className="scroll-mt-16 bg-surface-muted py-16 lg:py-24"
+      className="scroll-mt-16 bg-surface-band py-16 lg:py-24"
     >
       <div className="mx-auto max-w-content px-4 lg:px-8">
         <SectionHeading
@@ -70,7 +70,7 @@ export function Pricing() {
           ))}
         </RevealGroup>
         <Reveal>
-          <p className="mt-6 text-center text-small text-fg-muted">{t('note')}</p>
+          <p className="mt-6 text-center text-small text-fg-secondary">{t('note')}</p>
         </Reveal>
       </div>
     </section>

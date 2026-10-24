@@ -36,7 +36,7 @@ export function ProblemSolution() {
     <m.section
       ref={ref}
       aria-labelledby="problem-title"
-      className="bg-surface-muted py-16 lg:py-24"
+      className="bg-surface-band py-16 lg:py-24"
       style={{ '--drift': scrollYProgress } as unknown as CSSProperties}
     >
       <div className="mx-auto max-w-content px-4 lg:px-8">

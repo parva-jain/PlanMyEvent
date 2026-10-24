@@ -40,6 +40,7 @@
   --background: #f2f3fb;
   --surface: #ffffff;
   --surface-muted: #e7e9f7;
+  --surface-band: #d7dbef; /* alternate page sections */
   --border: #dcdff0;
   --border-strong: #c2c7e0;
   --fg: #12142b;
@@ -100,6 +101,7 @@
   --background: #090b1c;
   --surface: #11142b;
   --surface-muted: #191d3a;
+  --surface-band: #1e2244;
   --border: #23284b;
   --border-strong: #32386a;
   --fg: #edeffb;
@@ -151,6 +153,7 @@
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
+  --color-surface-band: var(--surface-band);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-fg: var(--fg);

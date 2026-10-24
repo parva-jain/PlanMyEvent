@@ -124,7 +124,7 @@ export function Features() {
     <section
       id="features"
       aria-labelledby="features-title"
-      className="scroll-mt-16 bg-surface-muted py-16 lg:py-24"
+      className="scroll-mt-16 bg-surface-band py-16 lg:py-24"
     >
       <div className="mx-auto max-w-content px-4 lg:px-8">
         <SectionHeading

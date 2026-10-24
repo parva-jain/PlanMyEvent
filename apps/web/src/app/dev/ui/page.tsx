@@ -23,6 +23,7 @@ const NEUTRALS = [
   'background',
   'surface',
   'surface-muted',
+  'surface-band',
   'border',
   'border-strong',
   'fg',

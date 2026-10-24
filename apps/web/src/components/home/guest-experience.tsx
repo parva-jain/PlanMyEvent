@@ -39,7 +39,7 @@ export function GuestExperience() {
   };
 
   return (
-    <section aria-labelledby="guests-title" className="bg-surface-muted py-16 lg:py-24">
+    <section aria-labelledby="guests-title" className="bg-surface-band py-16 lg:py-24">
       <div className="mx-auto grid max-w-content items-center gap-12 px-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:px-8">
         <div className="flex justify-center lg:order-none">
           <m.div

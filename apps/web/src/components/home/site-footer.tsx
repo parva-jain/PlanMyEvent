@@ -27,7 +27,7 @@ export function SiteFooter() {
   const t = useTranslations('home.footer');
 
   return (
-    <footer className="border-t border-border bg-surface-muted">
+    <footer className="border-t border-border bg-surface-band">
       <div className="mx-auto grid max-w-content gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr] lg:px-8">
         <div className="max-w-xs">
           <p className="flex items-center gap-2">

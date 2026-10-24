@@ -24,13 +24,14 @@ A shared event-planning app for teams: weddings, conferences, college fests, fai
 
 ### Neutrals (cool, "Mist Deep")
 
-Cool greys with a trace of the brand indigo (decision 007). Warmth comes from the marigold accent and the event colours, not the neutrals. Every text colour meets WCAG AA (4.5:1) on each surface it is used on, in both themes (decision 006).
+Cool greys with a trace of the brand indigo (decision 007). Warmth comes from the marigold accent and the event colours, not the neutrals. Every text colour meets WCAG AA (4.5:1) on each surface it is used on, in both themes (decision 006). Exception: text-muted is not used directly on surface-band (4.25:1); use text-secondary there.
 
 | Token | Hex | Use |
 | --- | --- | --- |
 | background | #F2F3FB | App and page background |
 | surface | #FFFFFF | Cards, sheets, tables |
-| surface-muted | #E7E9F7 | Input fills, table headers, hover, alternate sections |
+| surface-muted | #E7E9F7 | Input fills, table headers, hover, small fills inside cards |
+| surface-band | #D7DBEF | Alternate page sections (light and dark bands on marketing and public pages) |
 | border | #DCDFF0 | Card and divider lines |
 | border-strong | #C2C7E0 | Input borders |
 | text | #12142B | Primary text |
@@ -65,6 +66,7 @@ Each event has one accent set by its type. Used only in the event header strip, 
 | background | #090B1C |
 | surface | #11142B |
 | surface-muted | #191D3A |
+| surface-band | #1E2244 |
 | border | #23284B |
 | border-strong | #32386A |
 | text | #EDEFFB |
@@ -83,7 +85,8 @@ The Stitch screens were designed with the earlier warm palette and are kept as t
 | --- | --- | --- | --- |
 | #FAF8F5 page | background | #F2F3FB | #090B1C |
 | #FFFFFF cards | surface | #FFFFFF | #11142B |
-| #F3EFE9 fills, and the peach section background (#FDF3EA) | surface-muted | #E7E9F7 | #191D3A |
+| #F3EFE9 fills | surface-muted | #E7E9F7 | #191D3A |
+| Peach section background (#FDF3EA) | surface-band | #D7DBEF | #1E2244 |
 | #ECE7E0 lines | border | #DCDFF0 | #23284B |
 | #D6CEC3 input borders | border-strong | #C2C7E0 | #32386A |
 | #1F1B16 text | text | #12142B | #EDEFFB |
