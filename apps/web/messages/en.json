@@ -36,6 +36,23 @@
     "durations": "Durations",
     "easings": "Easing",
     "springs": "Springs",
-    "distances": "Distances and stagger"
+    "distances": "Distances and stagger",
+    "replay": "Replay",
+    "motionComponents": "Motion components",
+    "demos": {
+      "reveal": "Fades in and rises 12 px (24 px for headings) when 20% is visible, once.",
+      "revealGroup": "Staggers its children 80 ms apart (40 ms in lists, max 8 rows).",
+      "pressable": "Scales to 0.97 while pressed (CSS, 100 ms).",
+      "hoverLift": "Rises 4 px and gains the raised shadow on hover (CSS, 150 ms).",
+      "sampleHeading": "Your whole event team, on the same page.",
+      "sampleBody": "Tasks, budget, guests and schedule in one shared plan.",
+      "rowOne": "Book caterer",
+      "rowTwo": "Send invitations",
+      "rowThree": "Confirm venue",
+      "rowFour": "Print badges",
+      "pressMe": "Add task",
+      "sampleCardTitle": "DevFest Bhopal 2026",
+      "sampleCardBody": "1,200 registrations · 78% ready"
+    }
   }
 }

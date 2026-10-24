@@ -16,3 +16,22 @@
   --press-scale: 0.97;
   --lift: -4px;
 }
+
+/*
+ * One switch for every CSS-only effect: 1 normally, 0 when motion is reduced, either by
+ * the OS setting or by the /dev/ui override (<html data-reduced-motion>). Distances and
+ * scales multiply by it, so reduced motion keeps colour and shadow changes but no movement.
+ */
+:root {
+  --motion: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-reduced-motion='never']) {
+    --motion: 0;
+  }
+}
+
+:root[data-reduced-motion='always'] {
+  --motion: 0;
+}

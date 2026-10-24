@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
+import { EntranceDemos } from '@/components/dev/motion-demos';
 import { MotionPreferenceSwitcher } from '@/components/dev/motion-preference-switcher';
 import { ThemeSwitcher } from '@/components/dev/theme-switcher';
 import { distance, duration, ease, scale, spring, stagger } from '@/lib/motion';
@@ -197,6 +198,10 @@ export default function DevUiPage() {
           </div>
         </div>
       </Section>
+      <Section title={t('motionComponents')}>
+        <EntranceDemos />
+      </Section>
+
       <Section title={t('motion')}>
         <p className="text-fg-secondary">{t('motionIntro')}</p>
         <div className="grid gap-6 sm:grid-cols-2">

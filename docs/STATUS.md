@@ -15,7 +15,7 @@ Working style: small steps, each explained and reviewed before moving on; learni
 | A | Web foundation: Next.js, Tailwind tokens (light + dark), fonts, next-intl, icons, `/dev/ui` | Done |
 | B | Motion tokens (`src/lib/motion.ts`, `src/styles/motion.css`) | Done |
 | C | `MotionConfig reducedMotion="user"` + `LazyMotion`, reduced-motion override on `/dev/ui` | Done |
-| D | Motion components (MOTION.md §4) on `/dev/ui` with a reduced-motion toggle | Next |
+| D | Motion components (MOTION.md §4) on `/dev/ui` with a reduced-motion toggle | In progress: Reveal, RevealGroup, Pressable, HoverLift done; next CountUp, ProgressFill, CheckDraw, LiveHighlight |
 | E | Base UI components: Button, Badge, Card, Tabs, Accordion | |
 | F | Home page, one section per commit, with its MOTION.md §6.2 motion | |
 | G | Playwright (normal + reduced motion), Lighthouse mobile ≥ 90, no layout shift | |
@@ -85,6 +85,9 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | motion 14.6.0 | Current stable, past pnpm's release-age window | `apps/web/package.json` |
 | `motion.css` also defines `--dur-instant`, `--dur-deliberate`, `--press-scale`, `--lift` | Listed in MOTION.md's token tables but missing from its CSS sample; `Pressable` needs `instant` | `src/styles/motion.css` |
 | Reduced-motion override (`user` / `always` / `never`) in React context, mirrored to `<html data-reduced-motion>` | Lets `/dev/ui` compare both modes for Motion and CSS effects | `src/components/motion/motion-provider.tsx` |
+| CSS-only effects share one `--motion` variable (1 normal, 0 reduced) that scales their distances | One switch for the OS setting and the override; reduced keeps colour and shadow changes | `src/styles/motion.css` |
+| Pressable and HoverLift are Tailwind utilities (`pressable`, `hover-lift`); HoverLift only on hover-capable devices | MOTION.md says CSS; avoids sticky hover on touch | `src/styles/globals.css` |
+| Playwright 1.64.1 added to apps/web now | Used to verify motion behaviour (computed styles mid-animation) before step G's smoke tests | `apps/web/package.json` |
 | Home page: softened feature claims, placeholder pricing, "© 2026 Plan My Event", flat indigo banner, `surface-muted` instead of peach, served at `/` | Stitch copy and styling conflicted with PRD and DESIGN.md | Step F |
 | MOTION.md §6.2 adapted to the Stitch layout; `AmbientFloat` and `Typewriter` added to §4 | Stitch has no device mockups, marquee strip or sticky showcase | `docs/MOTION.md` |
 

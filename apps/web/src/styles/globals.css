@@ -200,6 +200,29 @@
   --container-content: 1200px;
 }
 
+/* Pressable (MOTION.md section 4): scale to `press` while pressed, `instant`. */
+@utility pressable {
+  transition: transform var(--dur-instant) var(--ease-out);
+
+  &:active {
+    transform: scale(calc(1 - (1 - var(--press-scale)) * var(--motion)));
+  }
+}
+
+/* HoverLift: rise `lift` and gain the raised shadow, `fast`. Pointer devices only. */
+@utility hover-lift {
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(calc(var(--lift) * var(--motion)));
+      box-shadow: var(--shadow-raised);
+    }
+  }
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
