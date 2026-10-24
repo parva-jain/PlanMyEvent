@@ -18,13 +18,13 @@ Working style: small steps, each explained and reviewed before moving on; learni
 | D | Motion components (MOTION.md §4) on `/dev/ui` with a reduced-motion toggle | Done |
 | E | Base UI components: Button, Badge, Card, Tabs, Accordion | Done |
 | F | Home page with its MOTION.md §6.2 motion (header + hero `4a638d3`, problem `34f4b71`, palette `e8a4c27`, remaining sections in one commit at your request) | Done |
-| G | Playwright (normal + reduced motion), Lighthouse mobile ≥ 90, no layout shift | Next |
+| G | Playwright (normal + reduced motion), Lighthouse mobile ≥ 90, no layout shift | Done |
 
 After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
 
-**Next step:** G, Playwright smoke tests of the home page (normal and reduced motion) and a Lighthouse run on a quiet machine.
+**Home page track complete.** Next step: item 9, Docker Compose (Postgres 17.11, Redis 7.4.11, SeaweedFS + bucket init, Mailpit), Dockerfiles, decision 008.
 
-Full home page measured on a production build (Oct 24): Lighthouse mobile accessibility, best practices and SEO 100 in light and dark; CLS 0 in normal and reduced motion; performance 89–94 at load average ~5 and 87–90 at ~7 (the unchanged React chunk's CPU time varied 40% between runs), observed LCP 130–210 ms. The ≥ 90 target is borderline on this machine and is re-checked in step G. Earlier, hero only: Lighthouse mobile performance 90–98 over five runs (median 96), CLS 0, no console errors; observed LCP 100–190 ms (the 2–3 s LCP Lighthouse shows is its simulated slow-phone estimate). Re-measured with the full page in step G. A run after the problem section scored 73–78 under heavy machine load (load average 12–20, the unchanged React chunk took 2.7× longer); the section adds about 4.5 KB of JavaScript, so step G re-measures on a quiet machine.
+Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and phone (16 runs, all pass) against a production build on port 3100: every section renders, CLS 0 and no console errors in normal and reduced motion, header scroll state, use-case tabs (mouse and keyboard), FAQ, AI teaser typing, and reduced motion leaving drift and typing off. Lighthouse mobile over five runs at load average ~5: performance 92–96 (median 96), accessibility, best practices and SEO 100, CLS 0, TBT 50–150 ms, simulated LCP 2.7–3.3 s, observed LCP 103–197 ms.
 
 **Stitch:** read directly through the Stitch MCP server (project "Plan My Event Design System"). Screens are references, rebuilt with our tokens, components and translation keys (CLAUDE.md rule 14).
 
@@ -42,7 +42,7 @@ Full home page measured on a production build (Oct 24): Lighthouse mobile access
 | 8 | `apps/web`: tokens, fonts, shadcn components, Lucide, Motion, next-intl, TanStack Query, favicons, app shell, `/dev/ui`, status widget | In progress: foundation done (step A, `c9896b5`); home page track above | |
 | 9 | `infra/`: docker-compose (Postgres 17, Redis 7, SeaweedFS + bucket, Mailpit), Dockerfiles, `.env.example` | Not started (`.env.example` done for api and worker) | |
 | 10 | CI: GitHub Actions with install cache, lint, typecheck, test, build, Postgres/Redis services, migration check | Not started | |
-| 11 | Tests: Vitest in packages, api, worker; Playwright smoke test of the shell at phone and desktop sizes | Partly: core has 3 tests | |
+| 11 | Tests: Vitest in packages, api, worker; Playwright smoke test of the shell at phone and desktop sizes | Partly: core has 3 tests; Playwright home-page smoke tests at phone and desktop sizes (step G), shell test with item 8 | |
 | 12 | Docs: CLAUDE.md Commands section, README "Getting started" | Not started | |
 
 **Milestone 1 is done when**, from a fresh clone: `pnpm install`, `docker compose -f infra/docker-compose.yml up -d`, `pnpm db:migrate` and `pnpm dev` start everything; the web app shows the shell on localhost:3000; `/v1/health/ready` returns ok; the worker logs a processed sample job; lint, typecheck, test and build pass; CI is green.
@@ -52,6 +52,7 @@ Full home page measured on a production build (Oct 24): Lighthouse mobile access
 | Check | Result |
 | --- | --- |
 | `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test` | Pass |
+| `pnpm test:e2e` (Playwright, builds first) | 16/16 pass |
 | `pnpm db:migrate` against Postgres 17.11 | Applies `0000_extensions` (citext, pg_trgm); idempotent |
 | API `GET /v1/health/live` / `ready` | 200; ready → 503 + `Retry-After` when Postgres or Redis is down, recovers automatically |
 | API errors | problem+json for 404, bad JSON (400), >1 MB (413), unknown errors (500); every response has `X-Request-Id` |
@@ -123,6 +124,7 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | Fraunces not preloaded | Only used below the fold; preloading competed with the hero (LCP) | `src/app/layout.tsx` |
 | Footer has product and use-case links only | Privacy, terms and company pages don't exist yet | `site-footer.tsx` |
 | Floating hero cards on desktop only | No room around the card on phones | `hero.tsx` |
+| Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
 
 ## Open questions
 
@@ -138,8 +140,9 @@ None right now.
 
 - `pnpm peers check` reports an unmet `webpack` peer inside `@nestjs/cli`'s own dependencies; unused because we build with SWC.
 - `eslint-config-next`'s React, import and jsx-a11y plugins don't declare ESLint 10 support yet; lint runs correctly.
+- `next start` warns that it doesn't work with `output: 'standalone'`; it serves the build correctly for tests and Lighthouse. The standalone server is used in the Docker image (item 9).
 - `@parcel/watcher` and `unrs-resolver` install scripts are denied in `allowBuilds`; both use prebuilt binaries.
 
 ## Learning notes
 
-[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md) · [10 Motion components](learning/10-motion-components.md) · [11 Base UI components](learning/11-base-ui-components.md) · [12 Home header and hero](learning/12-home-header-hero.md) · [13 Scroll-linked motion](learning/13-scroll-linked-motion.md) · [14 Home page complete](learning/14-home-page-complete.md)
+[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md) · [10 Motion components](learning/10-motion-components.md) · [11 Base UI components](learning/11-base-ui-components.md) · [12 Home header and hero](learning/12-home-header-hero.md) · [13 Scroll-linked motion](learning/13-scroll-linked-motion.md) · [14 Home page complete](learning/14-home-page-complete.md) · [15 Smoke tests and Lighthouse](learning/15-smoke-tests-and-lighthouse.md)
