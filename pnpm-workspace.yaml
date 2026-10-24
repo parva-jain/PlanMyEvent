@@ -9,9 +9,8 @@ savePrefix: ''
 allowBuilds:
   '@scarf/scarf': false
   '@swc/core': true
+  '@parcel/watcher': false # prebuilt binaries ship as optional deps; the script is a source-build fallback
   esbuild: true
   # Optional native msgpack accelerator for BullMQ; the pure-JS fallback is fine.
   msgpackr-extract: false
-
-minimumReleaseAgeExclude:
-  - vite@8.3.5
+  unrs-resolver: false # same: prebuilt napi binaries, fallback build script

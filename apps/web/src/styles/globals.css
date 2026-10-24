@@ -1,0 +1,214 @@
+@import 'tailwindcss';
+
+/* Dark mode follows the `.dark` class set by next-themes (system preference by default). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens from docs/DESIGN.md. Components use the Tailwind names in @theme below,
+ * never raw hex values. DESIGN.md "text" tokens are named `fg` here to avoid classes
+ * like `text-text-secondary`: text → fg, text-secondary → fg-secondary, text-muted → fg-muted.
+ */
+:root {
+  /* Core */
+  --primary: #4338ca;
+  --primary-hover: #3730a3;
+  --primary-tint: #eef2ff;
+  --primary-text: #4338ca; /* links and indigo text */
+  --on-primary: #ffffff;
+  --accent: #f5a524; /* marigold: progress, milestones, logo; never text or backgrounds */
+  --accent-tint: #fff7e6;
+  --accent-text: #b4710c;
+
+  /* Warm neutrals */
+  --background: #faf8f5;
+  --surface: #ffffff;
+  --surface-muted: #f3efe9;
+  --border: #ece7e0;
+  --border-strong: #d6cec3;
+  --fg: #1f1b16;
+  --fg-secondary: #6b635a;
+  --fg-muted: #8e857a;
+
+  /* Status: solid, tint, text on tint */
+  --success: #16a34a;
+  --success-tint: #dcfce7;
+  --success-text: #166534;
+  --warning: #d97706;
+  --warning-tint: #fef3c7;
+  --warning-text: #92400e;
+  --danger: #dc2626;
+  --danger-tint: #fee2e2;
+  --danger-text: #991b1b;
+  --info: #4338ca;
+  --info-tint: #eef2ff;
+  --info-text: #3730a3;
+
+  /* Event accents, keyed by events.type (DatabaseDesign "Enumerations") */
+  --event-wedding: #e11d74;
+  --event-wedding-tint: #fce7f3;
+  --event-conference: #2563eb;
+  --event-conference-tint: #dbeafe;
+  --event-fair: #0d9488;
+  --event-fair-tint: #ccfbf1;
+  --event-celebration: #ea580c;
+  --event-celebration-tint: #ffedd5;
+  --event-custom: #7c3aed; /* also used by the "College fest" template */
+  --event-custom-tint: #ede9fe;
+
+  /* Depth */
+  --shadow-card: 0 1px 2px rgb(31 27 22 / 0.05);
+  --shadow-raised: 0 12px 32px rgb(31 27 22 / 0.12);
+
+  color-scheme: light;
+}
+
+.dark {
+  /* From DESIGN.md "Dark mode" and the Stitch dark UI kit */
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-tint: #2d2a45;
+  --primary-text: #a5b4fc;
+  --on-primary: #ffffff;
+  --accent: #f5a524;
+
+  --background: #1f1b16;
+  --surface: #2a2520;
+  --surface-muted: #332d27;
+  --border: #3a342d;
+  --border-strong: #4d453c;
+  --fg: #f5f1ea;
+  --fg-secondary: #b8afa4;
+  --fg-muted: #8e857a;
+
+  /*
+   * Provisional: DESIGN.md and Stitch define no dark values for these. Derived for
+   * contrast on dark surfaces; revisit when the dark designs cover them.
+   */
+  --accent-tint: #3a2e17;
+  --accent-text: #f5c46b;
+  --success-tint: #14301f;
+  --success-text: #86efac;
+  --warning-tint: #3a2a10;
+  --warning-text: #fcd34d;
+  --danger-tint: #3b1a1a;
+  --danger-text: #fca5a5;
+  --info: #6366f1;
+  --info-tint: #2d2a45;
+  --info-text: #a5b4fc;
+  --event-wedding-tint: color-mix(in srgb, var(--event-wedding) 22%, var(--surface));
+  --event-conference-tint: color-mix(in srgb, var(--event-conference) 22%, var(--surface));
+  --event-fair-tint: color-mix(in srgb, var(--event-fair) 22%, var(--surface));
+  --event-celebration-tint: color-mix(in srgb, var(--event-celebration) 22%, var(--surface));
+  --event-custom-tint: color-mix(in srgb, var(--event-custom) 22%, var(--surface));
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-raised: 0 12px 32px rgb(0 0 0 / 0.45);
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-tint: var(--primary-tint);
+  --color-primary-text: var(--primary-text);
+  --color-on-primary: var(--on-primary);
+  --color-accent: var(--accent);
+  --color-accent-tint: var(--accent-tint);
+  --color-accent-text: var(--accent-text);
+
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-fg-secondary: var(--fg-secondary);
+  --color-fg-muted: var(--fg-muted);
+
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-warning-text: var(--warning-text);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-danger-text: var(--danger-text);
+  --color-info: var(--info);
+  --color-info-tint: var(--info-tint);
+  --color-info-text: var(--info-text);
+
+  --color-event-wedding: var(--event-wedding);
+  --color-event-wedding-tint: var(--event-wedding-tint);
+  --color-event-conference: var(--event-conference);
+  --color-event-conference-tint: var(--event-conference-tint);
+  --color-event-fair: var(--event-fair);
+  --color-event-fair-tint: var(--event-fair-tint);
+  --color-event-celebration: var(--event-celebration);
+  --color-event-celebration-tint: var(--event-celebration-tint);
+  --color-event-custom: var(--event-custom);
+  --color-event-custom-tint: var(--event-custom-tint);
+
+  /* Fonts, loaded with next/font in the root layout */
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  /* Type scale (DESIGN.md "Typography"); `-phone` variants for screens under 640px */
+  --text-display: 2.5rem;
+  --text-display--line-height: 3rem;
+  --text-display--font-weight: 700;
+  --text-display-phone: 2rem;
+  --text-display-phone--line-height: 2.5rem;
+  --text-display-phone--font-weight: 700;
+  --text-h1: 1.875rem;
+  --text-h1--line-height: 2.375rem;
+  --text-h1--font-weight: 700;
+  --text-h1-phone: 1.625rem;
+  --text-h1-phone--line-height: 2.125rem;
+  --text-h1-phone--font-weight: 700;
+  --text-h2: 1.375rem;
+  --text-h2--line-height: 1.875rem;
+  --text-h2--font-weight: 700;
+  --text-h3: 1.125rem;
+  --text-h3--line-height: 1.625rem;
+  --text-h3--font-weight: 600;
+  --text-body-lg: 1.0625rem;
+  --text-body-lg--line-height: 1.625rem;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.5rem;
+  --text-label: 0.875rem;
+  --text-label--line-height: 1.25rem;
+  --text-label--font-weight: 600;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.25rem;
+  --text-small--font-weight: 500;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-caption--font-weight: 500;
+
+  /* Shape and depth */
+  --radius-control: 12px; /* buttons, inputs */
+  --radius-card: 16px;
+  --radius-dialog: 20px;
+  --radius-sheet: 24px; /* bottom sheet top corners */
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+
+  /* Layout */
+  --container-content: 1200px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background font-sans text-body text-fg antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
+}

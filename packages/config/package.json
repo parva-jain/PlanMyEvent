@@ -10,7 +10,8 @@
     },
     "./eslint/base": "./eslint/base.js",
     "./eslint/node": "./eslint/node.js",
-    "./tsconfig/*.json": "./tsconfig/*.json"
+    "./tsconfig/*.json": "./tsconfig/*.json",
+    "./eslint/next": "./eslint/next.js"
   },
   "files": [
     "dist",
@@ -25,6 +26,7 @@
   },
   "dependencies": {
     "@eslint/js": "10.0.1",
+    "eslint-config-next": "16.4.2",
     "eslint-config-prettier": "10.1.8",
     "globals": "17.13.0",
     "typescript-eslint": "8.72.0",

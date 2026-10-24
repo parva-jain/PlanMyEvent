@@ -1,0 +1,15 @@
+{
+  "extends": "@pme/config/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "src",
+    "*.ts",
+    "*.mjs"
+  ],
+  "exclude": ["node_modules"]
+}

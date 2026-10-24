@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "title": "Plan My Event",
+    "description": "One plan for everyone behind your event."
+  },
+  "home": {
+    "placeholderTitle": "Your whole event team, on the same page.",
+    "placeholderBody": "The home page is being built. Design tokens are on /dev/ui."
+  },
+  "devUi": {
+    "title": "UI foundation",
+    "intro": "Design tokens from docs/DESIGN.md, rendered in the current theme.",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "colors": "Colors",
+    "core": "Core",
+    "neutrals": "Neutrals",
+    "status": "Status",
+    "events": "Event accents",
+    "typography": "Typography",
+    "typeSample": "Sharma Wedding · ₹1,50,000 · Sat, 12 Dec",
+    "radius": "Radius",
+    "shadows": "Shadows",
+    "shadowCard": "Card",
+    "shadowRaised": "Raised"
+  }
+}
