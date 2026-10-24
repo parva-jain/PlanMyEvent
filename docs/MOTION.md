@@ -126,6 +126,8 @@ Build these once in `apps/web/src/components/motion/` and use them everywhere; s
 | `Skeleton` | Soft opacity pulse 0.6 ↔ 1 | 1.2 s loop; static at 0.8 with reduced motion |
 | `Confetti` | Short marigold burst from a given element | 40 particles, 1 s, once per milestone per user |
 | `LogoMark` | Plays the logo sequence once: tile pop, tick draw, sparkle pop | 1.2 s total (BRAND.md) |
+| `AmbientFloat` | Gentle vertical drift loop (marketing only); pauses on hover and focus, stops off-screen | y ±6 px over 6 s, per-item offset; static with reduced motion |
+| `Typewriter` | Types a sentence once when in view, with a blinking caret | 35 ms per character; full text immediately with reduced motion |
 
 ## 5. Reduced motion
 
@@ -170,14 +172,13 @@ Also follow WCAG 2.2.2: anything that moves or auto-updates for more than 5 seco
 | Header | Transparent over the hero; after 8 px of scroll, background and bottom border fade in (`base`). Logo mark plays `LogoMark` once on first visit (session) |
 | Hero headline | Words rise in with 60 ms stagger, `riseLarge`, `deliberate`; subheading and buttons follow (+150 ms) |
 | Hero event-type pills | Highlight moves pill to pill every 2.2 s for one full loop, then stops on "Conferences"; pause on hover |
-| Hero device mockups | Laptop and phone rise in (+300 ms). After 1 s, a scripted "live" sequence plays once: a task row ticks (`CheckDraw`), "+24 registrations today" counts up, a `LiveHighlight` with "Rahul just updated this" appears |
+| Hero dashboard card | The DevFest Bhopal live-planning card rises in (+300 ms). After 1 s, a scripted "live" sequence plays once: a task row ticks (`CheckDraw`), "+24 registrations today" counts up, a `LiveHighlight` with "Rahul just updated this" appears |
 | Hero floating cards | Enter one by one (`staggerSection`), then drift gently (y ±6 px over 6 s, offset per card); ambient loop stops when the hero leaves the viewport |
-| Event-type strip | Slow marquee (40 s per loop), pauses on hover and focus; static wrapped row on reduced motion |
-| Problem to solution | Scroll-linked over the section's height: chat bubbles, sheet fragments and sticky notes drift toward the center and fade as the dashboard card scales 0.92 → 1. Reduced motion: final state |
-| How it works | Three steps reveal with `staggerSection`; the connector line between them draws left to right (`pathLength`, 600 ms) |
-| Features (desktop) | Sticky showcase: text blocks scroll on the left; the device on the right crossfades (`inOut`, 300 ms) to the matching screen when each block crosses the middle of the viewport. Phone: plain `Reveal` cards |
+| Problem to solution | Scroll-linked over the section's height: the WhatsApp chat bubbles drift toward the synced-plan card and fade as that card scales 0.92 → 1. Reduced motion: final state |
+| How it works | Three steps reveal with `staggerSection`; on desktop a thin connector line behind the step icons draws left to right (`pathLength`, 600 ms) |
+| Features | Six-card grid revealed with `RevealGroup` (`staggerSection`) on every screen size; cards use `HoverLift` |
 | Use cases tabs | Active tab indicator slides (`snappy`); preview crossfades (`base`) and the event accent color transitions (`fast`) |
-| Guest experience | When in view: phone rises in, the invitation cover unfolds (scaleY 0.96 → 1 from the top, `gentle`), then greeting and schedule rows stagger in |
+| Guest experience | When in view: the invitation card rises in and unfolds (scaleY 0.96 → 1 from the top, `gentle`), then its title, details and RSVP buttons stagger in |
 | Coming soon (AI teaser) | When in view, once: the sentence types out (35 ms per character, blinking caret), then three result cards pop in with `bouncy`, 120 ms apart |
 | Pricing cards | `HoverLift`; "Coming soon" badge static |
 | FAQ | Accordion height animates (`moderate`, `out`); chevron rotates 180° |
