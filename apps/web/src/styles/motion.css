@@ -35,3 +35,25 @@
 :root[data-reduced-motion='always'] {
   --motion: 0;
 }
+
+/* LogoMark intro: hide the parts until the animation starts, only when motion is allowed. */
+:root[data-logo-intro='pending'] .logo-intro-part {
+  opacity: calc(1 - var(--motion));
+}
+
+/* Typewriter caret: blinks while typing, removed 2 s after the text completes. */
+.typewriter-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: typewriter-blink 1s steps(1) infinite;
+}
+
+@keyframes typewriter-blink {
+  50% {
+    opacity: 0;
+  }
+}

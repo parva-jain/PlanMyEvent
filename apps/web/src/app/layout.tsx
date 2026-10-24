@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 
 import { MotionProvider } from '@/components/motion/motion-provider';
 import { ThemeProvider } from '@/components/theme-provider';
+import { LOGO_INTRO_SCRIPT } from '@/lib/logo-intro';
 
 import '@/styles/globals.css';
 
@@ -39,6 +40,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       className={`${jakarta.variable} ${fraunces.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {/* Must run before first paint so the logo intro never flashes (see LogoMark). */}
+        <script dangerouslySetInnerHTML={{ __html: LOGO_INTRO_SCRIPT }} />
+      </head>
       <body>
         <NextIntlClientProvider>
           <ThemeProvider>

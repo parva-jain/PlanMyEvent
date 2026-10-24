@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
+import { BrandDemos } from '@/components/dev/brand-demos';
 import { EntranceDemos } from '@/components/dev/motion-demos';
 import { MotionPreferenceSwitcher } from '@/components/dev/motion-preference-switcher';
 import { StateDemos } from '@/components/dev/state-demos';
@@ -202,6 +203,7 @@ export default function DevUiPage() {
       <Section title={t('motionComponents')}>
         <EntranceDemos />
         <StateDemos />
+        <BrandDemos />
       </Section>
 
       <Section title={t('motion')}>

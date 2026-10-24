@@ -127,7 +127,7 @@ Build these once in `apps/web/src/components/motion/` and use them everywhere; s
 | `Confetti` | Short marigold burst from a given element | 40 particles, 1 s, once per milestone per user |
 | `LogoMark` | Plays the logo sequence once: tile pop, tick draw, sparkle pop | 1.2 s total (BRAND.md) |
 | `AmbientFloat` | Gentle vertical drift loop (marketing only); pauses on hover and focus, stops off-screen | y ±6 px over 6 s, per-item offset; static with reduced motion |
-| `Typewriter` | Types a sentence once when in view, with a blinking caret | 35 ms per character; full text immediately with reduced motion |
+| `Typewriter` | Types a sentence once when in view, with a blinking caret | 35 ms per character; caret blinks every 1 s and is removed 2 s after the text completes (nothing blinks indefinitely); full text immediately with reduced motion |
 
 ## 5. Reduced motion
 

@@ -67,7 +67,17 @@
       "paid": "Paid",
       "teammateLabel": "Rahul just updated this",
       "simulateTeammate": "Simulate teammate change",
-      "simulateOwn": "Simulate own change"
+      "simulateOwn": "Simulate own change",
+      "logoMark": "Tile pops, tick draws, sparkle pops (1.2 s). Plays once per session in the header; this demo replays it.",
+      "confetti": "40 marigold particles, about 1 s, plus the event accent. Nothing fires with reduced motion.",
+      "celebrate": "Celebrate",
+      "ambientFloat": "Drifts ±6 px over 6 s with a per-card offset. Pauses on hover or focus, stops off-screen.",
+      "floatOne": "Rahul marked completed",
+      "floatTwo": "Catering advance paid ₹45,000",
+      "floatThree": "+24 registrations today",
+      "typewriter": "Types 35 ms per character when half visible; the caret disappears 2 s after it finishes.",
+      "typewriterSample": "Finalized the caterer, paid 20k advance via UPI, need balance by Friday",
+      "logoSession": "Header mode: once per session"
     }
   }
 }
