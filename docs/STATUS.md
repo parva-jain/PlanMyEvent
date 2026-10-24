@@ -13,16 +13,16 @@ Working style: small steps, each explained and reviewed before moving on; learni
 | Step | What | Status |
 | --- | --- | --- |
 | A | Web foundation: Next.js, Tailwind tokens (light + dark), fonts, next-intl, icons, `/dev/ui` | Done |
-| B | Motion tokens (`src/lib/motion.ts`, `src/styles/motion.css`) | Next |
-| C | `MotionConfig reducedMotion="user"` + `LazyMotion` | |
-| D | Motion components (MOTION.md §4) on `/dev/ui` with a reduced-motion toggle | |
+| B | Motion tokens (`src/lib/motion.ts`, `src/styles/motion.css`) | Done |
+| C | `MotionConfig reducedMotion="user"` + `LazyMotion`, reduced-motion override on `/dev/ui` | Done |
+| D | Motion components (MOTION.md §4) on `/dev/ui` with a reduced-motion toggle | Next |
 | E | Base UI components: Button, Badge, Card, Tabs, Accordion | |
 | F | Home page, one section per commit, with its MOTION.md §6.2 motion | |
 | G | Playwright (normal + reduced motion), Lighthouse mobile ≥ 90, no layout shift | |
 
 After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
 
-**Next step:** B, motion tokens.
+**Next step:** D, motion components.
 
 **Stitch:** read directly through the Stitch MCP server (project "Plan My Event Design System"). Screens are references, rebuilt with our tokens, components and translation keys (CLAUDE.md rule 14).
 
@@ -82,6 +82,9 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | DESIGN.md `text` tokens are `fg`, `fg-secondary`, `fg-muted` in code | Avoids classes like `text-text-secondary` | `globals.css` comment |
 | next-intl without locale routing (English only) | Routing arrives with Hindi | `src/i18n/request.ts` |
 | `/dev/ui` returns 404 in production | Internal showcase only | `src/app/dev/ui/page.tsx` |
+| motion 14.6.0 | Current stable, past pnpm's release-age window | `apps/web/package.json` |
+| `motion.css` also defines `--dur-instant`, `--dur-deliberate`, `--press-scale`, `--lift` | Listed in MOTION.md's token tables but missing from its CSS sample; `Pressable` needs `instant` | `src/styles/motion.css` |
+| Reduced-motion override (`user` / `always` / `never`) in React context, mirrored to `<html data-reduced-motion>` | Lets `/dev/ui` compare both modes for Motion and CSS effects | `src/components/motion/motion-provider.tsx` |
 | Home page: softened feature claims, placeholder pricing, "© 2026 Plan My Event", flat indigo banner, `surface-muted` instead of peach, served at `/` | Stitch copy and styling conflicted with PRD and DESIGN.md | Step F |
 | MOTION.md §6.2 adapted to the Stitch layout; `AmbientFloat` and `Typewriter` added to §4 | Stitch has no device mockups, marquee strip or sticky showcase | `docs/MOTION.md` |
 
@@ -97,4 +100,4 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 
 ## Learning notes
 
-[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md)
+[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md)
