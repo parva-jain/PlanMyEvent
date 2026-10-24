@@ -58,6 +58,27 @@
         "rsvpYes": "Yes",
         "rsvpDecline": "Decline"
       }
+    },
+    "problem": {
+      "eyebrow": "The event chaos vs the plan",
+      "title": "From 12 WhatsApp groups and 5 spreadsheets to one shared plan.",
+      "body": "When updates are scattered across group chats and old attachments, details get missed. Plan My Event keeps everyone working from the same plan.",
+      "chatTitle": "WhatsApp · “Event Committee Final FINAL”",
+      "bubble1": "“Wait, did someone send the advance to the caterer or is it pending?”",
+      "bubble2": "“Check v3 of the Excel sheet… wait, v4 in Drive has the new venue.”",
+      "bubble3": "“Who has the latest guest list? Mausi added 30 names on Sunday.”",
+      "chatStatus": "Scattered and out of sync",
+      "chatProblem": "3 overlapping sheets",
+      "planTitle": "Plan My Event",
+      "planBadge": "All synced",
+      "rowAdvance": "Catering advance ₹45,000",
+      "rowAdvanceStatus": "Paid",
+      "rowVenue": "Venue contract",
+      "rowVenueStatus": "1 version only",
+      "rowGuests": "Guest list · 412 guests",
+      "rowGuestsStatus": "Updated live",
+      "planStatus": "One shared plan",
+      "planResult": "No follow-up calls needed"
     }
   },
   "devUi": {

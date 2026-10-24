@@ -105,3 +105,25 @@
   animation-duration: var(--dur-fast);
   animation-delay: 0s;
 }
+
+/*
+ * Home page problem-to-solution section (MOTION.md 6.2). --drift (0 → 1) is the section's
+ * scroll progress, set by Motion; --k scales each bubble's share. Everything multiplies by
+ * --motion, so reduced motion shows the final state: bubbles at rest, plan card full size.
+ * Server HTML (no --drift yet) shows the same.
+ */
+.drift-bubble {
+  --d: calc(var(--drift, 0) * var(--k, 1) * var(--motion));
+  translate: 0 calc(var(--d) * 24px);
+  opacity: calc(1 - var(--d) * 0.3);
+}
+
+@media (width >= 64rem) {
+  .drift-bubble {
+    translate: calc(var(--d) * 24px) 0;
+  }
+}
+
+.drift-card {
+  scale: calc(1 - (1 - var(--drift, 1)) * 0.08 * var(--motion));
+}
