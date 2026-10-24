@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: Oct 23, 2026 · Updated at the end of every working step.
+Last updated: Oct 24, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
@@ -8,11 +8,23 @@ Last updated: Oct 23, 2026 · Updated at the end of every working step.
 
 Working style: small steps, each explained and reviewed before moving on; learning notes in [`docs/learning/`](learning/).
 
-**Agreed order for the rest of milestone 1 (backend first):** item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → 8 (web, built from the Stitch screens) → milestone 2 (auth).
+**Current track: home page with motion** (changed Oct 24 from the backend-first order). Steps, each reviewed before the next:
 
-**Next step:** item 9, Docker Compose.
+| Step | What | Status |
+| --- | --- | --- |
+| A | Web foundation: Next.js, Tailwind tokens (light + dark), fonts, next-intl, icons, `/dev/ui` | Done |
+| B | Motion tokens (`src/lib/motion.ts`, `src/styles/motion.css`) | Next |
+| C | `MotionConfig reducedMotion="user"` + `LazyMotion` | |
+| D | Motion components (MOTION.md §4) on `/dev/ui` with a reduced-motion toggle | |
+| E | Base UI components: Button, Badge, Card, Tabs, Accordion | |
+| F | Home page, one section per commit, with its MOTION.md §6.2 motion | |
+| G | Playwright (normal + reduced motion), Lighthouse mobile ≥ 90, no layout shift | |
 
-**Stitch:** most screens are designed in Stitch. They're used as references for item 8 (CLAUDE.md rule 14: rebuild with our tokens, components and translation keys, never paste the generated code).
+After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
+
+**Next step:** B, motion tokens.
+
+**Stitch:** read directly through the Stitch MCP server (project "Plan My Event Design System"). Screens are references, rebuilt with our tokens, components and translation keys (CLAUDE.md rule 14).
 
 ## Milestone 1 checklist
 
@@ -25,7 +37,7 @@ Working style: small steps, each explained and reviewed before moving on; learni
 | 5 | `packages/core`: `ActionContext`, `runAction` with placeholder permission/activity/outbox hooks, tests | Done | `050da31` |
 | 6 | `apps/api`: env config, pino + request ids, `/v1` prefix, health live/ready, problem+json filter, Zod validation, OpenAPI 3.1 at `/v1/docs`, CORS, graceful shutdown, optional Sentry, `/live` gateway stub | Done | `5eaf00c` |
 | 7 | `apps/worker`: BullMQ connection, sample queue/producer/processor, graceful shutdown | Done | `7e5f995` |
-| 8 | `apps/web`: tokens, fonts, shadcn components, Lucide, Motion, next-intl, TanStack Query, favicons, app shell, `/dev/ui`, status widget | Not started; after item 12, from the Stitch screens | |
+| 8 | `apps/web`: tokens, fonts, shadcn components, Lucide, Motion, next-intl, TanStack Query, favicons, app shell, `/dev/ui`, status widget | In progress: foundation done (step A, `c9896b5`); home page track above | |
 | 9 | `infra/`: docker-compose (Postgres 17, Redis 7, SeaweedFS + bucket, Mailpit), Dockerfiles, `.env.example` | Not started (`.env.example` done for api and worker) | |
 | 10 | CI: GitHub Actions with install cache, lint, typecheck, test, build, Postgres/Redis services, migration check | Not started | |
 | 11 | Tests: Vitest in packages, api, worker; Playwright smoke test of the shell at phone and desktop sizes | Partly: core has 3 tests | |
@@ -65,6 +77,13 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | Job ids joined with `-` via `jobId()`, never `:` | BullMQ rejects most ids containing `:` | [Decision 005](decisions/005-job-id-format.md) |
 | Custom health checks instead of `@nestjs/terminus` | Response must match the `HealthReady` contract | This file |
 | Toast via Sonner | shadcn deprecated its Toast component | Item 8 |
+| Next.js 16.4.2, not 16.4.3 | 16.4.3 was under a day old and failed pnpm's `minimumReleaseAge`; bump once it ages | This file |
+| Dark tokens from the Stitch dark UI kit (primary-tint #2D2A45, border-strong #4D453C, text-muted #8E857A, primary-hover #4F46E5); status, accent and event tints in dark are derived and marked provisional in `globals.css` | Neither DESIGN.md nor Stitch defines them | `apps/web/src/styles/globals.css` |
+| DESIGN.md `text` tokens are `fg`, `fg-secondary`, `fg-muted` in code | Avoids classes like `text-text-secondary` | `globals.css` comment |
+| next-intl without locale routing (English only) | Routing arrives with Hindi | `src/i18n/request.ts` |
+| `/dev/ui` returns 404 in production | Internal showcase only | `src/app/dev/ui/page.tsx` |
+| Home page: softened feature claims, placeholder pricing, "© 2026 Plan My Event", flat indigo banner, `surface-muted` instead of peach, served at `/` | Stitch copy and styling conflicted with PRD and DESIGN.md | Step F |
+| MOTION.md §6.2 adapted to the Stitch layout; `AmbientFloat` and `Typewriter` added to §4 | Stitch has no device mockups, marquee strip or sticky showcase | `docs/MOTION.md` |
 
 ## Open questions
 
@@ -73,7 +92,9 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 ## Known warnings (harmless)
 
 - `pnpm peers check` reports an unmet `webpack` peer inside `@nestjs/cli`'s own dependencies; unused because we build with SWC.
+- `eslint-config-next`'s React, import and jsx-a11y plugins don't declare ESLint 10 support yet; lint runs correctly.
+- `@parcel/watcher` and `unrs-resolver` install scripts are denied in `allowBuilds`; both use prebuilt binaries.
 
 ## Learning notes
 
-[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md)
+[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md)
