@@ -17,12 +17,14 @@ Working style: small steps, each explained and reviewed before moving on; learni
 | C | `MotionConfig reducedMotion="user"` + `LazyMotion`, reduced-motion override on `/dev/ui` | Done |
 | D | Motion components (MOTION.md §4) on `/dev/ui` with a reduced-motion toggle | Done |
 | E | Base UI components: Button, Badge, Card, Tabs, Accordion | Done |
-| F | Home page, one section per commit, with its MOTION.md §6.2 motion | Next |
+| F | Home page, one section per commit, with its MOTION.md §6.2 motion | In progress: header + hero done (`4a638d3`) |
 | G | Playwright (normal + reduced motion), Lighthouse mobile ≥ 90, no layout shift | |
 
 After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
 
-**Next step:** F, home page sections (starting with the header and hero).
+**Next step:** F, problem-to-solution section (WhatsApp chaos → synced plan, scroll-linked).
+
+Hero measured on a production build: Lighthouse mobile performance 90–98 over five runs (median 96), CLS 0, no console errors; observed LCP 100–190 ms (the 2–3 s LCP Lighthouse shows is its simulated slow-phone estimate). Re-measured with the full page in step G.
 
 **Stitch:** read directly through the Stitch MCP server (project "Plan My Event Design System"). Screens are references, rebuilt with our tokens, components and translation keys (CLAUDE.md rule 14).
 
@@ -101,6 +103,12 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | Playwright 1.64.1 added to apps/web now | Used to verify motion behaviour (computed styles mid-animation) before step G's smoke tests | `apps/web/package.json` |
 | Home page: softened feature claims, placeholder pricing, "© 2026 Plan My Event", flat indigo banner, `surface-muted` instead of peach, served at `/` | Stitch copy and styling conflicted with PRD and DESIGN.md | Step F |
 | MOTION.md §6.2 adapted to the Stitch layout; `AmbientFloat` and `Typewriter` added to §4 | Stitch has no device mockups, marquee strip or sticky showcase | `docs/MOTION.md` |
+| Hero entrance in CSS (`.rise-in` in `motion.css`, token durations, `--motion` switch), not the JS `Reveal` | The headline is the LCP element; a JS entrance keeps it invisible until hydration. Below-the-fold sections keep `Reveal` | `src/styles/motion.css` |
+| Header on phone: logo + "Start free" only (no menu); nav links from `lg` | One-page site; Stitch's phone header overflowed. Revisit if more pages arrive | `src/components/home/site-header.tsx` |
+| "See how it works" uses an arrow-down icon, not Stitch's play icon | It scrolls to the section; there is no video | `hero.tsx` |
+| `/sign-in` links use `prefetch={false}` | The route arrives in milestone 2; prefetching it logged a 404 | Header, hero |
+| Pill highlight starts and ends on Conferences; live card goes from a "before" state (task due, +18) to "after" (ticked, +24) | Server HTML and reduced motion show a sensible state with no jump | `event-type-pills.tsx`, `live-plan-card.tsx` |
+| Floating hero cards on desktop only | No room around the card on phones | `hero.tsx` |
 
 ## Open questions
 
@@ -117,4 +125,4 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 
 ## Learning notes
 
-[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md) · [10 Motion components](learning/10-motion-components.md) · [11 Base UI components](learning/11-base-ui-components.md)
+[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md) · [10 Motion components](learning/10-motion-components.md) · [11 Base UI components](learning/11-base-ui-components.md) · [12 Home header and hero](learning/12-home-header-hero.md)
