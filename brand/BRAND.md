@@ -47,13 +47,15 @@ Wordmark is Plus Jakarta Sans ExtraBold (800), tracking −1.7%, converted to ou
 | Primary dark | Deep indigo | #312E81 | Dark-mode logo tile, pressed states |
 | Primary light | Indigo 500 | #6366F1 | Dark-mode edges and focus rings |
 | Celebration accent | Marigold | #F5A524 | Logo tick and sparkle, progress, milestones; never body text |
-| Background | Warm white | #FAF8F5 | App and page background |
+| Background | Mist | #F2F3FB | App and page background |
 | Surface | White | #FFFFFF | Cards |
-| Text | Ink | #1F1B16 | Primary text, dark-mode background |
-| Text secondary | Stone | #6B635A | Supporting text |
+| Text | Midnight ink | #12142B | Primary text |
+| Text secondary | Slate ink | #454A68 | Supporting text |
 | Success | Green | #16A34A | Done, paid |
 | Warning | Amber | #D97706 | Pending, due soon |
 | Danger | Red | #DC2626 | Overdue, destructive actions |
+
+Neutrals changed from warm to cool in decision 007 (`docs/decisions/007-cool-mist-deep-palette.md`); dark mode uses midnight #090B1C. The logo SVG and PNG files still use the earlier ink (#1F1B16) and warm white (#FAF8F5) in the wordmark and app-icon background; regenerate them in the next brand pass.
 
 ### Event accent colors
 

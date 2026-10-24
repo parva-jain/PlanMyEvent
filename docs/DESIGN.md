@@ -22,20 +22,20 @@ A shared event-planning app for teams: weddings, conferences, college fests, fai
 | accent-tint | #FFF7E6 | Celebration banners, "next up" highlight |
 | accent-text | #9F650D | Text on accent-tint |
 
-### Neutrals (warm)
+### Neutrals (cool, "Mist Deep")
 
-Every text colour meets WCAG AA (4.5:1) on each surface it is used on, in both themes (decision 006).
+Cool greys with a trace of the brand indigo (decision 007). Warmth comes from the marigold accent and the event colours, not the neutrals. Every text colour meets WCAG AA (4.5:1) on each surface it is used on, in both themes (decision 006).
 
 | Token | Hex | Use |
 | --- | --- | --- |
-| background | #FAF8F5 | App and page background |
+| background | #F2F3FB | App and page background |
 | surface | #FFFFFF | Cards, sheets, tables |
-| surface-muted | #F3EFE9 | Input fills, table headers, hover |
-| border | #ECE7E0 | Card and divider lines |
-| border-strong | #D6CEC3 | Input borders |
-| text | #1F1B16 | Primary text |
-| text-secondary | #6B635A | Supporting text |
-| text-muted | #736C62 | Placeholders, captions |
+| surface-muted | #E7E9F7 | Input fills, table headers, hover, alternate sections |
+| border | #DCDFF0 | Card and divider lines |
+| border-strong | #C2C7E0 | Input borders |
+| text | #12142B | Primary text |
+| text-secondary | #454A68 | Supporting text |
+| text-muted | #5E6384 | Placeholders, captions |
 
 ### Status
 
@@ -62,16 +62,36 @@ Each event has one accent set by its type. Used only in the event header strip, 
 
 | Token | Hex |
 | --- | --- |
-| background | #1F1B16 |
-| surface | #2A2520 |
-| surface-muted | #332D27 |
-| border | #3A342D |
-| text | #F5F1EA |
-| text-secondary | #B8AFA4 |
-| text-muted | #9E958A |
+| background | #090B1C |
+| surface | #11142B |
+| surface-muted | #191D3A |
+| border | #23284B |
+| border-strong | #32386A |
+| text | #EDEFFB |
+| text-secondary | #ABB0CE |
+| text-muted | #8A90B2 |
+| primary-tint | #232864 |
 | primary (buttons) | #6265F0 |
 | primary (links, text) | #A5B4FC |
 | accent | #F5A524 |
+
+### Reading Stitch designs
+
+The Stitch screens were designed with the earlier warm palette and are kept as they are: they define layout, structure, content and hierarchy, not colour. Translate every Stitch colour to its token, never copy a hex value:
+
+| Stitch (warm) | Token | Light | Dark |
+| --- | --- | --- | --- |
+| #FAF8F5 page | background | #F2F3FB | #090B1C |
+| #FFFFFF cards | surface | #FFFFFF | #11142B |
+| #F3EFE9 fills, and the peach section background (#FDF3EA) | surface-muted | #E7E9F7 | #191D3A |
+| #ECE7E0 lines | border | #DCDFF0 | #23284B |
+| #D6CEC3 input borders | border-strong | #C2C7E0 | #32386A |
+| #1F1B16 text | text | #12142B | #EDEFFB |
+| #6B635A supporting text | text-secondary | #454A68 | #ABB0CE |
+| #8E857A captions | text-muted | #5E6384 | #8A90B2 |
+| Stitch dark kit #1F1B16 / #2A2520 / #332D27 | background / surface / surface-muted (dark) | | as above |
+
+Brand, status and event colours are unchanged, so Stitch values for those apply as they are.
 
 ## Typography
 

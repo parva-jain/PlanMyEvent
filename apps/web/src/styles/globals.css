@@ -36,15 +36,15 @@
   --accent-tint: #fff7e6;
   --accent-text: #9f650d;
 
-  /* Warm neutrals */
-  --background: #faf8f5;
+  /* Cool neutrals ("Mist Deep", decision 007): a trace of the brand indigo in every grey */
+  --background: #f2f3fb;
   --surface: #ffffff;
-  --surface-muted: #f3efe9;
-  --border: #ece7e0;
-  --border-strong: #d6cec3;
-  --fg: #1f1b16;
-  --fg-secondary: #6b635a;
-  --fg-muted: #736c62;
+  --surface-muted: #e7e9f7;
+  --border: #dcdff0;
+  --border-strong: #c2c7e0;
+  --fg: #12142b;
+  --fg-secondary: #454a68;
+  --fg-muted: #5e6384;
 
   /* Status: solid, tint, text on tint */
   --success: #16a34a;
@@ -75,42 +75,42 @@
    * Provisional, derived: text on event tints. The raw accents fail WCAG AA on their tints
    * (3.1-4.8:1), so text uses the accent mixed with ink (5.0-7.0:1). Accents are unchanged.
    */
-  --event-wedding-text: color-mix(in srgb, var(--event-wedding) 70%, #1f1b16);
-  --event-conference-text: color-mix(in srgb, var(--event-conference) 70%, #1f1b16);
-  --event-fair-text: color-mix(in srgb, var(--event-fair) 70%, #1f1b16);
-  --event-celebration-text: color-mix(in srgb, var(--event-celebration) 70%, #1f1b16);
-  --event-custom-text: color-mix(in srgb, var(--event-custom) 70%, #1f1b16);
+  --event-wedding-text: color-mix(in srgb, var(--event-wedding) 70%, #12142b);
+  --event-conference-text: color-mix(in srgb, var(--event-conference) 70%, #12142b);
+  --event-fair-text: color-mix(in srgb, var(--event-fair) 70%, #12142b);
+  --event-celebration-text: color-mix(in srgb, var(--event-celebration) 70%, #12142b);
+  --event-custom-text: color-mix(in srgb, var(--event-custom) 70%, #12142b);
 
   /* Depth */
-  --shadow-card: 0 1px 2px rgb(31 27 22 / 0.05);
-  --shadow-raised: 0 12px 32px rgb(31 27 22 / 0.12);
+  --shadow-card: 0 1px 2px rgb(18 20 43 / 0.05);
+  --shadow-raised: 0 12px 32px rgb(18 20 43 / 0.12);
 
   color-scheme: light;
 }
 
 .dark {
-  /* From DESIGN.md "Dark mode" and the Stitch dark UI kit */
+  /* From DESIGN.md "Dark mode" (Mist Deep, decision 007) */
   --primary: #6265f0; /* white text 4.53:1 (#6366F1 was 4.47) */
   --primary-hover: #4f46e5;
-  --primary-tint: #2d2a45;
+  --primary-tint: #232864;
   --primary-text: #a5b4fc;
   --on-primary: #ffffff;
   --accent: #f5a524;
 
-  --background: #1f1b16;
-  --surface: #2a2520;
-  --surface-muted: #332d27;
-  --border: #3a342d;
-  --border-strong: #4d453c;
-  --fg: #f5f1ea;
-  --fg-secondary: #b8afa4;
-  --fg-muted: #9e958a; /* AA on surface and surface-muted (Stitch's #8E857A was 4.18 on cards) */
+  --background: #090b1c;
+  --surface: #11142b;
+  --surface-muted: #191d3a;
+  --border: #23284b;
+  --border-strong: #32386a;
+  --fg: #edeffb;
+  --fg-secondary: #abb0ce;
+  --fg-muted: #8a90b2;
 
   /*
    * Provisional: DESIGN.md and Stitch define no dark values for these. Derived for
    * contrast on dark surfaces; revisit when the dark designs cover them.
    */
-  --accent-tint: #3a2e17;
+  --accent-tint: color-mix(in srgb, var(--accent) 16%, var(--surface));
   --accent-text: #f5c46b;
   --success-tint: #14301f;
   --success-text: #86efac;
@@ -119,7 +119,7 @@
   --danger-tint: #3b1a1a;
   --danger-text: #fca5a5;
   --info: #6366f1;
-  --info-tint: #2d2a45;
+  --info-tint: #232864;
   --info-text: #a5b4fc;
   --event-wedding-tint: color-mix(in srgb, var(--event-wedding) 22%, var(--surface));
   --event-conference-tint: color-mix(in srgb, var(--event-conference) 22%, var(--surface));

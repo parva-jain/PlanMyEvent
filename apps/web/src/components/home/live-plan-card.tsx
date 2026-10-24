@@ -77,7 +77,7 @@ export function LivePlanCard({ className }: { className?: string }) {
           <Badge tone="conference">{t('dates')}</Badge>
         </div>
 
-        <div className="mt-5 rounded-card bg-accent-tint p-4">
+        <div className="mt-5 rounded-card bg-surface-muted p-4">
           <div className="mb-2 flex items-center justify-between text-small">
             <span className="text-fg-secondary">{t('milestone')}</span>
             <span className="font-semibold text-primary-text">{t('ready', { percent: 78 })}</span>

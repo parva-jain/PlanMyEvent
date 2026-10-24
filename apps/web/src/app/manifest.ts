@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'One plan for everyone behind your event.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#FAF8F5',
+    background_color: '#F2F3FB',
     theme_color: '#4338CA',
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
