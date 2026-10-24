@@ -5,6 +5,22 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
+ * `reduce-motion:` applies when motion is reduced by the OS setting (unless the /dev/ui
+ * override says never) or by the override itself. Use it for CSS animations and
+ * transitions that can't simply scale by --motion (keyframes, rotations).
+ */
+@custom-variant reduce-motion {
+  @media (prefers-reduced-motion: reduce) {
+    &:where(:root:not([data-reduced-motion='never']) *) {
+      @slot;
+    }
+  }
+  &:where([data-reduced-motion='always'] *) {
+    @slot;
+  }
+}
+
+/*
  * Design tokens from docs/DESIGN.md. Components use the Tailwind names in @theme below,
  * never raw hex values. DESIGN.md "text" tokens are named `fg` here to avoid classes
  * like `text-text-secondary`: text → fg, text-secondary → fg-secondary, text-muted → fg-muted.
@@ -55,6 +71,15 @@
   --event-celebration-tint: #ffedd5;
   --event-custom: #7c3aed; /* also used by the "College fest" template */
   --event-custom-tint: #ede9fe;
+  /*
+   * Provisional, derived: text on event tints. The raw accents fail WCAG AA on their tints
+   * (3.1-4.8:1), so text uses the accent mixed with ink (5.0-7.0:1). Accents are unchanged.
+   */
+  --event-wedding-text: color-mix(in srgb, var(--event-wedding) 70%, #1f1b16);
+  --event-conference-text: color-mix(in srgb, var(--event-conference) 70%, #1f1b16);
+  --event-fair-text: color-mix(in srgb, var(--event-fair) 70%, #1f1b16);
+  --event-celebration-text: color-mix(in srgb, var(--event-celebration) 70%, #1f1b16);
+  --event-custom-text: color-mix(in srgb, var(--event-custom) 70%, #1f1b16);
 
   /* Depth */
   --shadow-card: 0 1px 2px rgb(31 27 22 / 0.05);
@@ -101,6 +126,11 @@
   --event-fair-tint: color-mix(in srgb, var(--event-fair) 22%, var(--surface));
   --event-celebration-tint: color-mix(in srgb, var(--event-celebration) 22%, var(--surface));
   --event-custom-tint: color-mix(in srgb, var(--event-custom) 22%, var(--surface));
+  --event-wedding-text: color-mix(in srgb, var(--event-wedding) 55%, #ffffff);
+  --event-conference-text: color-mix(in srgb, var(--event-conference) 55%, #ffffff);
+  --event-fair-text: color-mix(in srgb, var(--event-fair) 55%, #ffffff);
+  --event-celebration-text: color-mix(in srgb, var(--event-celebration) 55%, #ffffff);
+  --event-custom-text: color-mix(in srgb, var(--event-custom) 55%, #ffffff);
 
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-raised: 0 12px 32px rgb(0 0 0 / 0.45);
@@ -150,6 +180,11 @@
   --color-event-celebration-tint: var(--event-celebration-tint);
   --color-event-custom: var(--event-custom);
   --color-event-custom-tint: var(--event-custom-tint);
+  --color-event-wedding-text: var(--event-wedding-text);
+  --color-event-conference-text: var(--event-conference-text);
+  --color-event-fair-text: var(--event-fair-text);
+  --color-event-celebration-text: var(--event-celebration-text);
+  --color-event-custom-text: var(--event-custom-text);
 
   /* Fonts, loaded with next/font in the root layout */
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;

@@ -78,6 +78,62 @@
       "typewriter": "Types 35 ms per character when half visible; the caret disappears 2 s after it finishes.",
       "typewriterSample": "Finalized the caterer, paid 20k advance via UPI, need balance by Friday",
       "logoSession": "Header mode: once per session"
+    },
+    "components": "Components",
+    "ui": {
+      "buttons": "Buttons",
+      "addTask": "Add task",
+      "cancel": "Cancel",
+      "viewAll": "View all",
+      "delete": "Delete",
+      "small": "Small",
+      "sendInvitations": "Send invitations",
+      "disabled": "Disabled",
+      "loadingHint": "\"Send invitations\" simulates a 1.5 s save: the spinner replaces the icon only after 300 ms.",
+      "badges": "Badges",
+      "tone": {
+        "success": "Paid",
+        "warning": "Pending",
+        "danger": "Overdue",
+        "info": "Synced",
+        "accent": "Next up",
+        "neutral": "Draft"
+      },
+      "event": {
+        "wedding": "Wedding",
+        "conference": "Conference",
+        "fair": "Fair",
+        "celebration": "Celebration",
+        "custom": "College fest"
+      },
+      "cards": "Cards",
+      "cardTitle": "Catering advance",
+      "cardDescription": "Sharma Wedding · Due Sat, 12 Dec",
+      "interactiveTitle": "DevFest Bhopal 2026",
+      "interactiveDescription": "Interactive card: lifts on hover",
+      "tabs": "Tabs",
+      "tabsLabel": "Event types",
+      "tab": {
+        "weddings": "Weddings",
+        "conferences": "Conferences",
+        "collegeFests": "College fests",
+        "fairs": "Fairs & Expos"
+      },
+      "tabBody": {
+        "weddings": "Five functions, 412 guests, one shared plan.",
+        "conferences": "1,200 registrations across three tracks.",
+        "collegeFests": "18 competitions run by student committees.",
+        "fairs": "Three days, 60 stalls, one floor plan."
+      },
+      "accordion": "Accordion",
+      "faqFree": {
+        "question": "Is Plan My Event free to use?",
+        "answer": "Yes. The free plan covers most family events; paid plans are planned for larger teams."
+      },
+      "faqGuests": {
+        "question": "Do guests need an app or an account?",
+        "answer": "No. Guests open a link, see their invitation and reply in one tap."
+      }
     }
   }
 }

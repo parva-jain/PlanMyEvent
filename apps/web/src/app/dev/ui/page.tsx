@@ -6,6 +6,7 @@ import { BrandDemos } from '@/components/dev/brand-demos';
 import { EntranceDemos } from '@/components/dev/motion-demos';
 import { MotionPreferenceSwitcher } from '@/components/dev/motion-preference-switcher';
 import { StateDemos } from '@/components/dev/state-demos';
+import { UiDemos } from '@/components/dev/ui-demos';
 import { ThemeSwitcher } from '@/components/dev/theme-switcher';
 import { distance, duration, ease, scale, spring, stagger } from '@/lib/motion';
 
@@ -200,6 +201,10 @@ export default function DevUiPage() {
           </div>
         </div>
       </Section>
+      <Section title={t('components')}>
+        <UiDemos />
+      </Section>
+
       <Section title={t('motionComponents')}>
         <EntranceDemos />
         <StateDemos />

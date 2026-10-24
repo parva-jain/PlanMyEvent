@@ -57,3 +57,22 @@
     opacity: 0;
   }
 }
+
+/* Accordion (MOTION.md 6.2 FAQ): height animates, `moderate`, `out`. Radix supplies the height. */
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
