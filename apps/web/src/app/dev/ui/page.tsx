@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 import { EntranceDemos } from '@/components/dev/motion-demos';
 import { MotionPreferenceSwitcher } from '@/components/dev/motion-preference-switcher';
+import { StateDemos } from '@/components/dev/state-demos';
 import { ThemeSwitcher } from '@/components/dev/theme-switcher';
 import { distance, duration, ease, scale, spring, stagger } from '@/lib/motion';
 
@@ -200,6 +201,7 @@ export default function DevUiPage() {
       </Section>
       <Section title={t('motionComponents')}>
         <EntranceDemos />
+        <StateDemos />
       </Section>
 
       <Section title={t('motion')}>

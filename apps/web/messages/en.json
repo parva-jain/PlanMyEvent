@@ -52,7 +52,22 @@
       "rowFour": "Print badges",
       "pressMe": "Add task",
       "sampleCardTitle": "DevFest Bhopal 2026",
-      "sampleCardBody": "1,200 registrations · 78% ready"
+      "sampleCardBody": "1,200 registrations · 78% ready",
+      "countUp": "Counts to the value when in view (800 ms), then from the old value on updates (400 ms). en-IN format.",
+      "registrations": "Registrations",
+      "spent": "Spent so far",
+      "addRegistrations": "Add 24 registrations",
+      "progressFill": "Fills from 0 in 600 ms; turns green with a 150 ms fade when it reaches 100%.",
+      "milestone": "Milestone progress",
+      "setTo": "Set to {value}%",
+      "checkDraw": "Box fills, then the tick draws (250 ms). Reduced motion: the tick fades in.",
+      "taskTitle": "Finalize keynote stage",
+      "liveHighlight": "Indigo glow behind a changed row: 1.5 s for a teammate's change, 800 ms for your own.",
+      "expenseRow": "Catering advance ₹45,000",
+      "paid": "Paid",
+      "teammateLabel": "Rahul just updated this",
+      "simulateTeammate": "Simulate teammate change",
+      "simulateOwn": "Simulate own change"
     }
   }
 }
