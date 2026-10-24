@@ -2,19 +2,11 @@
 
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useSyncExternalStore } from 'react';
+
+import { useHydrated } from '@/lib/use-hydrated';
 
 const OPTIONS = ['light', 'dark', 'system'] as const;
 const LABEL_KEYS = { light: 'themeLight', dark: 'themeDark', system: 'themeSystem' } as const;
-
-// The theme is only known in the browser, so render the selection after hydration.
-const subscribe = () => () => {};
-const useHydrated = () =>
-  useSyncExternalStore(
-    subscribe,
-    () => true,
-    () => false,
-  );
 
 export function ThemeSwitcher() {
   const t = useTranslations('devUi');

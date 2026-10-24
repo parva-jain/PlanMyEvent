@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
+import { MotionProvider } from '@/components/motion/motion-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 
 import '@/styles/globals.css';
@@ -40,7 +41,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     >
       <body>
         <NextIntlClientProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <MotionProvider>{children}</MotionProvider>
+          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

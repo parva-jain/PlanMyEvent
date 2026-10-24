@@ -24,6 +24,18 @@
     "radius": "Radius",
     "shadows": "Shadows",
     "shadowCard": "Card",
-    "shadowRaised": "Raised"
+    "shadowRaised": "Raised",
+    "reducedMotion": "Reduced motion",
+    "motionUser": "Follow device",
+    "motionAlways": "Always reduce",
+    "motionNever": "Never reduce",
+    "motionStateReduced": "Motion is reduced",
+    "motionStateFull": "Full motion",
+    "motion": "Motion",
+    "motionIntro": "Tokens from docs/MOTION.md section 2. Components that use them appear below as they are built.",
+    "durations": "Durations",
+    "easings": "Easing",
+    "springs": "Springs",
+    "distances": "Distances and stagger"
   }
 }

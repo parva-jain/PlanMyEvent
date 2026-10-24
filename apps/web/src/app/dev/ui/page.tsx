@@ -2,7 +2,9 @@ import { notFound } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
+import { MotionPreferenceSwitcher } from '@/components/dev/motion-preference-switcher';
 import { ThemeSwitcher } from '@/components/dev/theme-switcher';
+import { distance, duration, ease, scale, spring, stagger } from '@/lib/motion';
 
 const CORE = [
   'primary',
@@ -55,6 +57,24 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
+function TokenTable({ title, rows }: { title: string; rows: (readonly [string, string])[] }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-label text-fg-secondary">{title}</h3>
+      <dl className="divide-y divide-border rounded-card border border-border bg-surface">
+        {rows.map(([name, value]) => (
+          <div key={name} className="flex justify-between gap-4 px-4 py-2">
+            <dt>
+              <code className="text-small">{name}</code>
+            </dt>
+            <dd className="text-small text-fg-secondary tabular-nums">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
 function Swatch({ token }: { token: string }) {
   return (
     <div className="flex flex-col gap-1">
@@ -81,7 +101,10 @@ export default function DevUiPage() {
           <h1 className="text-h1-phone sm:text-h1">{t('title')}</h1>
           <p className="text-fg-secondary">{t('intro')}</p>
         </div>
-        <ThemeSwitcher />
+        <div className="flex flex-col items-end gap-2">
+          <ThemeSwitcher />
+          <MotionPreferenceSwitcher />
+        </div>
       </header>
 
       <Section title={t('colors')}>
@@ -172,6 +195,39 @@ export default function DevUiPage() {
           <div className="flex h-24 w-48 items-center justify-center rounded-card bg-surface shadow-raised">
             {t('shadowRaised')}
           </div>
+        </div>
+      </Section>
+      <Section title={t('motion')}>
+        <p className="text-fg-secondary">{t('motionIntro')}</p>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <TokenTable
+            title={t('durations')}
+            rows={Object.entries(duration).map(([name, value]) => [name, `${value * 1000} ms`])}
+          />
+          <TokenTable
+            title={t('easings')}
+            rows={Object.entries(ease).map(([name, value]) => [
+              name,
+              `cubic-bezier(${value.join(', ')})`,
+            ])}
+          />
+          <TokenTable
+            title={t('springs')}
+            rows={Object.entries(spring).map(([name, value]) => [
+              name,
+              `stiffness ${value.stiffness}, damping ${value.damping}`,
+            ])}
+          />
+          <TokenTable
+            title={t('distances')}
+            rows={[
+              ...Object.entries(distance).map(([name, value]) => [name, `${value}px`] as const),
+              ...Object.entries(stagger).map(
+                ([name, value]) => [`stagger.${name}`, `${value * 1000} ms`] as const,
+              ),
+              ['scale.press', String(scale.press)] as const,
+            ]}
+          />
         </div>
       </Section>
     </main>
