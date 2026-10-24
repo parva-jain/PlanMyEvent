@@ -15,14 +15,14 @@ Working style: small steps, each explained and reviewed before moving on; learni
 | A | Web foundation: Next.js, Tailwind tokens (light + dark), fonts, next-intl, icons, `/dev/ui` | Done |
 | B | Motion tokens (`src/lib/motion.ts`, `src/styles/motion.css`) | Done |
 | C | `MotionConfig reducedMotion="user"` + `LazyMotion`, reduced-motion override on `/dev/ui` | Done |
-| D | Motion components (MOTION.md §4) on `/dev/ui` with a reduced-motion toggle | In progress: Reveal, RevealGroup, Pressable, HoverLift, CountUp, ProgressFill, CheckDraw, LiveHighlight done; next LogoMark, Confetti, AmbientFloat, Typewriter |
-| E | Base UI components: Button, Badge, Card, Tabs, Accordion | |
+| D | Motion components (MOTION.md §4) on `/dev/ui` with a reduced-motion toggle | Done |
+| E | Base UI components: Button, Badge, Card, Tabs, Accordion | Next |
 | F | Home page, one section per commit, with its MOTION.md §6.2 motion | |
 | G | Playwright (normal + reduced motion), Lighthouse mobile ≥ 90, no layout shift | |
 
 After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
 
-**Next step:** D, motion components.
+**Next step:** E, base UI components.
 
 **Stitch:** read directly through the Stitch MCP server (project "Plan My Event Design System"). Screens are references, rebuilt with our tokens, components and translation keys (CLAUDE.md rule 14).
 
@@ -89,6 +89,10 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | Pressable and HoverLift are Tailwind utilities (`pressable`, `hover-lift`); HoverLift only on hover-capable devices | MOTION.md says CSS; avoids sticky hover on touch | `src/styles/globals.css` |
 | CountUp renders the final number in server HTML; resets to 0 only if it starts off-screen, and reserves the final width | Correct for SEO, no-JS and reduced motion; no flash for numbers visible at load; no layout shift | `src/components/motion/count-up.tsx` |
 | ProgressFill handles reduced motion explicitly | MotionConfig only skips transform animations, not the ring's `pathLength` | `src/components/motion/progress-fill.tsx` |
+| LogoMark rebuilt with Motion from `mark-animated.svg`'s shapes and timings; a `<head>` script marks "intro pending" so it never flashes | The SVG's CSS ignores the `/dev/ui` override and can't play once per session | `src/components/motion/logo-mark.tsx`, `src/lib/logo-intro.ts` |
+| canvas-confetti 1.9.4 loaded on first use; once-per-milestone keys in localStorage | Keeps it out of the initial bundle; MOTION.md principle 5 | `src/components/motion/confetti.tsx` |
+| Typewriter caret blinks every 1 s and is removed 2 s after typing ends | Nothing blinks indefinitely (WCAG 2.2.2); added to MOTION.md §4 | `docs/MOTION.md` |
+| Effects that start animations wait for hydration | Otherwise they start with `reduced = false` and freeze mid-way when the real value arrives | LogoMark, AmbientFloat |
 | Playwright 1.64.1 added to apps/web now | Used to verify motion behaviour (computed styles mid-animation) before step G's smoke tests | `apps/web/package.json` |
 | Home page: softened feature claims, placeholder pricing, "© 2026 Plan My Event", flat indigo banner, `surface-muted` instead of peach, served at `/` | Stitch copy and styling conflicted with PRD and DESIGN.md | Step F |
 | MOTION.md §6.2 adapted to the Stitch layout; `AmbientFloat` and `Typewriter` added to §4 | Stitch has no device mockups, marquee strip or sticky showcase | `docs/MOTION.md` |
@@ -105,4 +109,4 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 
 ## Learning notes
 
-[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md)
+[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md) · [10 Motion components](learning/10-motion-components.md)
