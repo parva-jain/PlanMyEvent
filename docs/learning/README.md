@@ -1,6 +1,6 @@
 # Learning notes
 
-One note per working step: what was built, the key ideas, what testing taught us, and self-check questions. Notes are grouped by topic; the number is the order they were written in, so reading 01 → 15 follows the build.
+One note per working step: what was built, the key ideas, what testing taught us, and self-check questions. Notes are grouped by topic; the number is the order they were written in, so reading them in number order follows the build.
 
 ## 1. Foundations
 
@@ -32,4 +32,8 @@ One note per working step: what was built, the key ideas, what testing taught us
 - [14 Home page complete (and a palette change)](5-home-page/14-home-page-complete.md)
 - [15 Smoke tests and Lighthouse](5-home-page/15-smoke-tests-and-lighthouse.md)
 
-New notes keep the next number and go in the folder for their topic; a new topic gets the next folder (infrastructure and CI notes will start `6-infra/`).
+## 6. Infrastructure
+
+- [16 Docker Compose for local services](6-infra/16-docker-compose.md)
+
+New notes keep the next number and go in the folder for their topic; a new topic gets the next folder.

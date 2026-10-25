@@ -9,7 +9,7 @@ The app stores gallery photos, receipts and cover images. Estimates put year-one
 
 ## Decision
 
-Use **Cloudflare R2** through the standard AWS S3 SDK. Gallery images are served from a public bucket behind Cloudflare's CDN; receipts sit in a private bucket and are served through short-lived signed URLs. Locally, MinIO stands in for R2.
+Use **Cloudflare R2** through the standard AWS S3 SDK. Gallery images are served from a public bucket behind Cloudflare's CDN; receipts sit in a private bucket and are served through short-lived signed URLs. Locally, MinIO stands in for R2 (local stand-in replaced by SeaweedFS in [008](008-seaweedfs-local-storage.md)).
 
 ## Rationale
 

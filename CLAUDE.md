@@ -35,7 +35,7 @@ TypeScript everywhere. pnpm workspaces + Turborepo.
 - `packages/db`: Drizzle schema, migrations, seeds.
 - `packages/contracts`: Zod schemas and types shared by API, sockets, web and (later) mobile.
 - `packages/config`: shared TypeScript, lint and env-validation config.
-- Infra: PostgreSQL 17+, Redis, Cloudflare R2 (MinIO locally), Resend (Mailpit locally), Sentry. Docker Compose in `infra/`.
+- Infra: PostgreSQL 17+, Redis, Cloudflare R2 (SeaweedFS locally), Resend (Mailpit locally), Sentry. Docker Compose in `infra/`.
 
 ## Non-negotiable rules
 

@@ -518,7 +518,7 @@ The first limits to hit are database connections, outbound provider rate limits 
 
 | Stage | Trigger | Setup |
 | --- | --- | --- |
-| 0. Build | Development, demos | Docker Compose locally (Postgres, Redis, MinIO, Mailpit, API, worker, web); free tiers for a hosted demo |
+| 0. Build | Development, demos | Docker Compose locally (Postgres, Redis, SeaweedFS, Mailpit, API, worker, web); free tiers for a hosted demo |
 | 1. Launch | First real events | One API container and one worker container; managed Postgres with daily backups; managed Redis; R2; web on Vercel or as a container; Sentry |
 | 2. Growth | p95 over targets, or more than about 200 active events | Two or more API containers behind a load balancer; workers split into fast and slow pools; PgBouncer; separate Redis for queues and cache; staging environment |
 | 3. Scale | Postgres CPU above 60% sustained, or reporting slows writes | Read replica for dashboards and exports; activity log partitions; public pages on a separate API deployment; consider a managed real-time service if socket load dominates |

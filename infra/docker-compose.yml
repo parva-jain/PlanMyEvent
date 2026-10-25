@@ -1,0 +1,83 @@
+# Local development services. Start with:
+#   docker compose -f infra/docker-compose.yml up -d
+# Credentials here are for local use only; production uses managed services (docs/SystemDesign.md).
+# Every port is bound to 127.0.0.1, so nothing is reachable from other machines on the network.
+name: pme
+
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_USER: pme
+      POSTGRES_PASSWORD: pme
+      POSTGRES_DB: pme
+    ports:
+      - 127.0.0.1:5432:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U pme -d pme']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7.4.11-alpine
+    # BullMQ needs `noeviction`: under memory pressure Redis must refuse writes rather than
+    # silently drop queued jobs. Append-only file keeps queues across restarts.
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    ports:
+      - 127.0.0.1:6379:6379
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # S3-compatible stand-in for Cloudflare R2 (decision 008). `weed mini` runs master, volume,
+  # filer and the S3 gateway in one process and creates both buckets on startup.
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48
+    command:
+      - mini
+      - -dir=/data
+      - -bucket=pme-public,pme-private
+      - -s3.config=/etc/seaweedfs/s3.json
+      - -webdav=false
+      - -admin.ui=false
+    ports:
+      - 127.0.0.1:8333:8333 # S3 API
+      - 127.0.0.1:8888:8888 # Filer UI (browse stored files)
+    volumes:
+      - seaweedfs-data:/data
+      - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8333/healthz']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Catches every email the apps send (stand-in for Resend); read them at http://localhost:8025.
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    ports:
+      - 127.0.0.1:1025:1025 # SMTP
+      - 127.0.0.1:8025:8025 # Web UI
+    volumes:
+      - mailpit-data:/data
+    environment:
+      MP_DATABASE: /data/mailpit.db
+      MP_MAX_MESSAGES: 2000
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:
+  redis-data:
+  seaweedfs-data:
+  mailpit-data:

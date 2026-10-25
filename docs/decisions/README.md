@@ -11,6 +11,7 @@ Short records of significant decisions: the context, what was decided, and the c
 | [005](005-job-id-format.md) | Dash-separated deterministic job ids | Accepted |
 | [006](006-aa-contrast-tokens.md) | Text colours adjusted to meet WCAG AA | Accepted |
 | [007](007-cool-mist-deep-palette.md) | Cool "Mist Deep" neutrals replace the warm palette | Accepted |
+| [008](008-seaweedfs-local-storage.md) | SeaweedFS replaces MinIO as the local S3 stand-in | Accepted |
 
 Template:
 

@@ -22,7 +22,7 @@ Working style: small steps, each explained and reviewed before moving on; learni
 
 After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
 
-**Home page track complete.** Next step: item 9, Docker Compose (Postgres 17.11, Redis 7.4.11, SeaweedFS + bucket init, Mailpit), Dockerfiles, decision 008.
+**Home page track complete.** Item 9 in two steps: 9a Docker Compose (done), 9b Dockerfiles for api, worker and web, plus an `app` profile in compose (next).
 
 Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and phone (16 runs, all pass) against a production build on port 3100: every section renders, CLS 0 and no console errors in normal and reduced motion, header scroll state, use-case tabs (mouse and keyboard), FAQ, AI teaser typing, and reduced motion leaving drift and typing off. Lighthouse mobile over five runs at load average ~5: performance 92–96 (median 96), accessibility, best practices and SEO 100, CLS 0, TBT 50–150 ms, simulated LCP 2.7–3.3 s, observed LCP 103–197 ms.
 
@@ -40,7 +40,7 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | 6 | `apps/api`: env config, pino + request ids, `/v1` prefix, health live/ready, problem+json filter, Zod validation, OpenAPI 3.1 at `/v1/docs`, CORS, graceful shutdown, optional Sentry, `/live` gateway stub | Done | `5eaf00c` |
 | 7 | `apps/worker`: BullMQ connection, sample queue/producer/processor, graceful shutdown | Done | `7e5f995` |
 | 8 | `apps/web`: tokens, fonts, shadcn components, Lucide, Motion, next-intl, TanStack Query, favicons, app shell, `/dev/ui`, status widget | In progress: foundation done (step A, `c9896b5`); home page track above | |
-| 9 | `infra/`: docker-compose (Postgres 17, Redis 7, SeaweedFS + bucket, Mailpit), Dockerfiles, `.env.example` | Not started (`.env.example` done for api and worker) | |
+| 9 | `infra/`: docker-compose (Postgres 17, Redis 7, SeaweedFS + bucket, Mailpit), Dockerfiles, `.env.example` | In progress: 9a compose done (`.env.example` done for api and worker); 9b Dockerfiles next | |
 | 10 | CI: GitHub Actions with install cache, lint, typecheck, test, build, Postgres/Redis services, migration check | Not started | |
 | 11 | Tests: Vitest in packages, api, worker; Playwright smoke test of the shell at phone and desktop sizes | Partly: core has 3 tests; Playwright home-page smoke tests at phone and desktop sizes (step G), shell test with item 8 | |
 | 12 | Docs: CLAUDE.md Commands section, README "Getting started" | Not started | |
@@ -53,18 +53,14 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | --- | --- |
 | `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test` | Pass |
 | `pnpm test:e2e` (Playwright, builds first) | 16/16 pass |
+| `docker compose -f infra/docker-compose.yml up -d --wait` | All four healthy in about 12 s; migrations apply; API ready reports Postgres and Redis up; worker processes its sample job; S3 auth and public/private access verified; Mailpit receives SMTP; data survives restart |
 | `pnpm db:migrate` against Postgres 17.11 | Applies `0000_extensions` (citext, pg_trgm); idempotent |
 | API `GET /v1/health/live` / `ready` | 200; ready → 503 + `Retry-After` when Postgres or Redis is down, recovers automatically |
 | API errors | problem+json for 404, bad JSON (400), >1 MB (413), unknown errors (500); every response has `X-Request-Id` |
 | API OpenAPI | 3.1 at `/v1/docs` (not in production) |
 | Worker | Enqueues and processes `sample-hello` at boot; exits cleanly on SIGTERM |
 
-Until item 9, run Postgres and Redis by hand:
-
-```
-docker run -d --rm --name pg -e POSTGRES_USER=pme -e POSTGRES_PASSWORD=pme -e POSTGRES_DB=pme -p 5432:5432 postgres:17.11-alpine
-docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
-```
+Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postgres, Redis, SeaweedFS, Mailpit; see [`infra/README.md`](../infra/README.md)).
 
 ## Decisions taken in milestone 1
 
@@ -74,7 +70,7 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | TypeScript 6.0.3, not 7 | typescript-eslint and @nestjs/swagger don't support TS 7 yet | This file |
 | pnpm 12.14.0 installed via npm, corepack's pnpm shim disabled | Corepack (≤ 0.36) can't launch pnpm 12's new package layout | This file |
 | Node 22 in `.nvmrc`, engines `>=22.12.0` | Your choice; vitest and nestjs-pino need ≥ 22.12 | `.nvmrc` |
-| SeaweedFS replaces MinIO locally | MinIO community images discontinued (Oct 2025), repo archived | Decision 008, to be written with item 9 |
+| SeaweedFS replaces MinIO locally (`weed mini`, buckets `pme-public` and `pme-private` created on startup, anonymous read on public only) | MinIO community images discontinued (Oct 2025), repo archived | [Decision 008](decisions/008-seaweedfs-local-storage.md) |
 | Event accents keyed by DB `event_type`; `custom` = #7C3AED; "College fest" is a template using `custom` | DESIGN.md, BRAND.md and DatabaseDesign disagreed | DESIGN.md fix due with item 8 |
 | Dark-mode tokens missing from DESIGN.md derived in code only, provisional | To be revisited against your Stitch designs | Item 8 |
 | Job ids joined with `-` via `jobId()`, never `:` | BullMQ rejects most ids containing `:` | [Decision 005](decisions/005-job-id-format.md) |
@@ -123,6 +119,8 @@ docker run -d --rm --name redis -p 6379:6379 redis:7.4.11-alpine
 | Typewriter gained `onDone`; its caret is a new element per character | Result cards follow the typing; a moving caret counted as layout shift | `typewriter.tsx` |
 | Fraunces not preloaded | Only used below the fold; preloading competed with the hero (LCP) | `src/app/layout.tsx` |
 | Footer has product and use-case links only | Privacy, terms and company pages don't exist yet | `site-footer.tsx` |
+| Compose: images pinned (postgres 17.11-alpine, redis 7.4.11-alpine, seaweedfs 4.48, mailpit v1.31.6), each released at least 10 days earlier; ports bound to 127.0.0.1; named volumes; health checks so `up --wait` returns when ready | Same release-age caution as npm packages; nothing exposed on the network | `infra/docker-compose.yml` |
+| Redis with `noeviction` and append-only file | BullMQ requirement; queued jobs are never evicted | `infra/docker-compose.yml` |
 | Floating hero cards on desktop only | No room around the card on phones | `hero.tsx` |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
 
@@ -145,4 +143,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (foundations, backend, web, motion, home page). Latest: [15 Smoke tests and Lighthouse](learning/5-home-page/15-smoke-tests-and-lighthouse.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (foundations, backend, web, motion, home page, infrastructure). Latest: [16 Docker Compose](learning/6-infra/16-docker-compose.md).
