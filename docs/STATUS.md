@@ -143,4 +143,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (foundations, backend, web, motion, home page, infrastructure). Latest: [16 Docker Compose](learning/6-infra/16-docker-compose.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [16 Docker Compose](learning/infra/16-docker-compose.md).
