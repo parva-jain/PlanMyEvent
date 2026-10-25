@@ -6,7 +6,7 @@ Last updated: Oct 24, 2026 · Updated at the end of every working step.
 
 **Milestone 1 — monorepo scaffold**, branch `chore/m1-scaffold` (not pushed yet; first push once CI exists, item 10).
 
-Working style: small steps, each explained and reviewed before moving on; learning notes in [`docs/learning/`](learning/).
+Working style: small steps, each explained and reviewed before moving on; learning notes in [`docs/learning/`](learning/README.md), grouped by topic.
 
 **Current track: home page with motion** (changed Oct 24 from the backend-first order). Steps, each reviewed before the next:
 
@@ -145,4 +145,4 @@ None right now.
 
 ## Learning notes
 
-[01 Monorepo basics](learning/01-monorepo-basics.md) · [02 Contracts and database](learning/02-contracts-and-database.md) · [03 Action pattern](learning/03-action-pattern.md) · [04 API request flow](learning/04-api-request-flow.md) · [05 Errors, logging, shutdown](learning/05-errors-logging-shutdown.md) · [06 Queues and BullMQ](learning/06-queues-and-bullmq.md) · [07 Worker app](learning/07-worker-app.md) · [08 Web foundation](learning/08-web-foundation.md) · [09 Motion tokens and provider](learning/09-motion-tokens-and-provider.md) · [10 Motion components](learning/10-motion-components.md) · [11 Base UI components](learning/11-base-ui-components.md) · [12 Home header and hero](learning/12-home-header-hero.md) · [13 Scroll-linked motion](learning/13-scroll-linked-motion.md) · [14 Home page complete](learning/14-home-page-complete.md) · [15 Smoke tests and Lighthouse](learning/15-smoke-tests-and-lighthouse.md)
+Index by topic: [`docs/learning/README.md`](learning/README.md) (foundations, backend, web, motion, home page). Latest: [15 Smoke tests and Lighthouse](learning/5-home-page/15-smoke-tests-and-lighthouse.md).
