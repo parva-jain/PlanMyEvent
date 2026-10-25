@@ -1,0 +1,19 @@
+# Read by BuildKit for infra/Dockerfile (build context is the repo root).
+# Anything built or installed on the host stays out; the image builds its own.
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+**/test-results
+**/playwright-report
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.husky
+**/.DS_Store
+docs
+brand
+infra/data

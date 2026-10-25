@@ -22,7 +22,7 @@ Working style: small steps, each explained and reviewed before moving on; learni
 
 After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
 
-**Home page track complete.** Item 9 in two steps: 9a Docker Compose (done), 9b Dockerfiles for api, worker and web, plus an `app` profile in compose (next).
+**Home page track complete.** Item 9 done (9a compose, 9b Dockerfiles and the `app` profile). Next step: item 10, CI on GitHub Actions, then the first push.
 
 Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and phone (16 runs, all pass) against a production build on port 3100: every section renders, CLS 0 and no console errors in normal and reduced motion, header scroll state, use-case tabs (mouse and keyboard), FAQ, AI teaser typing, and reduced motion leaving drift and typing off. Lighthouse mobile over five runs at load average ~5: performance 92–96 (median 96), accessibility, best practices and SEO 100, CLS 0, TBT 50–150 ms, simulated LCP 2.7–3.3 s, observed LCP 103–197 ms.
 
@@ -40,7 +40,7 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | 6 | `apps/api`: env config, pino + request ids, `/v1` prefix, health live/ready, problem+json filter, Zod validation, OpenAPI 3.1 at `/v1/docs`, CORS, graceful shutdown, optional Sentry, `/live` gateway stub | Done | `5eaf00c` |
 | 7 | `apps/worker`: BullMQ connection, sample queue/producer/processor, graceful shutdown | Done | `7e5f995` |
 | 8 | `apps/web`: tokens, fonts, shadcn components, Lucide, Motion, next-intl, TanStack Query, favicons, app shell, `/dev/ui`, status widget | In progress: foundation done (step A, `c9896b5`); home page track above | |
-| 9 | `infra/`: docker-compose (Postgres 17, Redis 7, SeaweedFS + bucket, Mailpit), Dockerfiles, `.env.example` | In progress: 9a compose done (`.env.example` done for api and worker); 9b Dockerfiles next | |
+| 9 | `infra/`: docker-compose (Postgres 17, Redis 7, SeaweedFS + bucket, Mailpit), Dockerfiles, `.env.example` | Done: compose, `infra/Dockerfile` (targets api, worker, web, migrate), `app` profile; `.env.example` for api and worker | |
 | 10 | CI: GitHub Actions with install cache, lint, typecheck, test, build, Postgres/Redis services, migration check | Not started | |
 | 11 | Tests: Vitest in packages, api, worker; Playwright smoke test of the shell at phone and desktop sizes | Partly: core has 3 tests; Playwright home-page smoke tests at phone and desktop sizes (step G), shell test with item 8 | |
 | 12 | Docs: CLAUDE.md Commands section, README "Getting started" | Not started | |
@@ -53,6 +53,7 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | --- | --- |
 | `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test` | Pass |
 | `pnpm test:e2e` (Playwright, builds first) | 16/16 pass |
+| `docker compose -f infra/docker-compose.yml --profile app up -d --build --wait` | migrate exits 0 ("Migrations applied"); API ready with Postgres and Redis up, `/v1/docs` 404 in production; worker processes its sample job; web serves the home page and CSS, `/dev/ui` 404; containers run as `node` |
 | `docker compose -f infra/docker-compose.yml up -d --wait` | All four healthy in about 12 s; migrations apply; API ready reports Postgres and Redis up; worker processes its sample job; S3 auth and public/private access verified; Mailpit receives SMTP; data survives restart |
 | `pnpm db:migrate` against Postgres 17.11 | Applies `0000_extensions` (citext, pg_trgm); idempotent |
 | API `GET /v1/health/live` / `ready` | 200; ready → 503 + `Retry-After` when Postgres or Redis is down, recovers automatically |
@@ -120,6 +121,10 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Fraunces not preloaded | Only used below the fold; preloading competed with the hero (LCP) | `src/app/layout.tsx` |
 | Footer has product and use-case links only | Privacy, terms and company pages don't exist yet | `site-footer.tsx` |
 | Compose: images pinned (postgres 17.11-alpine, redis 7.4.11-alpine, seaweedfs 4.48, mailpit v1.31.6), each released at least 10 days earlier; ports bound to 127.0.0.1; named volumes; health checks so `up --wait` returns when ready | Same release-age caution as npm packages; nothing exposed on the network | `infra/docker-compose.yml` |
+| One `infra/Dockerfile` with targets `api`, `worker`, `web`, `migrate`; Node apps packaged with `pnpm deploy --prod --legacy`, web from Next's standalone output; run as `node` user | One shared build stage; production images carry no dev dependencies or pnpm | `infra/Dockerfile` |
+| Node 22.23.4 in images although only 4 days old | Security release (seven CVEs); exception to the release-age wait | `infra/Dockerfile` |
+| Migrations in compose run from the full build stage (`migrate` target) | `migrate.ts` runs through tsx and isn't compiled; a production migration step is decided with deployment | `infra/Dockerfile` |
+| `@pme/config`'s ESLint presets moved to devDependencies; apps list `"files": ["dist"]` | Lint tooling was shipping in production images (API image 407 → 343 MB); without `files`, deploy skipped the git-ignored `dist` | `packages/config/package.json` |
 | Redis with `noeviction` and append-only file | BullMQ requirement; queued jobs are never evicted | `infra/docker-compose.yml` |
 | Floating hero cards on desktop only | No room around the card on phones | `hero.tsx` |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
@@ -132,6 +137,7 @@ None right now.
 
 - Only home-page messages need to reach the browser; today all namespaces (including `devUi`) are sent. Trim if step G needs the bytes.
 - Footer privacy and terms links once those pages exist.
+- `@sentry/nestjs` 11.8 pulls in `@sentry/bundler-plugins`, whose webpack peer brings webpack, SWC, esbuild and lightningcss (~60 MB) into the API image. Revisit with a Sentry update or a pnpm override.
 - Logo SVG/PNG files and app icons still use the warm ink #1F1B16 and warm white #FAF8F5 (BRAND.md note); regenerate in a brand pass.
 
 ## Known warnings (harmless)
@@ -143,4 +149,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [16 Docker Compose](learning/infra/16-docker-compose.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [17 Docker images](learning/infra/17-docker-images.md).

@@ -76,6 +76,57 @@ services:
       timeout: 3s
       retries: 10
 
+  # The apps themselves, as production images (`--profile app`). Day to day, run them with
+  # `pnpm dev` instead; this checks the images and runs a full stack without Node installed.
+  migrate:
+    profiles: [app]
+    build: &build
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: migrate
+    environment:
+      DATABASE_URL: postgres://pme:pme@postgres:5432/pme
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    profiles: [app]
+    build:
+      <<: *build
+      target: api
+    environment: &app-env
+      NODE_ENV: production
+      DATABASE_URL: postgres://pme:pme@postgres:5432/pme
+      REDIS_URL: redis://redis:6379
+      WEB_ORIGIN: http://localhost:3000
+    ports:
+      - 127.0.0.1:4000:4000
+    depends_on: &app-deps
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  worker:
+    profiles: [app]
+    build:
+      <<: *build
+      target: worker
+    environment: *app-env
+    depends_on: *app-deps
+
+  web:
+    profiles: [app]
+    build:
+      <<: *build
+      target: web
+    ports:
+      - 127.0.0.1:3000:3000
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   postgres-data:
   redis-data:

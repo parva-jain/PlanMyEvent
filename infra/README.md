@@ -23,3 +23,25 @@ docker compose -f infra/docker-compose.yml down -v        # stop and delete all 
 - **Redis** runs with `noeviction` and an append-only file, as BullMQ requires: when memory is full, Redis refuses writes instead of silently dropping queued jobs.
 - The S3 and SMTP settings reach the apps' env when they start using them: email in milestone 2, uploads in milestone 8.
 - All credentials here are local-only and are not secrets. Production values come from env and are never committed.
+
+## Running the apps as containers
+
+`infra/Dockerfile` builds every app from the repository root; pick one with `--target`:
+
+| Target | What it is | Size |
+| --- | --- | --- |
+| `api` | NestJS API, `dist` plus production dependencies (`pnpm deploy --prod`) | 343 MB |
+| `worker` | NestJS worker, same layout | 197 MB |
+| `web` | Next.js standalone server, static files and `public/` | 204 MB |
+| `migrate` | The full build stage; runs `pnpm db:migrate` | 1.8 GB, local only |
+
+The `app` profile runs all of them against the services above, as production builds (`NODE_ENV=production`):
+
+```sh
+docker compose -f infra/docker-compose.yml --profile app up -d --build --wait
+docker compose -f infra/docker-compose.yml --profile app rm -sf migrate api worker web   # stop the apps only
+```
+
+Order: `migrate` runs and exits, then `api` and `worker` start, then `web` once the API is healthy. The API is on `localhost:4000` and the web app on `localhost:3000`, the same ports as `pnpm dev`, so stop one before starting the other. Images run as the unprivileged `node` user; the API and web images have health checks.
+
+The first build downloads every dependency and can take a long time on a slow connection; later builds reuse the dependency layer and the pnpm store cache until `pnpm-lock.yaml` changes.

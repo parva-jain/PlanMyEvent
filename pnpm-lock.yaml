@@ -436,9 +436,19 @@ importers:
 
   packages/config:
     dependencies:
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.13.0(jiti@2.7.0)(supports-color@8.1.1))
+      '@types/node':
+        specifier: 22.20.5
+        version: 22.20.5
+      eslint:
+        specifier: 10.13.0
+        version: 10.13.0(jiti@2.7.0)(supports-color@8.1.1)
       eslint-config-next:
         specifier: 16.4.2
         version: 16.4.2(@typescript-eslint/parser@8.72.0(eslint@10.13.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.13.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
@@ -448,22 +458,12 @@ importers:
       globals:
         specifier: 17.13.0
         version: 17.13.0
-      typescript-eslint:
-        specifier: 8.72.0
-        version: 8.72.0(eslint@10.13.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
-      zod:
-        specifier: 4.6.7
-        version: 4.6.7
-    devDependencies:
-      '@types/node':
-        specifier: 22.20.5
-        version: 22.20.5
-      eslint:
-        specifier: 10.13.0
-        version: 10.13.0(jiti@2.7.0)(supports-color@8.1.1)
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+      typescript-eslint:
+        specifier: 8.72.0
+        version: 8.72.0(eslint@10.13.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
 
   packages/contracts:
     dependencies:
