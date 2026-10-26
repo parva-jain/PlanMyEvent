@@ -1,12 +1,12 @@
 # Project status
 
-Last updated: Oct 24, 2026 · Updated at the end of every working step.
+Last updated: Oct 26, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
 **Milestone 1 — monorepo scaffold**, branch `chore/m1-scaffold` (pushed Oct 26 with CI, item 10).
 
-Working style: small steps, each explained and reviewed before moving on; learning notes in [`docs/learning/`](learning/README.md), grouped by topic.
+Working style: since Oct 26, larger steps (a feature or milestone slice each), short summaries, a pause between steps; one learning note per feature in [`docs/learning/`](learning/README.md), grouped by topic.
 
 **Current track: home page with motion** (changed Oct 24 from the backend-first order). Steps, each reviewed before the next:
 
@@ -22,7 +22,7 @@ Working style: small steps, each explained and reviewed before moving on; learni
 
 After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
 
-**Home page track complete.** Items 9 (compose, Dockerfiles) and 10 (CI) done; draft PR [#1](https://github.com/parva-jain/PlanMyEvent/pull/1), CI green in about 1.5 min. Item 11 backend tests done: 11a unit tests, 11b API tests against the real app, Postgres and Redis. Item 12 docs done (CLAUDE.md commands, README getting started); root `db:*` scripts now build `@pme/db`'s dependencies first, since a fresh clone failed without them. Next: rest of item 8 (app shell).
+**Home page track complete.** Items 9 (compose, Dockerfiles) and 10 (CI) done; draft PR [#1](https://github.com/parva-jain/PlanMyEvent/pull/1), CI green in about 1.5 min. Item 11 backend tests done: 11a unit tests, 11b API tests against the real app, Postgres and Redis. Item 12 docs done (CLAUDE.md commands, README getting started); root `db:*` scripts now build `@pme/db`'s dependencies first, since a fresh clone failed without them. Item 8 app shell done (Oct 26). **Milestone 1 is complete**: next, mark PR #1 ready and merge, then milestone 2 (auth).
 
 Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and phone (16 runs, all pass) against a production build on port 3100: every section renders, CLS 0 and no console errors in normal and reduced motion, header scroll state, use-case tabs (mouse and keyboard), FAQ, AI teaser typing, and reduced motion leaving drift and typing off. Lighthouse mobile over five runs at load average ~5: performance 92–96 (median 96), accessibility, best practices and SEO 100, CLS 0, TBT 50–150 ms, simulated LCP 2.7–3.3 s, observed LCP 103–197 ms.
 
@@ -39,10 +39,10 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | 5 | `packages/core`: `ActionContext`, `runAction` with placeholder permission/activity/outbox hooks, tests | Done | `050da31` |
 | 6 | `apps/api`: env config, pino + request ids, `/v1` prefix, health live/ready, problem+json filter, Zod validation, OpenAPI 3.1 at `/v1/docs`, CORS, graceful shutdown, optional Sentry, `/live` gateway stub | Done | `5eaf00c` |
 | 7 | `apps/worker`: BullMQ connection, sample queue/producer/processor, graceful shutdown | Done | `7e5f995` |
-| 8 | `apps/web`: tokens, fonts, shadcn components, Lucide, Motion, next-intl, TanStack Query, favicons, app shell, `/dev/ui`, status widget | In progress: foundation done (step A, `c9896b5`); home page track above | |
+| 8 | `apps/web`: tokens, fonts, shadcn components, Lucide, Motion, next-intl, TanStack Query, favicons, app shell, `/dev/ui`, status widget | Done: foundation (step A, `c9896b5`), home page track above, app shell at `/app` (sidebar, rail, bottom bar, event switcher, quick add, API status widget) | |
 | 9 | `infra/`: docker-compose (Postgres 17, Redis 7, SeaweedFS + bucket, Mailpit), Dockerfiles, `.env.example` | Done: compose, `infra/Dockerfile` (targets api, worker, web, migrate), `app` profile; `.env.example` for api and worker | |
 | 10 | CI: GitHub Actions with install cache, lint, typecheck, test, build, Postgres/Redis services, migration check | Done: `.github/workflows/ci.yml`, jobs `verify` and `e2e`; runs on pull requests and pushes to `main` | |
-| 11 | Tests: Vitest in packages, api, worker; Playwright smoke test of the shell at phone and desktop sizes | Backend done: Vitest unit tests in every package and app; API tests boot the real app against Postgres and Redis (health, 503 when a dependency is down, problem+json 404/400/413, `X-Request-Id`); 46 tests in all. Playwright home-page smoke tests (step G); shell test with item 8 | |
+| 11 | Tests: Vitest in packages, api, worker; Playwright smoke test of the shell at phone and desktop sizes | Backend done: Vitest unit tests in every package and app; API tests boot the real app against Postgres and Redis (health, 503 when a dependency is down, problem+json 404/400/413, `X-Request-Id`); 46 tests in all. Playwright home-page smoke tests (step G) and shell tests (navigation, event switcher, quick add, status widget states, sheet motion and reduced motion) | |
 | 12 | Docs: CLAUDE.md Commands section, README "Getting started" | Done; verified from a fresh clone | |
 
 **Milestone 1 is done when**, from a fresh clone: `pnpm install`, `docker compose -f infra/docker-compose.yml up -d`, `pnpm db:migrate` and `pnpm dev` start everything; the web app shows the shell on localhost:3000; `/v1/health/ready` returns ok; the worker logs a processed sample job; lint, typecheck, test and build pass; CI is green.
@@ -52,7 +52,7 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | Check | Result |
 | --- | --- |
 | `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test` | Pass |
-| `pnpm test:e2e` (Playwright, builds first) | 16/16 pass |
+| `pnpm test:e2e` (Playwright, builds first) | 34 pass, 2 skipped (sheet tests on desktop) |
 | `docker compose -f infra/docker-compose.yml --profile app up -d --build --wait` | migrate exits 0 ("Migrations applied"); API ready with Postgres and Redis up, `/v1/docs` 404 in production; worker processes its sample job; web serves the home page and CSS, `/dev/ui` 404; containers run as `node` |
 | `docker compose -f infra/docker-compose.yml up -d --wait` | All four healthy in about 12 s; migrations apply; API ready reports Postgres and Redis up; worker processes its sample job; S3 auth and public/private access verified; Mailpit receives SMTP; data survives restart |
 | `pnpm db:migrate` against Postgres 17.11 | Applies `0000_extensions` (citext, pg_trgm); idempotent |
@@ -60,6 +60,7 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | API errors | problem+json for 404, bad JSON (400), >1 MB (413), unknown errors (500); every response has `X-Request-Id` |
 | API OpenAPI | 3.1 at `/v1/docs` (not in production) |
 | Worker | Enqueues and processes `sample-hello` at boot; exits cleanly on SIGTERM |
+| Web `/app` shell | Phone, tablet and desktop layouts; sample events; status widget reads the API's readiness ("All systems normal" with the API running, "Can't reach the server" without) |
 
 Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postgres, Redis, SeaweedFS, Mailpit; see [`infra/README.md`](../infra/README.md)).
 
@@ -135,6 +136,12 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | `@pme/config`'s ESLint presets moved to devDependencies; apps list `"files": ["dist"]` | Lint tooling was shipping in production images (API image 407 → 343 MB); without `files`, deploy skipped the git-ignored `dist` | `packages/config/package.json` |
 | Redis with `noeviction` and append-only file | BullMQ requirement; queued jobs are never evicted | `infra/docker-compose.yml` |
 | Floating hero cards on desktop only | No room around the card on phones | `hero.tsx` |
+| App shell lives at `/app` with sample events (`preview-events.ts`) and section placeholders | No events or auth yet; milestone 3 moves it to `/events/[eventId]` and loads real events | `apps/web/src/app/app/`, `src/components/shell/` |
+| Phone: bottom bar + More screen; tablet: icon rail; desktop: 248 px sidebar with the event switcher; quick add is a + button (phone, tablet) or "Add" in the top bar (desktop) | DESIGN.md "Layout" and the Stitch dashboard screens | `src/components/shell/` |
+| `Sheet` (Radix Dialog + Motion drag) and `Popover` (Radix + CSS keyframes scaled by `--motion`) | MOTION.md section 4 and 6.1; Radix handles focus, Escape and aria | `src/components/motion/sheet.tsx`, `src/components/ui/popover.tsx` |
+| TanStack Query 5.104.3 (11 days old; 5.104.4/5 too new); `QueryProvider` only in the `/app` layout | Marketing pages don't need it; release-age rule | `src/components/query-provider.tsx` |
+| Event dates always day-month ("Sat, 14 Nov 2026") via `formatEventDate` | DESIGN.md date style; the `en` locale would give US order | `src/lib/format.ts` |
+| Milestone 2 gets a minimal outbox relay (outbox table, relay into BullMQ, email queue) so sign-in OTP emails follow rule 2; milestone 5 adds activity log, undo and sockets on top. Configurable through env: relay on/off, poll interval, batch size, email transport (SMTP to Mailpit locally, Resend in production) | Approved Oct 26; avoids a temporary exception for auth emails. A decision record and the CLAUDE.md milestone list change come with the milestone 2 commit | This file |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
 
 ## Open questions
@@ -157,4 +164,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [19 Unit tests](learning/backend/19-unit-tests.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [21 App shell](learning/frontend/21-app-shell.md).

@@ -473,5 +473,95 @@
         "answer": "No. Guests open a link, see their invitation and reply in one tap."
       }
     }
+  },
+  "app": {
+    "brand": "Plan My Event",
+    "skipToContent": "Skip to content",
+    "nav": {
+      "label": "Event",
+      "home": "Home",
+      "schedule": "Schedule",
+      "tasks": "Tasks",
+      "people": "People",
+      "budget": "Budget",
+      "team": "Team",
+      "gallery": "Gallery",
+      "activity": "Activity",
+      "settings": "Settings",
+      "more": "More"
+    },
+    "eventTypes": {
+      "wedding": "Wedding",
+      "conference": "Conference",
+      "collegeFest": "College fest",
+      "fair": "Fair",
+      "celebration": "Celebration"
+    },
+    "switcher": {
+      "title": "Switch event",
+      "change": "Change event",
+      "yourEvents": "Your events",
+      "create": "Create event",
+      "soon": "Soon"
+    },
+    "quickAdd": {
+      "title": "Quick add",
+      "add": "Add",
+      "task": "Task",
+      "expense": "Expense",
+      "guest": "Guest",
+      "session": "Session"
+    },
+    "status": {
+      "label": "Service status",
+      "checking": "Checking…",
+      "ok": "All systems normal",
+      "degraded": "Some services are slow",
+      "offline": "Can't reach the server"
+    },
+    "theme": {
+      "label": "Appearance",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "sections": {
+      "home": {
+        "headline": "Your event at a glance",
+        "body": "Countdown, task progress, budget and headcounts will show here once the event has some plans in it."
+      },
+      "schedule": {
+        "headline": "No sessions yet",
+        "body": "Sub-events with their times, venues and capacity will be listed here."
+      },
+      "tasks": {
+        "headline": "No tasks yet",
+        "body": "Tasks with owners, due dates and progress will live here, in a list or a board."
+      },
+      "people": {
+        "headline": "No guests yet",
+        "body": "Guests, households, invitations and responses will be managed here."
+      },
+      "budget": {
+        "headline": "No budget yet",
+        "body": "Planned and actual spending by category, with who paid and what's still pending."
+      },
+      "team": {
+        "headline": "Just you for now",
+        "body": "Invite your team and choose what each person can see and change."
+      },
+      "gallery": {
+        "headline": "No photos yet",
+        "body": "Photos from the event, shared with everyone who helped."
+      },
+      "activity": {
+        "headline": "Nothing has happened yet",
+        "body": "Every change your team makes will appear here, with undo for mistakes."
+      },
+      "settings": {
+        "headline": "Event settings",
+        "body": "Name, dates, time zone, modules and how guests respond."
+      }
+    }
   }
 }

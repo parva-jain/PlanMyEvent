@@ -1,6 +1,6 @@
 # Learning notes
 
-One note per working step: what was built, the key ideas, what testing taught us, and self-check questions. Notes are grouped into three folders; the number is the order they were written in, so reading them in number order follows the build.
+One note per working step (per feature since Oct 26): what was built, the key ideas, what testing taught us, and self-check questions. Notes are grouped into three folders; the number is the order they were written in, so reading them in number order follows the build.
 
 ## Backend
 
@@ -27,6 +27,7 @@ The web app: foundation, motion, UI components and the home page.
 - [13 Scroll-linked motion](frontend/13-scroll-linked-motion.md)
 - [14 Home page complete (and a palette change)](frontend/14-home-page-complete.md)
 - [15 Smoke tests and Lighthouse](frontend/15-smoke-tests-and-lighthouse.md)
+- [21 App shell](frontend/21-app-shell.md)
 
 ## Infra
 
