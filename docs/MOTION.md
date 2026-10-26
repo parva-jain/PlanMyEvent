@@ -311,9 +311,26 @@ Also follow WCAG 2.2.2: anything that moves or auto-updates for more than 5 seco
 | Free plan limit | `Dialog` |
 | Loading | `Skeleton` blocks in the exact layout of the content; content crossfades in (`base`) with no layout shift |
 
-### 6.14 Later sections (apply the same patterns)
+### 6.14 Budget
 
-Budget, people, gallery, notifications, profile and public pages use the patterns in section 4: `ListPresence` for list changes, `SidePanel`/`Sheet` for details, `CountUp` and `ProgressFill` for totals, `LiveHighlight` for others' changes, `Confetti` only for milestones (budget fully planned, first 100 responses). Add their specific rows to this file when they're designed.
+| Moment | Motion |
+| --- | --- |
+| Overview load | Summary totals `CountUp`; each category bar fills with `ProgressFill`, paid segment first, then committed-unpaid segment 100 ms later |
+| By category ↔ by session | Crossfade (`base`) |
+| Category over its plan | Overflow segment fades to danger red (`fast`); "Over by ₹12,000" chip pops (`overshoot`); no shake |
+| Expand a category row | Height expands (`moderate`); its expense rows stagger (`stagger.list`) |
+| Add or edit expense | `SidePanel` / `Sheet`. Choosing "Advance paid" or "Partly paid" reveals the paid-so-far, paid-on, paid-by and reference fields (height expand, `moderate`); "Paid" hides the next-due field the same way |
+| Duplicate UPI reference | Field error per 6.1 (shake + message) |
+| Expense saved | New row enters with `ListPresence` and a short `LiveHighlight` (800 ms); totals count from old to new values (400 ms); affected category bar animates to its new value |
+| Record a payment | The expense's paid bar fills to the new amount (`ProgressFill`, 400 ms); when fully paid, the status chip crossfades to "Paid" (green) with `CheckDraw`; the row leaves "Due soon" with `ListPresence` |
+| All payments settled | When outstanding reaches ₹0 (with at least one expense), one `Confetti` burst + toast "Every payment is settled", once per event |
+| Receipt upload | Thumbnail appears immediately with a `ProgressFill` ring while uploading; `Skeleton` while processing; crossfades to the final image |
+| Delete expense or category | Row collapses with `UndoSnackbar`; totals count to new values |
+| Set overall budget (empty state) | Typing formats the amount live (no animation); on save the summary cards `RevealGroup` in |
+
+### 6.15 Later sections (apply the same patterns)
+
+People, gallery, notifications, profile and public pages use the patterns in section 4: `ListPresence` for list changes, `SidePanel`/`Sheet` for details, `CountUp` and `ProgressFill` for totals, `LiveHighlight` for others' changes, `Confetti` only for milestones (budget fully planned, first 100 responses). Add their specific rows to this file when they're designed.
 
 ## 7. Quality checks
 
