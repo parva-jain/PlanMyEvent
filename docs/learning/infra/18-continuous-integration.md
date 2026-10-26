@@ -9,7 +9,7 @@ Milestone 1, item 10 · Oct 26, 2026
 | Job | Steps |
 | --- | --- |
 | `verify` | Install; format check; lint; typecheck; unit tests; build; run migrations twice; `drizzle-kit check`; confirm the schema needs no new migration; start the built API and worker against Postgres and Redis and check readiness and the sample job |
-| `e2e` | Install; install Chromium; the 16 Playwright smoke tests against a production build. On failure, the HTML report is uploaded |
+| `e2e` | Runs inside Playwright's Docker image; install; the 16 Playwright smoke tests against a production build. On failure, the HTML report is uploaded |
 
 Every step was first run locally against the compose services, and all passed.
 
@@ -28,6 +28,7 @@ Every step was first run locally against the compose services, and all passed.
 
 - **Run CI steps locally first.** Each step ran locally against the compose services, so the first CI run checks the environment, not our code.
 - **Which events trigger a workflow matters.** With `on: pull_request` and `push: main`, pushing a feature branch on its own runs nothing. CI starts when the pull request is opened.
+- **Look at step timings before blaming the tests.** On the first run, the Playwright job sat in `playwright install --with-deps chromium` for over 9 minutes, installing system libraries with `apt-get` and downloading Chromium. The tests hadn't started. Running the job inside `mcr.microsoft.com/playwright:v1.64.1-noble`, where browsers and libraries are preinstalled, removes that step. The image tag must match the `@playwright/test` version.
 - **Scan history before the first push to a public repo.** Once pushed, everything in history is public, including a file deleted in a later commit. The history was searched for API keys, tokens, private keys and `.env` files before pushing.
 
 ## Self-check
