@@ -328,9 +328,31 @@ Also follow WCAG 2.2.2: anything that moves or auto-updates for more than 5 seco
 | Delete expense or category | Row collapses with `UndoSnackbar`; totals count to new values |
 | Set overall budget (empty state) | Typing formats the amount live (no animation); on save the summary cards `RevealGroup` in |
 
-### 6.15 Later sections (apply the same patterns)
+### 6.15 People (guests, invitations, responses)
 
-People, gallery, notifications, profile and public pages use the patterns in section 4: `ListPresence` for list changes, `SidePanel`/`Sheet` for details, `CountUp` and `ProgressFill` for totals, `LiveHighlight` for others' changes, `Confetti` only for milestones (budget fully planned, first 100 responses). Add their specific rows to this file when they're designed.
+| Moment | Motion |
+| --- | --- |
+| Guest list load | First 8 rows with `RevealGroup` (`stagger.list`); summary counts `CountUp` |
+| Households ↔ everyone toggle, filters, search | `ListPresence` reflow; no re-stagger |
+| Bulk select | Selection bar slides up (`gentle`); count in it rolls like the RSVP stepper |
+| Add or edit guest | `SidePanel` / `Sheet`; adding or removing a household member uses `ListPresence`; expected-count stepper rolls (`fast`) |
+| Import: choose file | Drop zone border turns indigo and scales 1.01 while a file is dragged over (`fast`); file chip pops in (`overshoot`) |
+| Import: step change | Same horizontal slide as the wizard (6.4) |
+| Import: column mapping | Each confirmed mapping shows a `CheckDraw`; preview table updates without animation |
+| Import: running | `ProgressFill` driven by job progress events; then result numbers `CountUp` ("1,180 added, 32 merged, 8 skipped") |
+| Mark card delivered | Button morphs to green "Delivered" with `CheckDraw` (250 ms); after 600 ms the row moves to the delivered group with `ListPresence`; the distributor's progress ring and the header's segmented bar animate to the new values |
+| Distributor finishes their list | Toast "All 60 of your cards are delivered"; no confetti |
+| Every invitation delivered or sent | One `Confetti` burst + toast, once per event |
+| WhatsApp one-by-one sending | When the user returns from WhatsApp, the current household gets a check and the next one slides in from the right (`moderate`); progress "12 of 60" counts up |
+| Copy link or message | As in 6.10 (button label crossfades to "Copied") |
+| Regenerate link | Confirmation `Dialog`; the link field crossfades to the new link with a short `LiveHighlight` |
+| Response or registration arrives (socket) | Matching row gets `LiveHighlight`; headcount numbers count from old to new (400 ms); no toast per response |
+| First 100 responses or registrations | One `Confetti` burst + toast, once per event |
+| Session almost full / full | Capacity bar color fades to amber at 90% and red at 100% (`fast`); "Full" chip pops (`overshoot`) |
+
+### 6.16 Later sections (apply the same patterns)
+
+Gallery, notifications, profile and public pages use the patterns in section 4: `ListPresence` for list changes, `SidePanel`/`Sheet` for details, `CountUp` and `ProgressFill` for totals, `LiveHighlight` for others' changes, `Confetti` only for real milestones. Add their specific rows to this file when they're designed.
 
 ## 7. Quality checks
 
