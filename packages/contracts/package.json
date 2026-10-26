@@ -16,6 +16,7 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -25,6 +26,7 @@
     "@pme/config": "workspace:*",
     "@types/node": "22.20.5",
     "eslint": "10.13.0",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
   }
 }

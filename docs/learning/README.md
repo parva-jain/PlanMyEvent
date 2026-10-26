@@ -12,6 +12,7 @@ API, worker, database and the shared packages behind them.
 - [05 Errors, logging, shutdown](backend/05-errors-logging-shutdown.md)
 - [06 Queues and BullMQ](backend/06-queues-and-bullmq.md)
 - [07 The worker app](backend/07-worker-app.md)
+- [19 Unit tests](backend/19-unit-tests.md)
 
 ## Frontend
 
