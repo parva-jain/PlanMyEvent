@@ -49,11 +49,12 @@ jobs:
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
+      # Migrations first: db, API and worker tests run against the real schema.
+      - name: Migrations apply, and apply again with no changes
+        run: pnpm db:migrate && pnpm db:migrate
       - run: pnpm test
       - run: pnpm build
 
-      - name: Migrations apply, and apply again with no changes
-        run: pnpm db:migrate && pnpm db:migrate
       - name: Migrations are consistent
         run: pnpm db:check
       - name: Schema and migrations are in sync

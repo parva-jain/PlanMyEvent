@@ -27,6 +27,7 @@
   "dependencies": {
     "@pme/config": "workspace:*",
     "@pme/contracts": "workspace:*",
+    "@pme/core": "workspace:*",
     "drizzle-orm": "0.45.4",
     "pg": "8.23.1",
     "uuid": "14.0.3",

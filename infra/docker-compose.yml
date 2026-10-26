@@ -100,6 +100,12 @@ services:
       DATABASE_URL: postgres://pme:pme@postgres:5432/pme
       REDIS_URL: redis://redis:6379
       WEB_ORIGIN: http://localhost:3000
+      API_URL: http://localhost:4000
+      # Local-only value; production sets a real secret (apps/api/.env.example).
+      BETTER_AUTH_SECRET: compose-local-secret-not-for-production
+      EMAIL_TRANSPORT: smtp
+      SMTP_URL: smtp://mailpit:1025
+      EMAIL_FROM: Plan My Event <hello@planmyevent.local>
     ports:
       - 127.0.0.1:4000:4000
     depends_on: &app-deps

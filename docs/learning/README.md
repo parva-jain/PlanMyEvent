@@ -14,6 +14,7 @@ API, worker, database and the shared packages behind them.
 - [07 The worker app](backend/07-worker-app.md)
 - [19 Unit tests](backend/19-unit-tests.md)
 - [20 API tests](backend/20-api-tests.md)
+- [22 Sign-in and the outbox](backend/22-sign-in-and-outbox.md)
 
 ## Frontend
 

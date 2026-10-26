@@ -5,7 +5,10 @@ import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, WORKER_ENV } from './config/config.module';
 import type { WorkerEnv } from './config/env';
 import { redisConnection } from './config/redis-connection';
+import { DatabaseModule } from './database/database.module';
+import { EmailModule } from './email/email.module';
 import { LifecycleService } from './lifecycle/lifecycle.service';
+import { OutboxModule } from './outbox/outbox.module';
 import { SampleModule } from './queues/sample/sample.module';
 
 @Module({
@@ -27,6 +30,9 @@ import { SampleModule } from './queues/sample/sample.module';
       inject: [WORKER_ENV],
       useFactory: (env: WorkerEnv) => ({ connection: redisConnection(env.REDIS_URL) }),
     }),
+    DatabaseModule,
+    OutboxModule,
+    EmailModule,
     SampleModule,
   ],
   providers: [LifecycleService],

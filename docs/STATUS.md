@@ -4,7 +4,16 @@ Last updated: Oct 26, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Milestone 1 — monorepo scaffold**, branch `chore/m1-scaffold` (pushed Oct 26 with CI, item 10).
+**Milestone 2 — sign-in**, branch `feat/m2-auth`. Milestone 1 is merged to `main` (PR #1, squash `76f8ffb`, Oct 26).
+
+| Step | What | Status |
+| --- | --- | --- |
+| 2a | Backend: identity, workspace and outbox tables; Better Auth (Google, email OTP) at `/v1/auth`; session guard and CSRF origin check; `GET /v1/me`; OTP rate limits in Redis; outbox relay and `email-critical` queue (SMTP/Resend) in the worker | Done (code); decision records 009 and 010 awaiting approval |
+| 2b | Web: sign-in and code screens, Welcome (name), `PATCH /v1/me`, shell behind sign-in, Playwright for both flows | Next |
+
+Verified end to end on Oct 26: a code requested through the API reached Mailpit through the outbox, relay and worker; signing in with it gave a session; `/v1/me` returned the user and personal workspace; without the cookie, 401 problem+json.
+
+### Milestone 1 (done)
 
 Working style: since Oct 26, larger steps (a feature or milestone slice each), short summaries, a pause between steps; one learning note per feature in [`docs/learning/`](learning/README.md), grouped by topic.
 
@@ -164,4 +173,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [21 App shell](learning/frontend/21-app-shell.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [22 Sign-in and the outbox](learning/backend/22-sign-in-and-outbox.md).
