@@ -8,7 +8,7 @@ Last updated: Oct 26, 2026 · Updated at the end of every working step.
 
 | Step | What | Status |
 | --- | --- | --- |
-| 2a | Backend: identity, workspace and outbox tables; Better Auth (Google, email OTP) at `/v1/auth`; session guard and CSRF origin check; `GET /v1/me`; OTP rate limits in Redis; outbox relay and `email-critical` queue (SMTP/Resend) in the worker | Done (code); decision records 009 and 010 awaiting approval |
+| 2a | Backend: identity, workspace and outbox tables; Better Auth (Google, email OTP) at `/v1/auth`; session guard and CSRF origin check; `GET /v1/me`; OTP rate limits in Redis; outbox relay and `email-critical` queue (SMTP/Resend) in the worker | Done (`6aeb58b`); decisions 009 and 010 accepted |
 | 2b | Web: sign-in and code screens, Welcome (name), `PATCH /v1/me`, shell behind sign-in, Playwright for both flows | Next |
 
 Verified end to end on Oct 26: a code requested through the API reached Mailpit through the outbox, relay and worker; signing in with it gave a session; `/v1/me` returned the user and personal workspace; without the cookie, 401 problem+json.

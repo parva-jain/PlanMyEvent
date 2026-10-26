@@ -51,7 +51,7 @@ Organizers authenticate with Better Auth sessions (cookie on web, bearer token o
 
 ### Sign-in endpoints
 
-Mounted from Better Auth under /v1/auth; exact sub-paths follow the library.
+Mounted from Better Auth under /v1/auth; exact sub-paths follow the library, and so do their error bodies (`{ code, message }` instead of problem+json, decision 010).
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -62,7 +62,7 @@ Mounted from Better Auth under /v1/auth; exact sub-paths follow the library.
 | GET | /v1/auth/get-session | Current session, or null |
 | POST | /v1/auth/sign-out | Revoke the current session |
 
-A user's personal workspace is created in the same transaction as the user row, through a Better Auth hook that calls the core createUserWorkspace action.
+A user's personal workspace is created right after the user row commits, through a Better Auth hook that calls the core ensurePersonalWorkspace action; GET /v1/me runs the same idempotent action whenever it's missing (decision 010).
 
 ### CSRF and CORS
 
@@ -193,7 +193,7 @@ PATCH and PUT are naturally idempotent with If-Match, and DELETE of an already d
 
 ## Errors
 
-Every error is an RFC 9457 problem+json body with a stable code the clients switch on; the human-readable title and detail may change, the code never does.
+Every error outside /v1/auth is an RFC 9457 problem+json body with a stable code the clients switch on; the human-readable title and detail may change, the code never does.
 
 ```json
 {
@@ -244,7 +244,7 @@ Limits are sliding windows in Redis, keyed per bucket; they are generous for org
 | Bucket | Key | Limit | Notes |
 | --- | --- | --- | --- |
 | OTP send | email, and IP | 5 per 15 min per email; 20 per hour per IP | Protects the email budget |
-| OTP verify | email | 10 attempts per 15 min | Then the code is invalidated |
+| OTP verify | code, and IP | 3 wrong attempts per code; 10 per 15 min per IP | Then the code is invalidated (decision 010) |
 | Organizer reads | user | 600 per min |  |
 | Organizer writes | user | 120 per min |  |
 | Bulk and import calls | event | 10 per hour | CSV import, bulk invitations, guest-scope switch |

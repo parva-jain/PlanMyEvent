@@ -86,10 +86,10 @@ Env: every app has a `.env.example`; local defaults match compose, so no `.env` 
 ## MVP milestones
 
 1. Monorepo scaffold, Docker Compose, CI, env validation, design tokens and base UI components, app shell.
-2. Auth (Google, email OTP), users, hidden personal workspace.
+2. Auth (Google, email OTP), users, hidden personal workspace; minimal outbox relay and the email-critical queue for sign-in codes (decision 009).
 3. Events from templates, sub-events, venues, modules, guest scope.
 4. Members, roles, permissions, sub-event scoping, permission guard and cache.
-5. Outbox relay, activity log, undo, Socket.io live updates.
+5. Activity log, undo, entity.changed through the outbox, Socket.io live updates.
 6. Tasks; budget categories and expenses.
 7. Contacts, households, CSV import; invitations, magic links, RSVP.
 8. Open registration; dashboard aggregates; notifications; basic gallery.
