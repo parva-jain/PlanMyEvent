@@ -4,7 +4,7 @@ Last updated: Oct 24, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Milestone 1 — monorepo scaffold**, branch `chore/m1-scaffold` (not pushed yet; first push once CI exists, item 10).
+**Milestone 1 — monorepo scaffold**, branch `chore/m1-scaffold` (pushed Oct 26 with CI, item 10).
 
 Working style: small steps, each explained and reviewed before moving on; learning notes in [`docs/learning/`](learning/README.md), grouped by topic.
 
@@ -22,7 +22,7 @@ Working style: small steps, each explained and reviewed before moving on; learni
 
 After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
 
-**Home page track complete.** Item 9 done (9a compose, 9b Dockerfiles and the `app` profile). Next step: item 10, CI on GitHub Actions, then the first push.
+**Home page track complete.** Items 9 (compose, Dockerfiles) and 10 (CI) done. Next step: item 11, Vitest for api and worker (and the remaining packages).
 
 Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and phone (16 runs, all pass) against a production build on port 3100: every section renders, CLS 0 and no console errors in normal and reduced motion, header scroll state, use-case tabs (mouse and keyboard), FAQ, AI teaser typing, and reduced motion leaving drift and typing off. Lighthouse mobile over five runs at load average ~5: performance 92–96 (median 96), accessibility, best practices and SEO 100, CLS 0, TBT 50–150 ms, simulated LCP 2.7–3.3 s, observed LCP 103–197 ms.
 
@@ -41,7 +41,7 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | 7 | `apps/worker`: BullMQ connection, sample queue/producer/processor, graceful shutdown | Done | `7e5f995` |
 | 8 | `apps/web`: tokens, fonts, shadcn components, Lucide, Motion, next-intl, TanStack Query, favicons, app shell, `/dev/ui`, status widget | In progress: foundation done (step A, `c9896b5`); home page track above | |
 | 9 | `infra/`: docker-compose (Postgres 17, Redis 7, SeaweedFS + bucket, Mailpit), Dockerfiles, `.env.example` | Done: compose, `infra/Dockerfile` (targets api, worker, web, migrate), `app` profile; `.env.example` for api and worker | |
-| 10 | CI: GitHub Actions with install cache, lint, typecheck, test, build, Postgres/Redis services, migration check | Not started | |
+| 10 | CI: GitHub Actions with install cache, lint, typecheck, test, build, Postgres/Redis services, migration check | Done: `.github/workflows/ci.yml`, jobs `verify` and `e2e`; runs on pull requests and pushes to `main` | |
 | 11 | Tests: Vitest in packages, api, worker; Playwright smoke test of the shell at phone and desktop sizes | Partly: core has 3 tests; Playwright home-page smoke tests at phone and desktop sizes (step G), shell test with item 8 | |
 | 12 | Docs: CLAUDE.md Commands section, README "Getting started" | Not started | |
 
@@ -121,6 +121,9 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Fraunces not preloaded | Only used below the fold; preloading competed with the hero (LCP) | `src/app/layout.tsx` |
 | Footer has product and use-case links only | Privacy, terms and company pages don't exist yet | `site-footer.tsx` |
 | Compose: images pinned (postgres 17.11-alpine, redis 7.4.11-alpine, seaweedfs 4.48, mailpit v1.31.6), each released at least 10 days earlier; ports bound to 127.0.0.1; named volumes; health checks so `up --wait` returns when ready | Same release-age caution as npm packages; nothing exposed on the network | `infra/docker-compose.yml` |
+| CI actions pinned to commit SHAs (checkout v7.0.1, setup-node v7.1.0, pnpm/action-setup v6.1.0, upload-artifact v7.0.2); `permissions: contents: read`; newer pushes cancel older runs | A moved tag can't change what runs; least privilege | `.github/workflows/ci.yml` |
+| CI migration check: migrate twice, `drizzle-kit check`, and `db:generate` must produce no new files | Catches schema edits without a migration and non-idempotent migrations | `.github/workflows/ci.yml` |
+| CI smoke step starts the built API and worker against Postgres and Redis services | Proves the builds boot and connect, not just compile; first real use of the Redis service | `.github/workflows/ci.yml` |
 | One `infra/Dockerfile` with targets `api`, `worker`, `web`, `migrate`; Node apps packaged with `pnpm deploy --prod --legacy`, web from Next's standalone output; run as `node` user | One shared build stage; production images carry no dev dependencies or pnpm | `infra/Dockerfile` |
 | Node 22.23.4 in images although only 4 days old | Security release (seven CVEs); exception to the release-age wait | `infra/Dockerfile` |
 | Migrations in compose run from the full build stage (`migrate` target) | `migrate.ts` runs through tsx and isn't compiled; a production migration step is decided with deployment | `infra/Dockerfile` |
@@ -149,4 +152,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [17 Docker images](learning/infra/17-docker-images.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [18 Continuous integration](learning/infra/18-continuous-integration.md).

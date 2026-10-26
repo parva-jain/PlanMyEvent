@@ -33,5 +33,6 @@ Repository tooling, Docker, CI and deployment.
 - [01 Monorepo basics](infra/01-monorepo-basics.md)
 - [16 Docker Compose for local services](infra/16-docker-compose.md)
 - [17 Docker images for the apps](infra/17-docker-images.md)
+- [18 Continuous integration](infra/18-continuous-integration.md)
 
 New notes keep the next number and go in the folder that matches their topic.
