@@ -18,7 +18,7 @@ const FOLLOW_DELAY = 0.15;
 /** The plan card rises in 300 ms after the headline starts; floating cards follow it. */
 const CARD_DELAY = 0.3;
 
-// /sign-in arrives in milestone 2; `prefetch={false}` on its links avoids a 404 prefetch until then.
+// `prefetch={false}` on /sign-in links: the home page shouldn't spend bandwidth on it up front.
 
 /** Inline style for a `.rise-in` element (CSS entrance, see motion.css). */
 function riseIn(delay: number, rise: number = distance.rise): CSSProperties {

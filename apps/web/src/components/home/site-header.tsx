@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 /** MOTION.md 6.2: the header gains its background after 8 px of scroll. */
 const SCROLL_THRESHOLD = 8;
 
-// /sign-in arrives in milestone 2; `prefetch={false}` on its links avoids a 404 prefetch until then.
+// `prefetch={false}` on /sign-in links: the home page shouldn't spend bandwidth on it up front.
 
 const NAV = [
   { key: 'features', href: '#features' },

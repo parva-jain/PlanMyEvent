@@ -5,6 +5,7 @@ import { m } from 'motion/react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
+import { SignOutButton } from '@/components/auth/sign-out-button';
 import { Card } from '@/components/ui/card';
 import { distance, duration, ease } from '@/lib/motion';
 
@@ -56,6 +57,10 @@ export function MoreMenu() {
           <span className="text-label">{t('status.label')}</span>
           <StatusWidget />
         </div>
+      </Card>
+
+      <Card className="p-2 sm:p-2">
+        <SignOutButton className="min-h-14 text-body" />
       </Card>
     </m.div>
   );

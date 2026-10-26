@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
+import { SignOutButton } from '@/components/auth/sign-out-button';
 import { LogoMark } from '@/components/motion/logo-mark';
+import { useMe } from '@/lib/me';
 import { cn } from '@/lib/utils';
 
 import { EventSwitcherPopover } from './event-switcher';
@@ -19,6 +21,7 @@ import { ThemeToggle } from './theme-toggle';
 export function AppSidebar() {
   const t = useTranslations('app');
   const pathname = usePathname();
+  const { data: me } = useMe();
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-18 flex-col border-r border-border bg-surface sm:flex lg:w-62">
@@ -65,6 +68,14 @@ export function AppSidebar() {
         <StatusWidget compact className="lg:hidden" />
         <StatusWidget className="hidden lg:flex" />
         <ThemeToggle className="hidden lg:inline-flex lg:self-start" />
+        {me && (
+          <div className="hidden min-w-0 flex-col lg:flex" data-testid="signed-in-user">
+            <span className="truncate text-label">{me.user.name}</span>
+            <span className="truncate text-caption text-fg-muted">{me.user.email}</span>
+          </div>
+        )}
+        <SignOutButton compact className="w-11 lg:hidden" />
+        <SignOutButton className="hidden lg:flex" />
       </div>
     </aside>
   );

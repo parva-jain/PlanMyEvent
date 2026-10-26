@@ -24,7 +24,16 @@ export interface WorkspaceStore {
   }): Promise<{ workspace: PersonalWorkspace; created: boolean }>;
 }
 
+export interface UserStore {
+  /** Changes only the given fields; returns false if the user doesn't exist. */
+  updateProfile(
+    userId: string,
+    changes: { name?: string; phone?: string | null },
+  ): Promise<boolean>;
+}
+
 /** The transaction handle every action receives. */
 export interface CoreTx {
+  users: UserStore;
   workspaces: WorkspaceStore;
 }

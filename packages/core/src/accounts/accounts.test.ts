@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { runAction, type ActionRuntime, type OutboxMessage } from '../action.js';
 import type { ActionContext } from '../context.js';
 import type { CoreTx, PersonalWorkspace } from '../ports.js';
+import { updateProfile } from './update-profile.js';
 import { ensurePersonalWorkspace, personalWorkspaceName } from './ensure-personal-workspace.js';
 import { queueSignInCode } from './queue-sign-in-code.js';
 
@@ -11,7 +12,16 @@ function fakeRuntime() {
   const workspaces = new Map<string, PersonalWorkspace>();
   const outbox: OutboxMessage[] = [];
   let inserts = 0;
+  const profiles = new Map<string, { name?: string; phone?: string | null }>([['u1', {}]]);
   const tx: CoreTx = {
+    users: {
+      updateProfile: (userId, changes) => {
+        const profile = profiles.get(userId);
+        if (!profile) return Promise.resolve(false);
+        Object.assign(profile, changes);
+        return Promise.resolve(true);
+      },
+    },
     workspaces: {
       findPersonal: (ownerUserId) => Promise.resolve(workspaces.get(ownerUserId) ?? null),
       createPersonal: ({ ownerUserId, name }) => {
@@ -31,7 +41,7 @@ function fakeRuntime() {
       return Promise.resolve();
     },
   };
-  return { runtime, outbox, inserts: () => inserts };
+  return { runtime, outbox, profiles, inserts: () => inserts };
 }
 
 const ctx: ActionContext = {
@@ -93,5 +103,36 @@ describe('queueSignInCode', () => {
     expect(await send('123456')).toBe(key);
     expect(await send('654321')).not.toBe(key);
     expect(key).toMatch(/^sign-in-code-[0-9a-f]{32}$/);
+  });
+});
+
+describe('updateProfile', () => {
+  const userCtx: ActionContext = {
+    ...ctx,
+    channel: 'app',
+    actor: { kind: 'user', userId: 'u1', memberId: null },
+  };
+
+  it("changes the signed-in user's own profile", async () => {
+    const { runtime, profiles } = fakeRuntime();
+    await runAction(runtime, userCtx, updateProfile, {
+      name: 'Neha Verma',
+      phone: '+919876543210',
+    });
+    expect(profiles.get('u1')).toEqual({ name: 'Neha Verma', phone: '+919876543210' });
+  });
+
+  it('refuses non-user actors and unknown users', async () => {
+    const { runtime } = fakeRuntime();
+    await expect(runAction(runtime, ctx, updateProfile, { name: 'X' })).rejects.toMatchObject({
+      code: 'forbidden',
+    });
+    const ghost: ActionContext = {
+      ...userCtx,
+      actor: { kind: 'user', userId: 'nobody', memberId: null },
+    };
+    await expect(runAction(runtime, ghost, updateProfile, { name: 'X' })).rejects.toMatchObject({
+      code: 'not_found',
+    });
   });
 });

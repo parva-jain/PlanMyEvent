@@ -20,3 +20,19 @@ export const MeSchema = z.object({
 });
 
 export type Me = z.infer<typeof MeSchema>;
+
+/** Indian mobile numbers in E.164 (CLAUDE.md: Indian phone numbers). */
+export const IndianMobileSchema = z
+  .string()
+  .regex(/^\+91[6-9]\d{9}$/, 'Enter a 10-digit Indian mobile number');
+
+/** PATCH /v1/me: fields the user can change; omitted fields stay as they are. */
+export const UpdateMeSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Enter your name').max(80),
+    /** null clears it. */
+    phone: IndianMobileSchema.nullable(),
+  })
+  .partial();
+
+export type UpdateMe = z.infer<typeof UpdateMeSchema>;

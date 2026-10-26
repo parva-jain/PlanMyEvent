@@ -154,6 +154,54 @@ describe('email sign-in', () => {
   });
 });
 
+describe('PATCH /v1/me', () => {
+  const patch = (cookie: string[], body: object) =>
+    request(app.getHttpServer())
+      .patch('/v1/me')
+      .set('Origin', WEB_ORIGIN)
+      .set('Cookie', cookie)
+      .send(body);
+
+  it('sets the name and an Indian mobile number, and /v1/me shows them', async () => {
+    const { api, cookie } = await signedIn();
+    const res = await patch(cookie, { name: '  Vikram Singh ', phone: '+919876543210' }).expect(
+      200,
+    );
+    expect((res.body as Me).user).toMatchObject({ name: 'Vikram Singh', phone: '+919876543210' });
+
+    const me = (await api.me(cookie).expect(200)).body as Me;
+    expect(me.user).toMatchObject({ name: 'Vikram Singh', phone: '+919876543210' });
+  });
+
+  it('rejects an empty name and a non-Indian number with field errors', async () => {
+    const { cookie } = await signedIn();
+    const res = await patch(cookie, { name: ' ', phone: '+14155550100' }).expect(422);
+    const problem = res.body as Problem & { fields: { path: string }[] };
+    expect(problem.code).toBe('validation_failed');
+    expect(problem.fields.map((field) => field.path).sort()).toEqual(['name', 'phone']);
+  });
+});
+
+describe('CORS', () => {
+  it('lets the web app call auth routes cross-origin, with credentials', async () => {
+    const res = await request(app.getHttpServer())
+      .options('/v1/auth/email-otp/send-verification-otp')
+      .set('Origin', WEB_ORIGIN)
+      .set('Access-Control-Request-Method', 'POST')
+      .set('Access-Control-Request-Headers', 'content-type')
+      .expect(204);
+    expect(res.headers['access-control-allow-origin']).toBe(WEB_ORIGIN);
+    expect(res.headers['access-control-allow-credentials']).toBe('true');
+  });
+
+  it('only ever allows the web app origin, so browsers refuse other sites', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/health/live')
+      .set('Origin', 'https://evil.example');
+    expect(res.headers['access-control-allow-origin']).toBe(WEB_ORIGIN);
+  });
+});
+
 describe('session guard', () => {
   it('answers 401 problem+json without a session', async () => {
     const res = await client().me().expect(401);

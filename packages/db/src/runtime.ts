@@ -3,12 +3,14 @@ import {
   type ActionRuntime,
   type CoreTx,
   type PersonalWorkspace,
+  type UserStore,
   type WorkspaceStore,
 } from '@pme/core';
 import type { ValueOf } from '@pme/contracts';
 import { and, eq, sql } from 'drizzle-orm';
 
 import type { Database } from './client.js';
+import { users } from './schema/auth.js';
 import { outbox } from './schema/outbox.js';
 import { workspaces } from './schema/workspaces.js';
 
@@ -47,11 +49,26 @@ function workspaceStore(db: DrizzleTx): WorkspaceStore {
   };
 }
 
+function userStore(db: DrizzleTx): UserStore {
+  return {
+    async updateProfile(userId, changes) {
+      const updated = await db
+        .update(users)
+        .set(changes)
+        .where(eq(users.id, userId))
+        .returning({ id: users.id });
+      return updated.length > 0;
+    },
+  };
+}
+
 /** CoreTx backed by one Drizzle transaction; `db` stays reachable for the runtime's own writes. */
 export class DbTx implements CoreTx {
+  readonly users: UserStore;
   readonly workspaces: WorkspaceStore;
 
   constructor(readonly db: DrizzleTx) {
+    this.users = userStore(db);
     this.workspaces = workspaceStore(db);
   }
 }

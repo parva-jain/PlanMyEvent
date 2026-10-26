@@ -20,14 +20,16 @@ export function configureApp(app: NestExpressApplication): ApiEnv {
     req.id = genRequestId(req, res);
     next();
   });
-  // Better Auth reads its own request bodies, so it goes before the JSON parser.
-  app.use('/v1/auth', toNodeHandler(app.get<Auth>(AUTH)));
-  app.useBodyParser('json', { limit: '1mb' });
+  // CORS before anything that answers requests, Better Auth included: the web app calls
+  // every route cross-origin.
   app.enableCors({
     origin: env.WEB_ORIGIN,
     credentials: true,
     exposedHeaders: ['X-Request-Id', 'ETag'],
   });
+  // Better Auth reads its own request bodies, so it goes before the JSON parser.
+  app.use('/v1/auth', toNodeHandler(app.get<Auth>(AUTH)));
+  app.useBodyParser('json', { limit: '1mb' });
   app.useWebSocketAdapter(new LiveIoAdapter(app, env.WEB_ORIGIN));
   app.set('trust proxy', 1);
   // ETag is the resource version (APIDesign), never Express's body hash.
