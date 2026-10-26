@@ -6,7 +6,7 @@
 
 Most events in India are organized through WhatsApp groups, spreadsheets and phone calls. Nobody knows the real headcount, who paid the caterer, or which tasks are still open. Plan My Event replaces that with one shared event space that a whole family, committee or team can work in at once.
 
-> Status: design phase. The product spec and system design are complete; implementation is starting. See the [roadmap](#roadmap).
+> Status: milestone 1 (scaffold) nearly complete: monorepo, local infrastructure, CI, design system and marketing home page. Progress is tracked in [docs/STATUS.md](docs/STATUS.md).
 
 ## What it does
 
@@ -66,6 +66,37 @@ Clients ─▶ Cloudflare edge ─▶ Next.js web ─▶ NestJS API ─▶ Postg
 ```
 
 Full details: [docs/SystemDesign.md](docs/SystemDesign.md).
+
+## Getting started
+
+You need Node 22 (see `.nvmrc`), pnpm 12.14.0 (`npm install -g pnpm@12.14.0`) and Docker.
+
+```sh
+git clone https://github.com/parva-jain/PlanMyEvent.git
+cd PlanMyEvent
+pnpm install
+docker compose -f infra/docker-compose.yml up -d --wait   # Postgres, Redis, S3 storage, mail catcher
+pnpm db:migrate
+pnpm dev
+```
+
+| What | Where |
+| --- | --- |
+| Web app | http://localhost:3000 |
+| API | http://localhost:4000/v1, interactive docs at http://localhost:4000/v1/docs |
+| Health | http://localhost:4000/v1/health/ready |
+| Email inbox (Mailpit) | http://localhost:8025 |
+
+No `.env` files are needed locally: every app's defaults point at the compose services. Each app has a `.env.example` listing what production needs.
+
+Checks, the same ones CI runs:
+
+```sh
+pnpm lint && pnpm typecheck && pnpm test   # Vitest; API tests use the compose Postgres and Redis
+pnpm test:e2e                              # Playwright (first time: pnpm --filter @pme/web exec playwright install chromium)
+```
+
+More: [infra/README.md](infra/README.md) for the local services and running the apps as containers.
 
 ## Documentation
 

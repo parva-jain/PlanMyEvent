@@ -64,7 +64,24 @@ TypeScript everywhere. pnpm workspaces + Turborepo.
 
 ## Commands
 
-Filled in by milestone 1. Expected: `pnpm dev`, `pnpm build`, `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm db:migrate`, `pnpm db:seed`, `docker compose -f infra/docker-compose.yml up -d`.
+Run from the repository root. Node 22 (`.nvmrc`), pnpm 12.14.0 (`packageManager`).
+
+| Command | What it does |
+| --- | --- |
+| `docker compose -f infra/docker-compose.yml up -d --wait` | Start Postgres, Redis, SeaweedFS and Mailpit (see `infra/README.md`) |
+| `pnpm install` | Install dependencies |
+| `pnpm db:migrate` | Apply migrations (builds the packages `@pme/db` imports first) |
+| `pnpm db:seed` | Load demo data (empty until milestone 9) |
+| `pnpm db:generate` | Write a new migration after a schema change; commit it with the change |
+| `pnpm db:check` | Check migrations are consistent |
+| `pnpm dev` | Web on `localhost:3000`, API on `localhost:4000` (OpenAPI at `/v1/docs`), worker, packages in watch mode |
+| `pnpm build` | Build everything (Turborepo, cached) |
+| `pnpm test` | Vitest in every package; API tests need the compose Postgres and Redis running |
+| `pnpm test:e2e` | Playwright against a production web build on port 3100 |
+| `pnpm lint` / `pnpm typecheck` / `pnpm format:check` | What CI checks; `pnpm format` fixes formatting |
+| `pnpm --filter @pme/api test` | Any script in one package |
+
+Env: every app has a `.env.example`; local defaults match compose, so no `.env` is needed in development. CI (`.github/workflows/ci.yml`) runs format, lint, typecheck, test, build, migration checks, an API and worker start, and Playwright.
 
 ## MVP milestones
 

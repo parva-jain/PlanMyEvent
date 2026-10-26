@@ -16,10 +16,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky",
-    "db:generate": "pnpm --filter @pme/db db:generate",
-    "db:check": "pnpm --filter @pme/db db:check",
-    "db:migrate": "pnpm --filter @pme/db db:migrate",
-    "db:seed": "pnpm --filter @pme/db db:seed"
+    "db:deps": "turbo run build --filter=@pme/db^... --output-logs=errors-only",
+    "db:generate": "pnpm db:deps && pnpm --filter @pme/db db:generate",
+    "db:check": "pnpm db:deps && pnpm --filter @pme/db db:check",
+    "db:migrate": "pnpm db:deps && pnpm --filter @pme/db db:migrate",
+    "db:seed": "pnpm db:deps && pnpm --filter @pme/db db:seed"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

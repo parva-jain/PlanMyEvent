@@ -22,7 +22,7 @@ Working style: small steps, each explained and reviewed before moving on; learni
 
 After the home page: item 9 (Docker Compose) → 10 (CI) → 11 (backend tests) → 12 (docs) → rest of item 8 (app shell) → milestone 2 (auth).
 
-**Home page track complete.** Items 9 (compose, Dockerfiles) and 10 (CI) done; draft PR [#1](https://github.com/parva-jain/PlanMyEvent/pull/1), CI green in about 1.5 min. Item 11 backend tests done: 11a unit tests, 11b API tests against the real app, Postgres and Redis. Next: item 12 (docs: CLAUDE.md commands, README getting started).
+**Home page track complete.** Items 9 (compose, Dockerfiles) and 10 (CI) done; draft PR [#1](https://github.com/parva-jain/PlanMyEvent/pull/1), CI green in about 1.5 min. Item 11 backend tests done: 11a unit tests, 11b API tests against the real app, Postgres and Redis. Item 12 docs done (CLAUDE.md commands, README getting started); root `db:*` scripts now build `@pme/db`'s dependencies first, since a fresh clone failed without them. Next: rest of item 8 (app shell).
 
 Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and phone (16 runs, all pass) against a production build on port 3100: every section renders, CLS 0 and no console errors in normal and reduced motion, header scroll state, use-case tabs (mouse and keyboard), FAQ, AI teaser typing, and reduced motion leaving drift and typing off. Lighthouse mobile over five runs at load average ~5: performance 92–96 (median 96), accessibility, best practices and SEO 100, CLS 0, TBT 50–150 ms, simulated LCP 2.7–3.3 s, observed LCP 103–197 ms.
 
@@ -43,7 +43,7 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | 9 | `infra/`: docker-compose (Postgres 17, Redis 7, SeaweedFS + bucket, Mailpit), Dockerfiles, `.env.example` | Done: compose, `infra/Dockerfile` (targets api, worker, web, migrate), `app` profile; `.env.example` for api and worker | |
 | 10 | CI: GitHub Actions with install cache, lint, typecheck, test, build, Postgres/Redis services, migration check | Done: `.github/workflows/ci.yml`, jobs `verify` and `e2e`; runs on pull requests and pushes to `main` | |
 | 11 | Tests: Vitest in packages, api, worker; Playwright smoke test of the shell at phone and desktop sizes | Backend done: Vitest unit tests in every package and app; API tests boot the real app against Postgres and Redis (health, 503 when a dependency is down, problem+json 404/400/413, `X-Request-Id`); 46 tests in all. Playwright home-page smoke tests (step G); shell test with item 8 | |
-| 12 | Docs: CLAUDE.md Commands section, README "Getting started" | Not started | |
+| 12 | Docs: CLAUDE.md Commands section, README "Getting started" | Done; verified from a fresh clone | |
 
 **Milestone 1 is done when**, from a fresh clone: `pnpm install`, `docker compose -f infra/docker-compose.yml up -d`, `pnpm db:migrate` and `pnpm dev` start everything; the web app shows the shell on localhost:3000; `/v1/health/ready` returns ok; the worker logs a processed sample job; lint, typecheck, test and build pass; CI is green.
 
