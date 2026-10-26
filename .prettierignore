@@ -1,0 +1,12 @@
+pnpm-lock.yaml
+**/dist
+**/.next
+**/.turbo
+**/coverage
+**/drizzle/meta
+playwright-report
+test-results
+brand
+docs
+# Human-written docs are not reformatted
+*.md

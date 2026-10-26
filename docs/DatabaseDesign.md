@@ -396,6 +396,7 @@ Indexes: unique(event\_id, id); index(event\_id, household\_id); GIN(tags); GIN(
 | household\_id | uuid | FK (event\_id, household\_id) to households |  |
 | contact\_id | uuid | FK (event\_id, contact\_id) to contacts |  |
 | token\_hash | bytea | NN, UQ | SHA-256 of the magic-link token |
+| token\_version | integer | NN, default 1 | Token = HMAC(server key, id:token\_version), so links can be re-shared; regenerating a link increments it |
 | delivery\_status | text | NN, default 'not\_sent', check delivery\_status |  |
 | distributor\_member\_id | uuid | FK (event\_id, distributor\_member\_id) to members | Who hands over the card |
 | sent\_at, delivered\_at | timestamptz |  |  |
@@ -440,7 +441,7 @@ Checks: num\_nonnulls(household\_id, contact\_id) = 1; source = 'invited' requir
 
 Indexes: unique(event\_id, sub\_event\_id, household\_id, contact\_id) nulls not distinct, so one row per guest per scope and RSVP or registration resubmits update the same row; index(event\_id, sub\_event\_id, status) for headcounts; unique(qr\_token\_hash) where not null.
 
-Attendance has no deleted\_at: removing a guest from a sub-event sets status to cancelled, so headcount history and undo stay intact.
+Attendance has no deleted\_at: removing a guest from a sub-event sets status to cancelled, so headcount history and undo stay intact. Open registrations also create an invitation row (delivery status sent\_digitally), so every attendee has a magic link to view or cancel.
 
 ## Platform
 
@@ -511,7 +512,7 @@ These four tables carry no user-facing data; they exist so that writes, retries 
 | id | bigint | PK, generated always as identity | Monotonic order for the relay |
 | event\_id | uuid |  | For logging and per-event fairness; no FK |
 | topic | text | NN | entity.changed, email.send, media.process, ... |
-| dedupe\_key | text | NN | Becomes the BullMQ job id, e.g. invite-email:\<invitationId>:\<templateVersion> |
+| dedupe\_key | text | NN | Becomes the BullMQ job id, e.g. invite-email-\<invitationId>-\<templateVersion>; parts joined with `-`, never `:` (decision 005) |
 | payload | jsonb | NN |  |
 | available\_at | timestamptz | NN, default now() | Later values delay publishing |
 | attempts | integer | NN, default 0 |  |

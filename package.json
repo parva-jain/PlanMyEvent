@@ -1,0 +1,44 @@
+{
+  "name": "plan-my-event",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint && eslint --no-warn-ignored '*.mjs'",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky",
+    "db:deps": "turbo run build --filter=@pme/db^... --output-logs=errors-only",
+    "db:generate": "pnpm db:deps && pnpm --filter @pme/db db:generate",
+    "db:check": "pnpm db:deps && pnpm --filter @pme/db db:check",
+    "db:migrate": "pnpm db:deps && pnpm --filter @pme/db db:migrate",
+    "db:seed": "pnpm db:deps && pnpm --filter @pme/db db:seed"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.13.0",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "prettier": "3.9.10",
+    "turbo": "2.11.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,tsx}": [
+      "eslint --fix --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{json,yml,yaml,css}": "prettier --write"
+  }
+}

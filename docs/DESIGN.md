@@ -20,20 +20,23 @@ A shared event-planning app for teams: weddings, conferences, college fests, fai
 | primary-tint | #EEF2FF | Selected rows, active chips, info backgrounds |
 | accent (marigold) | #F5A524 | Progress fills, milestone highlights, logo; never for text or body backgrounds |
 | accent-tint | #FFF7E6 | Celebration banners, "next up" highlight |
-| accent-text | #B4710C | Text on accent-tint |
+| accent-text | #9F650D | Text on accent-tint |
 
-### Neutrals (warm)
+### Neutrals (cool, "Mist Deep")
+
+Cool greys with a trace of the brand indigo (decision 007). Warmth comes from the marigold accent and the event colours, not the neutrals. Every text colour meets WCAG AA (4.5:1) on each surface it is used on, in both themes (decision 006). Exception: text-muted is not used directly on surface-band (4.25:1); use text-secondary there.
 
 | Token | Hex | Use |
 | --- | --- | --- |
-| background | #FAF8F5 | App and page background |
+| background | #F2F3FB | App and page background |
 | surface | #FFFFFF | Cards, sheets, tables |
-| surface-muted | #F3EFE9 | Input fills, table headers, hover |
-| border | #ECE7E0 | Card and divider lines |
-| border-strong | #D6CEC3 | Input borders |
-| text | #1F1B16 | Primary text |
-| text-secondary | #6B635A | Supporting text |
-| text-muted | #8E857A | Placeholders, captions |
+| surface-muted | #E7E9F7 | Input fills, table headers, hover, small fills inside cards |
+| surface-band | #D7DBEF | Alternate page sections (light and dark bands on marketing and public pages) |
+| border | #DCDFF0 | Card and divider lines |
+| border-strong | #C2C7E0 | Input borders |
+| text | #12142B | Primary text |
+| text-secondary | #454A68 | Supporting text |
+| text-muted | #5E6384 | Placeholders, captions |
 
 ### Status
 
@@ -60,15 +63,38 @@ Each event has one accent set by its type. Used only in the event header strip, 
 
 | Token | Hex |
 | --- | --- |
-| background | #1F1B16 |
-| surface | #2A2520 |
-| surface-muted | #332D27 |
-| border | #3A342D |
-| text | #F5F1EA |
-| text-secondary | #B8AFA4 |
-| primary (buttons) | #6366F1 |
+| background | #090B1C |
+| surface | #11142B |
+| surface-muted | #191D3A |
+| surface-band | #1E2244 |
+| border | #23284B |
+| border-strong | #32386A |
+| text | #EDEFFB |
+| text-secondary | #ABB0CE |
+| text-muted | #8A90B2 |
+| primary-tint | #232864 |
+| primary (buttons) | #6265F0 |
 | primary (links, text) | #A5B4FC |
 | accent | #F5A524 |
+
+### Reading Stitch designs
+
+The Stitch screens were designed with the earlier warm palette and are kept as they are: they define layout, structure, content and hierarchy, not colour. Translate every Stitch colour to its token, never copy a hex value:
+
+| Stitch (warm) | Token | Light | Dark |
+| --- | --- | --- | --- |
+| #FAF8F5 page | background | #F2F3FB | #090B1C |
+| #FFFFFF cards | surface | #FFFFFF | #11142B |
+| #F3EFE9 fills | surface-muted | #E7E9F7 | #191D3A |
+| Peach section background (#FDF3EA) | surface-band | #D7DBEF | #1E2244 |
+| #ECE7E0 lines | border | #DCDFF0 | #23284B |
+| #D6CEC3 input borders | border-strong | #C2C7E0 | #32386A |
+| #1F1B16 text | text | #12142B | #EDEFFB |
+| #6B635A supporting text | text-secondary | #454A68 | #ABB0CE |
+| #8E857A captions | text-muted | #5E6384 | #8A90B2 |
+| Stitch dark kit #1F1B16 / #2A2520 / #332D27 | background / surface / surface-muted (dark) | | as above |
+
+Brand, status and event colours are unchanged, so Stitch values for those apply as they are.
 
 ## Typography
 
@@ -124,9 +150,9 @@ Tap targets at least 48px. Primary action reachable by thumb on phone.
 - **Empty states:** small illustration, one-line headline, one sentence, one button.
 - **Loading:** skeleton blocks, never full-page spinners.
 
-## Motion (implemented in code)
+## Motion
 
-Fast and purposeful: 150–250 ms, springs for drag, nothing over 600 ms, respects reduced motion. Task tick draws, milestone confetti in marigold once, live-update glow 1.5 s, numbers count up on dashboard load, bottom sheets spring up, event card expands into the event header.
+All motion (tokens, tools, reusable patterns, reduced-motion rules and every animation per screen) is specified in [MOTION.md](MOTION.md). Summary: fast and purposeful, 150–250 ms, springs for drag, nothing over 600 ms except one-time hero and logo sequences, always respects reduced motion.
 
 ## Voice
 

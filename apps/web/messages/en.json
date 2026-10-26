@@ -1,0 +1,567 @@
+{
+  "meta": {
+    "title": "Plan My Event",
+    "description": "One plan for everyone behind your event."
+  },
+  "home": {
+    "header": {
+      "brand": "Plan My Event",
+      "navLabel": "Main",
+      "skipToContent": "Skip to content",
+      "features": "Features",
+      "useCases": "Use cases",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "signIn": "Sign in",
+      "startFree": "Start free",
+      "startPlanning": "Start planning, free"
+    },
+    "hero": {
+      "eyebrow": "Live multi-user event planner",
+      "headlineLead": "Your whole event team, on the",
+      "headlineEmphasis": "same page.",
+      "subheading": "Tasks, budget, guests and schedule in one shared plan that updates live for everyone involved.",
+      "primaryCta": "Start planning, free",
+      "secondaryCta": "See how it works",
+      "eventTypes": {
+        "label": "Built for every gathering",
+        "weddings": "Weddings",
+        "conferences": "Conferences",
+        "collegeFests": "College fests",
+        "exhibitions": "Exhibitions",
+        "meetups": "Meetups",
+        "celebrations": "Celebrations"
+      },
+      "plan": {
+        "summary": "Preview of a live event plan: DevFest Bhopal 2026, 78% ready, with tasks being ticked off and registrations arriving.",
+        "live": "Live planning",
+        "event": "DevFest Bhopal 2026",
+        "dates": "Oct 24–25",
+        "milestone": "Milestone target",
+        "ready": "{percent}% ready",
+        "taskDone": "Finalize keynote stage",
+        "taskDoneBy": "RS",
+        "taskDue": "Confirm badge print run",
+        "dueToday": "Due today",
+        "done": "Done",
+        "rahulUpdated": "Rahul just updated this",
+        "registrations": "+<count></count> registrations today",
+        "attendees": "Track B · 1,180 attendees confirmed"
+      },
+      "floating": {
+        "completedTitle": "Rahul marked completed",
+        "completedDetail": "“Book main hall AV setup” · 2m ago",
+        "paid": "Catering advance paid ₹45,000",
+        "rsvpLabel": "Digital RSVP",
+        "rsvpEvent": "Ananya & Sid’s Sangeet",
+        "rsvpDetail": "Fri, 7:00 PM · Taj Lake Palace",
+        "rsvpYes": "Yes",
+        "rsvpDecline": "Decline"
+      }
+    },
+    "problem": {
+      "eyebrow": "The event chaos vs the plan",
+      "title": "From 12 WhatsApp groups and 5 spreadsheets to one shared plan.",
+      "body": "When updates are scattered across group chats and old attachments, details get missed. Plan My Event keeps everyone working from the same plan.",
+      "chatTitle": "WhatsApp · “Event Committee Final FINAL”",
+      "bubble1": "“Wait, did someone send the advance to the caterer or is it pending?”",
+      "bubble2": "“Check v3 of the Excel sheet… wait, v4 in Drive has the new venue.”",
+      "bubble3": "“Who has the latest guest list? Mausi added 30 names on Sunday.”",
+      "chatStatus": "Scattered and out of sync",
+      "chatProblem": "3 overlapping sheets",
+      "planTitle": "Plan My Event",
+      "planBadge": "All synced",
+      "rowAdvance": "Catering advance ₹45,000",
+      "rowAdvanceStatus": "Paid",
+      "rowVenue": "Venue contract",
+      "rowVenueStatus": "1 version only",
+      "rowGuests": "Guest list · 412 guests",
+      "rowGuestsStatus": "Updated live",
+      "planStatus": "One shared plan",
+      "planResult": "No follow-up calls needed"
+    },
+    "howItWorks": {
+      "eyebrow": "Simple workflow",
+      "title": "How it works",
+      "body": "Three calm steps from a blank slate to showtime.",
+      "step1": {
+        "label": "Step 1",
+        "title": "Pick a template",
+        "body": "Start from a wedding, conference, fair, celebration or custom template, with sub-events, starter tasks and budget categories ready to go.",
+        "meta": "Ready-made starter plans"
+      },
+      "step2": {
+        "label": "Step 2",
+        "title": "Invite your team",
+        "body": "Add co-hosts, family and volunteers by link or email. Each gets a role that fits, from full admin to helpers who see only their own tasks.",
+        "meta": "Role-based access"
+      },
+      "step3": {
+        "label": "Step 3",
+        "title": "Track everything live",
+        "body": "Tasks, payments and RSVPs update for everyone within seconds, so nobody has to call around for the latest.",
+        "meta": "Live for the whole team"
+      }
+    },
+    "features": {
+      "eyebrow": "Built for action",
+      "title": "Features that keep you calm",
+      "body": "Every moving part of your event, in one shared plan.",
+      "team": {
+        "title": "Team and roles",
+        "body": "Owners, admins, editors, helpers and viewers, or your own custom roles, limited to the sub-events each person handles.",
+        "previewName": "Pooja Sharma",
+        "previewRole": "Decor coordinator · Sangeet",
+        "previewBadge": "Editor"
+      },
+      "schedule": {
+        "title": "Schedule and sub-events",
+        "body": "Mehendi, keynotes or Day 2: each sub-event has its own time, venue, capacity and guest list.",
+        "previewRow1": "10:00 AM · Welcome note",
+        "previewRow1Place": "Main auditorium",
+        "previewRow2": "11:30 AM · Panel discussion",
+        "previewRow2Place": "Hall B"
+      },
+      "tasks": {
+        "title": "Tasks that get done",
+        "body": "Assign tasks with due dates, priorities and checklists. Helpers get a simple “My tasks” view on their phone.",
+        "previewTask": "Generator test run",
+        "previewBadge": "Done"
+      },
+      "budget": {
+        "title": "Budget and payments",
+        "body": "Plan each category, track advances and pending payments in rupees, and see budget against actual at a glance.",
+        "previewSpent": "Spent so far",
+        "previewLeft": "Remaining"
+      },
+      "guests": {
+        "title": "Guests and RSVPs",
+        "body": "Households, personal invitation links and one-tap RSVPs. Guests never need an account.",
+        "previewAttending": "Attending",
+        "previewPending": "Pending",
+        "previewDeclined": "Declined"
+      },
+      "history": {
+        "title": "Live updates and history",
+        "body": "Changes appear for everyone within seconds, and the activity log shows who changed what, with undo for recent edits.",
+        "previewEntry": "Aman updated “Stage lighting” · 4 min ago"
+      }
+    },
+    "useCases": {
+      "eyebrow": "Tailored for every scale",
+      "title": "Made for your kind of event",
+      "tabsLabel": "Event types",
+      "weddings": {
+        "tab": "Weddings",
+        "title": "Multi-function weddings",
+        "subtitle": "Mehendi, sangeet, wedding, reception",
+        "body": "Plan every function with one family team. See who is invited to what, which advances are paid, and which cards are still waiting to be delivered.",
+        "point1": "Separate guest lists per function",
+        "point2": "Household invitations with expected counts",
+        "point3": "Track cards delivered in person, and by whom",
+        "metricLabel": "Sangeet headcount",
+        "metric": "286 / 340",
+        "status": "On track",
+        "card1Label": "Mehendi",
+        "card1Title": "120 guests",
+        "card1Detail": "Decor paid",
+        "card2Label": "Reception",
+        "card2Title": "412 guests",
+        "card2Detail": "Caterer advance due",
+        "activity": "Neha ticked “Mehendi artist booked”",
+        "activityTime": "6:40 PM"
+      },
+      "conferences": {
+        "tab": "Conferences",
+        "title": "Conferences and keynotes",
+        "subtitle": "Tracks, speakers, registrations",
+        "body": "Run 1,500 registrations across tracks and halls. Keep AV checks, speaker slots and volunteer duties in one place your whole crew can see.",
+        "point1": "Open registration with email confirmation",
+        "point2": "Tracks and halls as sub-events with their own capacity",
+        "point3": "Volunteers see only the tasks they own",
+        "metricLabel": "Registrations",
+        "metric": "1,180 / 1,500",
+        "status": "Open",
+        "card1Label": "Track 1",
+        "card1Title": "AI and Cloud · 9 talks",
+        "card1Detail": "AV checked",
+        "card2Label": "Track 2",
+        "card2Title": "DevOps · 7 talks",
+        "card2Detail": "24 seats left",
+        "activity": "Dr. Verma's session moved to Main auditorium",
+        "activityTime": "10:15 AM"
+      },
+      "collegeFests": {
+        "tab": "College fests",
+        "title": "College fests",
+        "subtitle": "Competitions, volunteers, sponsors' deadlines",
+        "body": "Eighteen competitions, sixty volunteers and one convenor. Give every coordinator their own corner of the plan without losing the big picture.",
+        "point1": "Each competition as its own sub-event",
+        "point2": "Coordinators limited to their competition",
+        "point3": "Public registration page for participants",
+        "metricLabel": "Participants registered",
+        "metric": "642 / 800",
+        "status": "Filling fast",
+        "card1Label": "Robo Race",
+        "card1Title": "32 teams",
+        "card1Detail": "Arena booked",
+        "card2Label": "Hackathon",
+        "card2Title": "58 teams",
+        "card2Detail": "12 seats left",
+        "activity": "Arjun added 12 volunteers to Robo Race",
+        "activityTime": "4:05 PM"
+      },
+      "fairs": {
+        "tab": "Fairs and expos",
+        "title": "Fairs and exhibitions",
+        "subtitle": "Days, halls, stalls",
+        "body": "Three days, two halls, sixty stalls. Track vendor payments against the budget and open visitor registration for each day.",
+        "point1": "Days and halls as sub-events",
+        "point2": "Vendor payments tracked against the budget",
+        "point3": "Visitor registration for each day",
+        "metricLabel": "Visitors registered",
+        "metric": "3,240 / 5,000",
+        "status": "Day 1 ready",
+        "card1Label": "Hall A",
+        "card1Title": "24 stalls",
+        "card1Detail": "Power checked",
+        "card2Label": "Hall B",
+        "card2Title": "36 stalls",
+        "card2Detail": "Tent hire pending",
+        "activity": "Priya logged ₹18,000 for tent hire",
+        "activityTime": "11:20 AM"
+      }
+    },
+    "guests": {
+      "eyebrow": "Easy RSVPs",
+      "title": "Guests don't need an app.",
+      "body": "Send each household its own link by WhatsApp, email or a printed card. Guests reply in one tap and see the time and venue. No account, no download.",
+      "point1": "A personal link for every household",
+      "point2": "One-tap RSVP with party size",
+      "point3": "Opens in any phone browser",
+      "cardLabel": "Digital invitation",
+      "cardEvent": "Ananya & Sid’s Sangeet",
+      "cardDetail": "Friday, 7:00 PM · Taj Lake Palace",
+      "cardQuestion": "Will you join us?",
+      "cardYes": "Yes",
+      "cardNo": "Can't make it",
+      "cardFooter": "Works in WhatsApp, Safari and Chrome"
+    },
+    "ai": {
+      "badge": "Coming soon: AI assistant",
+      "title": "“Just say what happened.”",
+      "body": "Type or speak a quick update in English, Hindi or Hinglish. The assistant turns it into task, expense and due-date changes, and nothing is saved until you confirm.",
+      "inputLabel": "Quick update",
+      "example": "“Finalised the caterer, paid 20k advance on UPI, balance due Friday”",
+      "resultTaskLabel": "Task",
+      "resultTask": "Catering: confirmed",
+      "resultExpenseLabel": "Expense",
+      "resultExpense": "₹20,000 advance",
+      "resultDueLabel": "Due date",
+      "resultDue": "Balance due Friday"
+    },
+    "pricing": {
+      "eyebrow": "Transparent and simple",
+      "title": "Start free, upgrade as you grow",
+      "body": "The planning core is free. Paid plans raise the limits and add features that cost us to run.",
+      "free": {
+        "name": "Free",
+        "audience": "For families, friends and small events",
+        "badge": "Always free",
+        "price": "₹0",
+        "period": "forever",
+        "cta": "Start planning, free",
+        "point1": "Events, sub-events, tasks and budget",
+        "point2": "Your team with role-based access",
+        "point3": "Guest lists, invitations and RSVPs",
+        "point4": "Live updates for everyone",
+        "point5": "Activity log with undo"
+      },
+      "pro": {
+        "name": "Pro",
+        "audience": "For agencies, colleges and frequent organisers",
+        "badge": "Coming soon",
+        "price": "₹1,499",
+        "period": "/ month",
+        "cta": "Start free, upgrade later",
+        "point1": "Everything in Free",
+        "point2": "Higher limits on events and members",
+        "point3": "More AI quick updates each month",
+        "point4": "WhatsApp assistant for your team",
+        "point5": "More photo storage"
+      },
+      "note": "Prices and limits are being finalised and may change before launch."
+    },
+    "faq": {
+      "eyebrow": "Got questions?",
+      "title": "Frequently asked questions",
+      "free": {
+        "q": "Is Plan My Event really free?",
+        "a": "Yes. The planning core (events, tasks, budget, guests and your team) is free, with limits on the number of events and members. Paid plans raise those limits and include features that cost us per use, like the AI assistant."
+      },
+      "guests": {
+        "q": "Do guests need to download an app or create an account?",
+        "a": "No. Every invitation has its own link that opens in any phone browser. Guests RSVP in one tap, without signing up."
+      },
+      "together": {
+        "q": "Can several organisers edit at the same time?",
+        "a": "Yes. Changes appear for everyone within a couple of seconds. If two people edit the same item at once, the second person is told, so nobody's work is silently overwritten."
+      },
+      "eventTypes": {
+        "q": "Does it suit Indian weddings as well as tech conferences?",
+        "a": "Yes. Templates for weddings, conferences, fairs, celebrations and custom events set up the right sub-events, starter tasks and budget categories, and everything can be adjusted."
+      },
+      "data": {
+        "q": "How safe is our budget and guest data?",
+        "a": "Only members of your event can see it, and each person sees only what their role allows. Connections are encrypted, and every change is recorded in the activity log."
+      },
+      "hindi": {
+        "q": "Is Hindi or regional language support planned?",
+        "a": "The app launches in English, with Hindi planned next. The AI assistant will understand English, Hindi and Hinglish when it arrives."
+      }
+    },
+    "cta": {
+      "title": "Your next event deserves one plan.",
+      "body": "Leave scattered messages and overlapping sheets behind. Set up your first event in a few minutes.",
+      "button": "Start planning, free",
+      "note": "Free to start · No credit card needed"
+    },
+    "footer": {
+      "brand": "Plan My Event",
+      "tagline": "One plan for everyone behind your event, from guest lists to run sheets and budgets.",
+      "product": {
+        "title": "Product",
+        "features": "Features",
+        "howItWorks": "How it works",
+        "pricing": "Pricing"
+      },
+      "useCases": {
+        "title": "Use cases",
+        "weddings": "Weddings",
+        "conferences": "Conferences",
+        "collegeFests": "College fests",
+        "fairs": "Fairs and expos"
+      },
+      "copyright": "© 2026 Plan My Event"
+    }
+  },
+  "devUi": {
+    "title": "UI foundation",
+    "intro": "Design tokens from docs/DESIGN.md, rendered in the current theme.",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "colors": "Colors",
+    "core": "Core",
+    "neutrals": "Neutrals",
+    "status": "Status",
+    "events": "Event accents",
+    "typography": "Typography",
+    "typeSample": "Sharma Wedding · ₹1,50,000 · Sat, 12 Dec",
+    "radius": "Radius",
+    "shadows": "Shadows",
+    "shadowCard": "Card",
+    "shadowRaised": "Raised",
+    "reducedMotion": "Reduced motion",
+    "motionUser": "Follow device",
+    "motionAlways": "Always reduce",
+    "motionNever": "Never reduce",
+    "motionStateReduced": "Motion is reduced",
+    "motionStateFull": "Full motion",
+    "motion": "Motion",
+    "motionIntro": "Tokens from docs/MOTION.md section 2. Components that use them appear below as they are built.",
+    "durations": "Durations",
+    "easings": "Easing",
+    "springs": "Springs",
+    "distances": "Distances and stagger",
+    "replay": "Replay",
+    "motionComponents": "Motion components",
+    "demos": {
+      "reveal": "Fades in and rises 12 px (24 px for headings) when 20% is visible, once.",
+      "revealGroup": "Staggers its children 80 ms apart (40 ms in lists, max 8 rows).",
+      "pressable": "Scales to 0.97 while pressed (CSS, 100 ms).",
+      "hoverLift": "Rises 4 px and gains the raised shadow on hover (CSS, 150 ms).",
+      "sampleHeading": "Your whole event team, on the same page.",
+      "sampleBody": "Tasks, budget, guests and schedule in one shared plan.",
+      "rowOne": "Book caterer",
+      "rowTwo": "Send invitations",
+      "rowThree": "Confirm venue",
+      "rowFour": "Print badges",
+      "pressMe": "Add task",
+      "sampleCardTitle": "DevFest Bhopal 2026",
+      "sampleCardBody": "1,200 registrations · 78% ready",
+      "countUp": "Counts to the value when in view (800 ms), then from the old value on updates (400 ms). en-IN format.",
+      "registrations": "Registrations",
+      "spent": "Spent so far",
+      "addRegistrations": "Add 24 registrations",
+      "progressFill": "Fills from 0 in 600 ms; turns green with a 150 ms fade when it reaches 100%.",
+      "milestone": "Milestone progress",
+      "setTo": "Set to {value}%",
+      "checkDraw": "Box fills, then the tick draws (250 ms). Reduced motion: the tick fades in.",
+      "taskTitle": "Finalize keynote stage",
+      "liveHighlight": "Indigo glow behind a changed row: 1.5 s for a teammate's change, 800 ms for your own.",
+      "expenseRow": "Catering advance ₹45,000",
+      "paid": "Paid",
+      "teammateLabel": "Rahul just updated this",
+      "simulateTeammate": "Simulate teammate change",
+      "simulateOwn": "Simulate own change",
+      "logoMark": "Tile pops, tick draws, sparkle pops (1.2 s). Plays once per session in the header; this demo replays it.",
+      "confetti": "40 marigold particles, about 1 s, plus the event accent. Nothing fires with reduced motion.",
+      "celebrate": "Celebrate",
+      "ambientFloat": "Drifts ±6 px over 6 s with a per-card offset. Pauses on hover or focus, stops off-screen.",
+      "floatOne": "Rahul marked completed",
+      "floatTwo": "Catering advance paid ₹45,000",
+      "floatThree": "+24 registrations today",
+      "typewriter": "Types 35 ms per character when half visible; the caret disappears 2 s after it finishes.",
+      "typewriterSample": "Finalized the caterer, paid 20k advance via UPI, need balance by Friday",
+      "logoSession": "Header mode: once per session"
+    },
+    "components": "Components",
+    "ui": {
+      "buttons": "Buttons",
+      "addTask": "Add task",
+      "cancel": "Cancel",
+      "viewAll": "View all",
+      "delete": "Delete",
+      "small": "Small",
+      "sendInvitations": "Send invitations",
+      "disabled": "Disabled",
+      "loadingHint": "\"Send invitations\" simulates a 1.5 s save: the spinner replaces the icon only after 300 ms.",
+      "badges": "Badges",
+      "tone": {
+        "success": "Paid",
+        "warning": "Pending",
+        "danger": "Overdue",
+        "info": "Synced",
+        "accent": "Next up",
+        "neutral": "Draft"
+      },
+      "event": {
+        "wedding": "Wedding",
+        "conference": "Conference",
+        "fair": "Fair",
+        "celebration": "Celebration",
+        "custom": "College fest"
+      },
+      "cards": "Cards",
+      "cardTitle": "Catering advance",
+      "cardDescription": "Sharma Wedding · Due Sat, 12 Dec",
+      "interactiveTitle": "DevFest Bhopal 2026",
+      "interactiveDescription": "Interactive card: lifts on hover",
+      "tabs": "Tabs",
+      "tabsLabel": "Event types",
+      "tab": {
+        "weddings": "Weddings",
+        "conferences": "Conferences",
+        "collegeFests": "College fests",
+        "fairs": "Fairs & Expos"
+      },
+      "tabBody": {
+        "weddings": "Five functions, 412 guests, one shared plan.",
+        "conferences": "1,200 registrations across three tracks.",
+        "collegeFests": "18 competitions run by student committees.",
+        "fairs": "Three days, 60 stalls, one floor plan."
+      },
+      "accordion": "Accordion",
+      "faqFree": {
+        "question": "Is Plan My Event free to use?",
+        "answer": "Yes. The free plan covers most family events; paid plans are planned for larger teams."
+      },
+      "faqGuests": {
+        "question": "Do guests need an app or an account?",
+        "answer": "No. Guests open a link, see their invitation and reply in one tap."
+      }
+    }
+  },
+  "app": {
+    "brand": "Plan My Event",
+    "skipToContent": "Skip to content",
+    "nav": {
+      "label": "Event",
+      "home": "Home",
+      "schedule": "Schedule",
+      "tasks": "Tasks",
+      "people": "People",
+      "budget": "Budget",
+      "team": "Team",
+      "gallery": "Gallery",
+      "activity": "Activity",
+      "settings": "Settings",
+      "more": "More"
+    },
+    "eventTypes": {
+      "wedding": "Wedding",
+      "conference": "Conference",
+      "collegeFest": "College fest",
+      "fair": "Fair",
+      "celebration": "Celebration"
+    },
+    "switcher": {
+      "title": "Switch event",
+      "change": "Change event",
+      "yourEvents": "Your events",
+      "create": "Create event",
+      "soon": "Soon"
+    },
+    "quickAdd": {
+      "title": "Quick add",
+      "add": "Add",
+      "task": "Task",
+      "expense": "Expense",
+      "guest": "Guest",
+      "session": "Session"
+    },
+    "status": {
+      "label": "Service status",
+      "checking": "Checking…",
+      "ok": "All systems normal",
+      "degraded": "Some services are slow",
+      "offline": "Can't reach the server"
+    },
+    "theme": {
+      "label": "Appearance",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "sections": {
+      "home": {
+        "headline": "Your event at a glance",
+        "body": "Countdown, task progress, budget and headcounts will show here once the event has some plans in it."
+      },
+      "schedule": {
+        "headline": "No sessions yet",
+        "body": "Sub-events with their times, venues and capacity will be listed here."
+      },
+      "tasks": {
+        "headline": "No tasks yet",
+        "body": "Tasks with owners, due dates and progress will live here, in a list or a board."
+      },
+      "people": {
+        "headline": "No guests yet",
+        "body": "Guests, households, invitations and responses will be managed here."
+      },
+      "budget": {
+        "headline": "No budget yet",
+        "body": "Planned and actual spending by category, with who paid and what's still pending."
+      },
+      "team": {
+        "headline": "Just you for now",
+        "body": "Invite your team and choose what each person can see and change."
+      },
+      "gallery": {
+        "headline": "No photos yet",
+        "body": "Photos from the event, shared with everyone who helped."
+      },
+      "activity": {
+        "headline": "Nothing has happened yet",
+        "body": "Every change your team makes will appear here, with undo for mistakes."
+      },
+      "settings": {
+        "headline": "Event settings",
+        "body": "Name, dates, time zone, modules and how guests respond."
+      }
+    }
+  }
+}

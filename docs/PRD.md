@@ -112,7 +112,7 @@ Access is permission-based: a role is a named bundle of permissions, a member ca
 | Members | members.view, members.manage |
 | Roles | roles.manage |
 | Sub-events | subevents.view, subevents.edit |
-| Tasks | tasks.view, tasks.edit, tasks.assign |
+| Tasks | tasks.view, tasks.edit, tasks.assign, tasks.update\_own |
 | Budget | budget.view, budget.edit |
 | Guests | guests.view, guests.edit, guests.invite |
 | Registration and check-in | registrations.view, registrations.manage, checkin.perform |
@@ -126,7 +126,7 @@ Access is permission-based: a role is a named bundle of permissions, a member ca
 | Owner | Everything, including deleting the event and transferring ownership |
 | Admin | Everything except deleting the event and transferring ownership |
 | Editor | Edit plan content: sub-events, tasks, budget, guests |
-| Helper | View the plan, update tasks assigned to them |
+| Helper | View the plan, update tasks assigned to them (tasks.update\_own) |
 | Viewer | Read only |
 
 **Rules**
@@ -349,7 +349,18 @@ Six flows define the MVP and V2; each must work comfortably on a phone.
 
 Every record hangs off an event, and every event off a workspace, so access checks and data isolation follow one path.
 
-&#91;embedded content: data model · workspace, event and six groups of entities\]
+```
+Workspace (owns events and billing)
+└── Event (type, dates, time zone, status, modules, guest scope)
+    ├── Team:       Member · Role · Role assignment (+ sub-event scopes)
+    ├── Program:    Sub-event · Venue · Module setting
+    ├── Planning:   Task · Budget category · Expense
+    ├── Guests:     Contact · Household · Invitation · Attendance
+    ├── Platform:   Activity log · Media · Usage record (per workspace)
+    └── V2 / Later: Vendor · Form answers (JSON) · Ticket
+```
+
+Full schema: docs/DatabaseDesign.md.
 
 Attendance is the hub for guests: it ties a contact or household to the whole event, or to one sub-event when guests are separate, whatever the response mode, and later to a ticket.
 
@@ -406,7 +417,7 @@ The central rule: every change, from any channel, goes through one shared action
 | Privacy | Guest phone numbers and payment screenshots visible only with the right permission; event data deletable by the owner; aligned with India's DPDP Act |
 | Reliability | Daily backups; activity log enables undo and audit |
 | Accessibility | Readable on small screens, large tap targets, simple language |
-| Tech stack | To be decided; requirements are stack-agnostic |
+| Tech stack | Decided: see docs/SystemDesign.md |
 
 ## Monetization and plan limits
 
@@ -427,16 +438,16 @@ Exact limits and prices are set before launch (see Open questions). The app trac
 
 ## Open questions and risks
 
-The feature set is locked; what remains open is the stack, pricing and a few V2 details, plus risks to watch.
+The feature set is locked; what remains open is pricing and a few V2 details, plus risks to watch.
 
 **Open questions**
 
-- [ ] Tech stack: frontend, backend, database, real-time layer, hosting.
+- [x] Tech stack: decided (see docs/SystemDesign.md).
 - [ ] Free plan limits: events, members, AI uses, storage.
 - [ ] Paid plan pricing and whether to charge per workspace, per event or both.
 - [ ] Which AI model provider to use, and cost per update.
 - [ ] WhatsApp Business Platform setup and business verification for the V2 bot.
-- [ ] Email provider for OTPs, invitations and confirmations.
+- [x] Email provider: Resend.
 - [ ] Ticketing fee model and payment gateway (Later).
 
 **Risks**

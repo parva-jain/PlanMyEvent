@@ -1,0 +1,16 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Exact versions in package.json; the lockfile pins the rest.
+savePrefix: ''
+
+# Packages allowed to run install scripts (pnpm blocks all others).
+allowBuilds:
+  '@scarf/scarf': false
+  '@swc/core': true
+  '@parcel/watcher': false # prebuilt binaries ship as optional deps; the script is a source-build fallback
+  esbuild: true
+  # Optional native msgpack accelerator for BullMQ; the pure-JS fallback is fine.
+  msgpackr-extract: false
+  unrs-resolver: false # same: prebuilt napi binaries, fallback build script
