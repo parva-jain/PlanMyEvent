@@ -184,3 +184,28 @@
     transform: scale(calc(1 - 0.02 * var(--motion)));
   }
 }
+
+/* Skeleton (MOTION.md section 4): soft opacity pulse 0.6 ↔ 1 over 1.2 s; static at 0.8 with
+   reduced motion. */
+.skeleton {
+  background: var(--surface-muted);
+  animation: skeleton-pulse 1.2s var(--ease-in-out) infinite;
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-reduced-motion='never']) .skeleton {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+:root[data-reduced-motion='always'] .skeleton {
+  animation: none;
+  opacity: 0.8;
+}
