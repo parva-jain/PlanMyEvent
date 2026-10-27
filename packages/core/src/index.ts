@@ -15,5 +15,28 @@ export {
   type OutboxMessage,
 } from './action.js';
 export type { ActionContext, Actor } from './context.js';
+export { createEvent, replaceModules, updateEvent } from './events/event-actions.js';
+export {
+  createSubEvent,
+  createVenue,
+  deleteSubEvent,
+  deleteVenue,
+  updateSubEvent,
+  updateVenue,
+} from './events/program-actions.js';
+export { eventSlug, SLUG_PATTERN } from './events/slug.js';
+export { EVENT_TEMPLATES, starterSubEvents } from './events/templates.js';
+export { zonedTimeToUtc } from './events/time.js';
 export { ActionError } from './errors.js';
-export type { CoreTx, PersonalWorkspace, UserStore, WorkspaceStore } from './ports.js';
+export type {
+  CoreTx,
+  EventStore,
+  NewEvent,
+  NewSubEvent,
+  NewVenue,
+  PersonalWorkspace,
+  SubEventStore,
+  UserStore,
+  VenueStore,
+  WorkspaceStore,
+} from './ports.js';
