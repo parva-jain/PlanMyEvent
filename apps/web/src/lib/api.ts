@@ -42,5 +42,6 @@ export async function apiFetch<T>(
     const problem = (await res.json().catch(() => null)) as ApiError['problem'];
     throw new ApiError(res.status, problem);
   }
-  return (await res.json()) as T;
+  // 204 No Content (deletes) has no body.
+  return (res.status === 204 ? null : await res.json()) as T;
 }
