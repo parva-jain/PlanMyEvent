@@ -31,6 +31,7 @@ The web app: foundation, motion, UI components and the home page.
 - [15 Smoke tests and Lighthouse](frontend/15-smoke-tests-and-lighthouse.md)
 - [21 App shell](frontend/21-app-shell.md)
 - [23 Sign-in screens](frontend/23-sign-in-screens.md)
+- [25 Events in the web app](frontend/25-events-web.md)
 
 ## Infra
 
