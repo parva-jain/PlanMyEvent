@@ -14,6 +14,7 @@ API, worker, database and the shared packages behind them.
 - [07 The worker app](backend/07-worker-app.md)
 - [19 Unit tests](backend/19-unit-tests.md)
 - [20 API tests](backend/20-api-tests.md)
+- [22 Sign-in and the outbox](backend/22-sign-in-and-outbox.md)
 
 ## Frontend
 
@@ -28,6 +29,7 @@ The web app: foundation, motion, UI components and the home page.
 - [14 Home page complete (and a palette change)](frontend/14-home-page-complete.md)
 - [15 Smoke tests and Lighthouse](frontend/15-smoke-tests-and-lighthouse.md)
 - [21 App shell](frontend/21-app-shell.md)
+- [23 Sign-in screens](frontend/23-sign-in-screens.md)
 
 ## Infra
 

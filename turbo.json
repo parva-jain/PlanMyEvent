@@ -27,6 +27,10 @@
     "test:e2e": {
       "dependsOn": ["^build"],
       "cache": false
+    },
+    "@pme/web#test:e2e": {
+      "dependsOn": ["^build", "@pme/api#build", "@pme/worker#build"],
+      "cache": false
     }
   }
 }

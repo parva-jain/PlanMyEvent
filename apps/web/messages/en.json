@@ -563,5 +563,57 @@
         "body": "Name, dates, time zone, modules and how guests respond."
       }
     }
+  },
+  "auth": {
+    "loading": "Loading your workspace",
+    "signOut": "Sign out",
+    "brand": {
+      "headline": "Your whole event team, on the same page.",
+      "body": "One plan for everyone behind your event."
+    },
+    "signIn": {
+      "metaTitle": "Sign in · Plan My Event",
+      "title": "Welcome back",
+      "subtitle": "Sign in to plan with your team.",
+      "google": "Continue with Google",
+      "or": "or",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "emailHint": "We'll email you a 6-digit code. No password needed.",
+      "continueWithEmail": "Continue with email",
+      "codeTitle": "Check your email",
+      "codeSentTo": "We sent a 6-digit code to",
+      "codeLabel": "6-digit code",
+      "changeEmail": "Change email",
+      "resend": "Resend code",
+      "resendIn": "Resend code in {seconds}s",
+      "spamHint": "Can't find it? Check your spam folder.",
+      "success": "Signed in"
+    },
+    "errors": {
+      "invalidCode": "That code isn't right. Check it and try again.",
+      "expiredCode": "That code has expired. Send a new one.",
+      "tooManyAttempts": "Too many wrong tries. Send a new code.",
+      "rateLimited": "Too many requests. Wait a few minutes and try again.",
+      "unreachable": "Can't reach Plan My Event. Check your connection and try again.",
+      "generic": "Something went wrong. Try again in a moment."
+    },
+    "welcome": {
+      "metaTitle": "Welcome · Plan My Event",
+      "title": "Welcome to Plan My Event",
+      "subtitle": "Let's get you set up. This takes 10 seconds.",
+      "nameLabel": "Your name",
+      "fromGoogle": "From Google",
+      "phoneLabel": "Phone number",
+      "optional": "Optional",
+      "phoneHint": "Used later for WhatsApp updates from your team.",
+      "continue": "Continue",
+      "failed": "Couldn't save. Try again in a moment."
+    },
+    "gate": {
+      "unreachable": "Can't reach Plan My Event",
+      "unreachableBody": "Check your connection. Your plans are safe; we'll load them once we're back.",
+      "retry": "Try again"
+    }
   }
 }

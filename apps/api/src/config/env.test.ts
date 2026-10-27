@@ -12,7 +12,7 @@ describe('loadApiEnv', () => {
     expect(env.SENTRY_DSN).toBeUndefined();
   });
 
-  it('requires database, Redis and web origin in production', () => {
+  it('requires database, Redis, URLs and the auth secret in production', () => {
     expect(() => loadApiEnv({ NODE_ENV: 'production' })).toThrow(EnvValidationError);
     expect(() =>
       loadApiEnv({
@@ -20,8 +20,14 @@ describe('loadApiEnv', () => {
         DATABASE_URL: 'postgres://u:p@db:5432/pme',
         REDIS_URL: 'rediss://cache:6380',
         WEB_ORIGIN: 'https://planmyevent.app',
+        API_URL: 'https://api.planmyevent.app',
+        BETTER_AUTH_SECRET: 'x'.repeat(32),
       }),
     ).not.toThrow();
+  });
+
+  it('rejects a short auth secret', () => {
+    expect(() => loadApiEnv({ BETTER_AUTH_SECRET: 'too-short' })).toThrow(EnvValidationError);
   });
 
   it('caps the shutdown grace period', () => {

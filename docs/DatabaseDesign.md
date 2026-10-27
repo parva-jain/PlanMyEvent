@@ -109,7 +109,7 @@ Adding a value is a one-line migration that replaces the check constraint. Remov
 
 ## Identity and tenancy
 
-Users are global; everything else hangs off a workspace, and every user gets a personal workspace in the same transaction as sign-up.
+Users are global; everything else hangs off a workspace, and every user gets a personal workspace right after sign-up, created idempotently (decision 010).
 
 ### users
 
@@ -520,7 +520,7 @@ These four tables carry no user-facing data; they exist so that writes, retries 
 | published\_at | timestamptz |  | Null until relayed |
 | created\_at | timestamptz | NN, default now() |  |
 
-Indexes: index(available\_at, id) where published\_at is null, the relay's only query. Published rows are deleted after 7 days.
+Indexes: index(available\_at, id) where published\_at is null, the relay's only query. Published rows are deleted after 7 days; rows on sensitive topics (sign-in codes) are deleted as soon as they are published (decision 009).
 
 ### idempotency\_keys
 

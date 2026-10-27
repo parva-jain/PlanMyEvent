@@ -52,7 +52,7 @@ export function Pricing() {
                   <span className="text-body text-fg-secondary">{t(`${key}.period`)}</span>
                 </p>
                 <Button asChild variant={primary ? 'primary' : 'secondary'} className="w-full">
-                  {/* /sign-in arrives in milestone 2; no prefetch until then. */}
+                  {/* No prefetch: the home page shouldn't spend bandwidth on /sign-in up front. */}
                   <Link href="/sign-in" prefetch={false}>
                     {t(`${key}.cta`)}
                   </Link>

@@ -30,7 +30,7 @@ describe('health, with Redis down', () => {
   let app: NestExpressApplication;
   beforeAll(async () => {
     // Nothing listens on port 1, so every connection is refused at once.
-    app = await createApp({ REDIS_URL: 'redis://127.0.0.1:1' });
+    app = await createApp({ env: { REDIS_URL: 'redis://127.0.0.1:1' } });
   });
   afterAll(() => app.close());
 
@@ -51,7 +51,7 @@ describe('health, with Redis down', () => {
 describe('health, with Postgres down', () => {
   let app: NestExpressApplication;
   beforeAll(async () => {
-    app = await createApp({ DATABASE_URL: 'postgres://pme:pme@127.0.0.1:1/pme' });
+    app = await createApp({ env: { DATABASE_URL: 'postgres://pme:pme@127.0.0.1:1/pme' } });
   });
   afterAll(() => app.close());
 

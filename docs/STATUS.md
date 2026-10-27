@@ -4,7 +4,16 @@ Last updated: Oct 26, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Milestone 1 — monorepo scaffold**, branch `chore/m1-scaffold` (pushed Oct 26 with CI, item 10).
+**Milestone 2 — sign-in**, branch `feat/m2-auth`. Milestone 1 is merged to `main` (PR #1, squash `76f8ffb`, Oct 26).
+
+| Step | What | Status |
+| --- | --- | --- |
+| 2a | Backend: identity, workspace and outbox tables; Better Auth (Google, email OTP) at `/v1/auth`; session guard and CSRF origin check; `GET /v1/me`; OTP rate limits in Redis; outbox relay and `email-critical` queue (SMTP/Resend) in the worker | Done (`6aeb58b`); decisions 009 and 010 accepted |
+| 2b | Web: sign-in and code screens, Welcome (name, optional +91 phone), `PATCH /v1/me`, shell behind sign-in, sign-out, Playwright for the email flow | Done; Google sign-in verified locally on Oct 27 (consent round trip, linked to the existing email account, no duplicate) |
+
+Verified end to end on Oct 26: a code requested through the API reached Mailpit through the outbox, relay and worker; signing in with it gave a session; `/v1/me` returned the user and personal workspace; without the cookie, 401 problem+json.
+
+### Milestone 1 (done)
 
 Working style: since Oct 26, larger steps (a feature or milestone slice each), short summaries, a pause between steps; one learning note per feature in [`docs/learning/`](learning/README.md), grouped by topic.
 
@@ -52,7 +61,7 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | Check | Result |
 | --- | --- |
 | `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test` | Pass |
-| `pnpm test:e2e` (Playwright, builds first) | 34 pass, 2 skipped (sheet tests on desktop) |
+| `pnpm test:e2e` (Playwright, builds web, API and worker first) | 40 pass, 2 skipped (sheet tests on desktop); sign-in tests run the real API and worker and read codes from Mailpit |
 | `docker compose -f infra/docker-compose.yml --profile app up -d --build --wait` | migrate exits 0 ("Migrations applied"); API ready with Postgres and Redis up, `/v1/docs` 404 in production; worker processes its sample job; web serves the home page and CSS, `/dev/ui` 404; containers run as `node` |
 | `docker compose -f infra/docker-compose.yml up -d --wait` | All four healthy in about 12 s; migrations apply; API ready reports Postgres and Redis up; worker processes its sample job; S3 auth and public/private access verified; Mailpit receives SMTP; data survives restart |
 | `pnpm db:migrate` against Postgres 17.11 | Applies `0000_extensions` (citext, pg_trgm); idempotent |
@@ -142,6 +151,12 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | TanStack Query 5.104.3 (11 days old; 5.104.4/5 too new); `QueryProvider` only in the `/app` layout | Marketing pages don't need it; release-age rule | `src/components/query-provider.tsx` |
 | Event dates always day-month ("Sat, 14 Nov 2026") via `formatEventDate` | DESIGN.md date style; the `en` locale would give US order | `src/lib/format.ts` |
 | Milestone 2 gets a minimal outbox relay (outbox table, relay into BullMQ, email queue) so sign-in OTP emails follow rule 2; milestone 5 adds activity log, undo and sockets on top. Configurable through env: relay on/off, poll interval, batch size, email transport (SMTP to Mailpit locally, Resend in production) | Approved Oct 26; avoids a temporary exception for auth emails. A decision record and the CLAUDE.md milestone list change come with the milestone 2 commit | This file |
+| Better Auth's origin and callback-URL checks are forced on (`disableOriginCheck: false`) | It skips them under `NODE_ENV=test`, so tests would pass for redirects production refuses | `apps/api/src/auth/auth.ts`, `apps/api/test/google.test.ts` |
+| Web session check runs in the browser (`SessionGate` on GET /v1/me), not in Next middleware | The session cookie belongs to the API host, which the web server never sees in production | `src/components/auth/session-gate.tsx` |
+| Sign-in uses Better Auth's client; everything else `apiFetch` with problem+json errors | Decision 010 | `src/lib/auth-client.ts`, `src/lib/api.ts` |
+| Google button shows only with `NEXT_PUBLIC_GOOGLE_SIGN_IN=true` | The API enables Google only when its credentials are set | `apps/web/.env.example` |
+| Code entry is one real input under six boxes (`autocomplete="one-time-code"`), no on-screen keypad; no "end-to-end encrypted" badges | Paste and SMS autofill work; the phone keyboard is better than a keypad; the badge claim isn't true | `src/components/auth/code-input.tsx` |
+| Playwright starts the API (port 4100) and worker from their builds; CI's e2e job gets Postgres, Redis and Mailpit services | Sign-in can only be tested end to end with the real stack | `apps/web/playwright.config.ts`, `.github/workflows/ci.yml` |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
 
 ## Open questions
@@ -150,6 +165,10 @@ None right now.
 
 ## Follow-ups
 
+- Rate limits trust the first `X-Forwarded-For` value. In production behind Cloudflare, read `CF-Connecting-IP` instead (make the header configurable), or clients can rotate the header to dodge per-IP limits; the per-email limit still holds.
+- Google sign-in before launch: publish the OAuth consent screen (Google verification; until then only test users can sign in) and add the production redirect URI `{API_URL}/v1/auth/callback/google`.
+- Google linked to an existing email account doesn't copy the profile photo (Better Auth leaves user info alone on linking). Fill `avatar_url` on link only when it's empty, without overwriting the name.
+- Outbox cleanup job for published rows older than 7 days (milestone 5 with the scheduled queue).
 - Only home-page messages need to reach the browser; today all namespaces (including `devUi`) are sent. Trim if step G needs the bytes.
 - Footer privacy and terms links once those pages exist.
 - `@sentry/nestjs` 11.8 pulls in `@sentry/bundler-plugins`, whose webpack peer brings webpack, SWC, esbuild and lightningcss (~60 MB) into the API image. Revisit with a Sentry update or a pnpm override.
@@ -164,4 +183,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [21 App shell](learning/frontend/21-app-shell.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [23 Sign-in screens](learning/frontend/23-sign-in-screens.md).

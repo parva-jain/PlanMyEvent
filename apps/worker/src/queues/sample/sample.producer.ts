@@ -6,7 +6,7 @@ import { SAMPLE_QUEUE, sampleJobId, type SampleJobData } from './sample.queue';
 
 /**
  * Enqueues one job at boot so a fresh `pnpm dev` proves the queue works end to end.
- * Real jobs will come from the outbox relay (milestone 5), not from the worker itself.
+ * Real jobs come from the outbox relay (src/outbox), not from the worker itself.
  */
 @Injectable()
 export class SampleProducer implements OnApplicationBootstrap {

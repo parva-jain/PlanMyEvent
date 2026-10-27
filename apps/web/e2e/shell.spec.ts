@@ -35,6 +35,30 @@ async function mockReadiness(page: Page, response: 'ok' | 'degraded' | 'offline'
   );
 }
 
+/**
+ * These tests cover the shell, not sign-in (auth.spec.ts does that): a fake signed-in user
+ * passes the session gate without a running API.
+ */
+const SIGNED_IN = {
+  user: {
+    id: '0192f7aa-0000-7000-8000-000000000001',
+    email: 'priya@example.com',
+    name: 'Priya Sharma',
+    phone: null,
+    avatarUrl: null,
+    locale: 'en',
+  },
+  workspace: {
+    id: '0192f7aa-0000-7000-8000-000000000002',
+    name: "Priya's workspace",
+    plan: 'free',
+  },
+};
+
+test.beforeEach(async ({ page }) => {
+  await page.route('**/v1/me', (route) => route.fulfill({ json: SIGNED_IN }));
+});
+
 function collectErrors(page: Page) {
   const errors: string[] = [];
   page.on('console', (message) => {
@@ -136,6 +160,8 @@ test.describe('API status widget', () => {
 
 /** Opens quick add and reads the sheet's transform two frames in, mid-animation. */
 async function sheetTransformAtStart(page: Page) {
+  // The session gate renders the shell once /v1/me answers.
+  await expect(page.getByRole('button', { name: app.quickAdd.title! })).toBeVisible();
   return page.evaluate(async (label) => {
     document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!.click();
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
