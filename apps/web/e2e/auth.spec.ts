@@ -52,6 +52,18 @@ async function requestCode(page: Page, email: string) {
 }
 
 test.describe('sign-in', () => {
+  test('says so when the API cannot be reached, instead of spinning forever', async ({ page }) => {
+    await page.route('**/v1/auth/**', (route) => route.abort('connectionrefused'));
+    await page.goto('/sign-in');
+    await page.getByLabel(auth.signIn.emailLabel!).fill(newEmail());
+    const button = page.getByRole('button', { name: auth.signIn.continueWithEmail });
+    await button.click();
+
+    await expect(page.locator('#email-error')).toHaveText(auth.errors.unreachable!);
+    await expect(button).toBeEnabled();
+    await expect(button).not.toHaveAttribute('aria-busy');
+  });
+
   test('a new account signs in with an emailed code, sets a name and reaches the app', async ({
     page,
   }) => {

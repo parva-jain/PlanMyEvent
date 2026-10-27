@@ -595,6 +595,7 @@
       "expiredCode": "That code has expired. Send a new one.",
       "tooManyAttempts": "Too many wrong tries. Send a new code.",
       "rateLimited": "Too many requests. Wait a few minutes and try again.",
+      "unreachable": "Can't reach Plan My Event. Check your connection and try again.",
       "generic": "Something went wrong. Try again in a moment."
     },
     "welcome": {

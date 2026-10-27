@@ -13,7 +13,13 @@ import { useShouldReduceMotion } from '@/components/motion/motion-provider';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/input';
 import { apiFetch } from '@/lib/api';
-import { authClient, authErrorKey, GOOGLE_SIGN_IN, type AuthErrorKey } from '@/lib/auth-client';
+import {
+  authClient,
+  authErrorKey,
+  callAuth,
+  GOOGLE_SIGN_IN,
+  type AuthErrorKey,
+} from '@/lib/auth-client';
 import { ME_KEY } from '@/lib/me';
 import { distance, duration, ease } from '@/lib/motion';
 
@@ -60,10 +66,9 @@ export function SignInFlow() {
   async function sendCode() {
     setBusy(true);
     setError(null);
-    const { error: sendError } = await authClient.emailOtp.sendVerificationOtp({
-      email,
-      type: 'sign-in',
-    });
+    const { error: sendError } = await callAuth(() =>
+      authClient.emailOtp.sendVerificationOtp({ email, type: 'sign-in' }),
+    );
     setBusy(false);
     if (sendError) {
       setError(authErrorKey(sendError));
@@ -82,7 +87,7 @@ export function SignInFlow() {
   async function verify(otp: string) {
     setBusy(true);
     setError(null);
-    const { error: signInError } = await authClient.signIn.emailOtp({ email, otp });
+    const { error: signInError } = await callAuth(() => authClient.signIn.emailOtp({ email, otp }));
     if (signInError) {
       setBusy(false);
       setError(authErrorKey(signInError));
@@ -90,13 +95,12 @@ export function SignInFlow() {
       return;
     }
     setSucceeded(true);
-    // staleTime 0: the page cached "signed out" a moment ago, so ask again.
-    const me = await queryClient.fetchQuery({
-      queryKey: ME_KEY,
-      queryFn: () => apiFetch<Me>('/v1/me'),
-      staleTime: 0,
-    });
-    setTimeout(() => router.replace(destinationFor(me)), SUCCESS_PAUSE_MS);
+    // staleTime 0: the page cached "signed out" a moment ago, so ask again. If that fails,
+    // go to the app anyway: its session gate shows a retry instead of a stuck page.
+    const destination = await queryClient
+      .fetchQuery({ queryKey: ME_KEY, queryFn: () => apiFetch<Me>('/v1/me'), staleTime: 0 })
+      .then(destinationFor, () => '/app');
+    setTimeout(() => router.replace(destination), SUCCESS_PAUSE_MS);
   }
 
   function signInWithGoogle() {

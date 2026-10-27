@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-import { authClient } from '@/lib/auth-client';
+import { authClient, callAuth } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
 
 /** Ends the session (POST /v1/auth/sign-out), forgets cached data, back to /sign-in. */
@@ -24,7 +24,8 @@ export function SignOutButton({
 
   async function signOut() {
     setBusy(true);
-    await authClient.signOut();
+    // Settles even if the API is unreachable; the cookie expires on its own then.
+    await callAuth(() => authClient.signOut());
     queryClient.clear();
     router.replace('/sign-in');
   }
