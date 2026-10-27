@@ -1,3 +1,4 @@
+import { zonedTimeToUtc } from '@pme/contracts';
 import { describe, expect, it } from 'vitest';
 
 import { runAction } from '../action.js';
@@ -13,7 +14,6 @@ import {
 } from './program-actions.js';
 import { eventSlug, SLUG_PATTERN } from './slug.js';
 import { EVENT_TEMPLATES, starterSubEvents } from './templates.js';
-import { zonedTimeToUtc } from './time.js';
 
 const userCtx: ActionContext = {
   requestId: 'req_test',
