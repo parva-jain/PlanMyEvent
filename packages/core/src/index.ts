@@ -26,7 +26,6 @@ export {
 } from './events/program-actions.js';
 export { eventSlug, SLUG_PATTERN } from './events/slug.js';
 export { EVENT_TEMPLATES, starterSubEvents } from './events/templates.js';
-export { zonedTimeToUtc } from './events/time.js';
 export { ActionError } from './errors.js';
 export type {
   CoreTx,

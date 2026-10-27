@@ -1,10 +1,11 @@
-import type {
-  CreatedEvent,
-  CreateEvent,
-  Event,
-  EventModule,
-  ReplaceModules,
-  UpdateEvent,
+import {
+  zonedTimeToUtc,
+  type CreatedEvent,
+  type CreateEvent,
+  type Event,
+  type EventModule,
+  type ReplaceModules,
+  type UpdateEvent,
 } from '@pme/contracts';
 
 import type { ActionDefinition } from '../action.js';
@@ -12,7 +13,6 @@ import { ActionError } from '../errors.js';
 import type { CoreTx } from '../ports.js';
 import { eventSlug } from './slug.js';
 import { EVENT_TEMPLATES, starterSubEvents } from './templates.js';
-import { zonedTimeToUtc } from './time.js';
 import { versionMismatch } from './versioned.js';
 
 /** Slug collisions are rare (4 random characters per name); retry a few times. */
