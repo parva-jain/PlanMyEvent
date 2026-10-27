@@ -7,7 +7,10 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
 import { ProblemFilter } from './errors/problem.filter';
+import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
+import { ETagInterceptor } from './http/etag.interceptor';
+import { IdempotencyInterceptor } from './http/idempotency.interceptor';
 import { LifecycleModule } from './lifecycle/lifecycle.module';
 import { LiveModule } from './live/live.module';
 import { LoggingModule } from './logging/logging.module';
@@ -25,10 +28,15 @@ import { RedisModule } from './redis/redis.module';
     AuthModule,
     HealthModule,
     MeModule,
+    EventsModule,
     LiveModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
+    // Outermost first: ETag sees the final body (fresh or replayed); idempotency stores the
+    // serialized body.
+    { provide: APP_INTERCEPTOR, useClass: ETagInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptor },
     { provide: APP_FILTER, useClass: ProblemFilter },
   ],

@@ -4,14 +4,18 @@ Last updated: Oct 26, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Milestone 2 — sign-in**, branch `feat/m2-auth`. Milestone 1 is merged to `main` (PR #1, squash `76f8ffb`, Oct 26).
+**Milestone 3 — events**, branch `feat/m3-events`. Milestones 1 and 2 are merged to `main` (PRs #1 and #2, squashed). From milestone 3, PRs are rebase-merged so every commit lands on `main`.
 
 | Step | What | Status |
 | --- | --- | --- |
-| 2a | Backend: identity, workspace and outbox tables; Better Auth (Google, email OTP) at `/v1/auth`; session guard and CSRF origin check; `GET /v1/me`; OTP rate limits in Redis; outbox relay and `email-critical` queue (SMTP/Resend) in the worker | Done (`6aeb58b`); decisions 009 and 010 accepted |
-| 2b | Web: sign-in and code screens, Welcome (name, optional +91 phone), `PATCH /v1/me`, shell behind sign-in, sign-out, Playwright for the email flow | Done; Google sign-in verified locally on Oct 27 (consent round trip, linked to the existing email account, no duplicate) |
+| 3a | Backend: events, modules, venues, sub-events and idempotency-key tables; templates; core actions; endpoints with ETag, If-Match and Idempotency-Key | Done |
+| 3b | Web: create-event wizard, My events, the shell on real events under `/events/[eventId]`, sub-events and venues screens | Next |
 
-Verified end to end on Oct 26: a code requested through the API reached Mailpit through the outbox, relay and worker; signing in with it gave a session; `/v1/me` returned the user and personal workspace; without the cookie, 401 problem+json.
+**Interim access rule (until milestone 4):** an event's owner holds every permission and anyone else gets 404, through one function (`canAccessEvent` in `packages/db`) used by the API guard and by core's permission check. Milestone 4 replaces its body with members, roles and sub-event scope; callers don't change.
+
+### Milestone 2 (done)
+
+Sign-in with Google and email codes, personal workspaces, the outbox relay with email delivery (decisions 009, 010). Merged as `c70f574`.
 
 ### Milestone 1 (done)
 
@@ -151,6 +155,12 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | TanStack Query 5.104.3 (11 days old; 5.104.4/5 too new); `QueryProvider` only in the `/app` layout | Marketing pages don't need it; release-age rule | `src/components/query-provider.tsx` |
 | Event dates always day-month ("Sat, 14 Nov 2026") via `formatEventDate` | DESIGN.md date style; the `en` locale would give US order | `src/lib/format.ts` |
 | Milestone 2 gets a minimal outbox relay (outbox table, relay into BullMQ, email queue) so sign-in OTP emails follow rule 2; milestone 5 adds activity log, undo and sockets on top. Configurable through env: relay on/off, poll interval, batch size, email transport (SMTP to Mailpit locally, Resend in production) | Approved Oct 26; avoids a temporary exception for auth emails. A decision record and the CLAUDE.md milestone list change come with the milestone 2 commit | This file |
+| Event templates are code in `packages/core` (modules, response mode, starter sub-events in the event's time zone); starter tasks and budget categories wait for their tables (milestone 6) | Templates are data that core uses inside the create transaction | `packages/core/src/events/templates.ts` |
+| Core actions reach the database through ports core defines (`CoreTx`: users, workspaces, events, venues, sub-events); `packages/db` implements them, tests use an in-memory fake | Keeps core free of Drizzle and lets action tests run without Postgres | `packages/core/src/ports.ts`, `packages/core/src/testing/memory-tx.ts` |
+| API reads go through `eventQueries` in `packages/db` | Every query keeps its `event_id` filter in one place; avoids Drizzle's CJS/ESM type split in the API | `packages/db/src/queries/events.ts` |
+| Deleting a venue clears it from its sub-events (bumping their versions) instead of refusing | Matches what people expect; sub-events keep their times | `packages/db/src/stores/events.ts` |
+| Idempotency keys: stored per user for 24 h; the route's status is stored (Nest sets it after interceptors); failures release the key | APIDesign "Idempotency-Key" | `apps/api/src/http/idempotency.interceptor.ts` |
+| Worker Vitest runs on `src/` only | `nest start --watch` compiles test files into `dist/` | `apps/worker/vitest.config.mts` |
 | Better Auth's origin and callback-URL checks are forced on (`disableOriginCheck: false`) | It skips them under `NODE_ENV=test`, so tests would pass for redirects production refuses | `apps/api/src/auth/auth.ts`, `apps/api/test/google.test.ts` |
 | Web session check runs in the browser (`SessionGate` on GET /v1/me), not in Next middleware | The session cookie belongs to the API host, which the web server never sees in production | `src/components/auth/session-gate.tsx` |
 | Sign-in uses Better Auth's client; everything else `apiFetch` with problem+json errors | Decision 010 | `src/lib/auth-client.ts`, `src/lib/api.ts` |
@@ -165,6 +175,9 @@ None right now.
 
 ## Follow-ups
 
+- Deleting an event (202 job) and switching guest scope (job) are designed but not built; both arrive with the jobs they need (guest scope with guests in milestone 7).
+- Free-plan event limits (402 plan_limit_reached) once limits are set before launch.
+- Idempotency-key cleanup job for expired rows (scheduled queue, milestone 5).
 - Rate limits trust the first `X-Forwarded-For` value. In production behind Cloudflare, read `CF-Connecting-IP` instead (make the header configurable), or clients can rotate the header to dodge per-IP limits; the per-email limit still holds.
 - Google sign-in before launch: publish the OAuth consent screen (Google verification; until then only test users can sign in) and add the production redirect URI `{API_URL}/v1/auth/callback/google`.
 - Google linked to an existing email account doesn't copy the profile photo (Better Auth leaves user info alone on linking). Fill `avatar_url` on link only when it's empty, without overwriting the name.
@@ -183,4 +196,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [23 Sign-in screens](learning/frontend/23-sign-in-screens.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [24 Events, versions and retries](learning/backend/24-events-versions-retries.md).
