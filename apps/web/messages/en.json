@@ -493,16 +493,15 @@
     "eventTypes": {
       "wedding": "Wedding",
       "conference": "Conference",
-      "collegeFest": "College fest",
-      "fair": "Fair",
-      "celebration": "Celebration"
+      "fair": "Fair or exhibition",
+      "celebration": "Celebration",
+      "custom": "Custom"
     },
     "switcher": {
       "title": "Switch event",
       "change": "Change event",
       "yourEvents": "Your events",
-      "create": "Create event",
-      "soon": "Soon"
+      "create": "Create event"
     },
     "quickAdd": {
       "title": "Quick add",
@@ -562,6 +561,32 @@
         "headline": "Event settings",
         "body": "Name, dates, time zone, modules and how guests respond."
       }
+    },
+    "close": "Close",
+    "eventStatus": {
+      "draft": "Draft",
+      "planning": "Planning",
+      "live": "Live",
+      "completed": "Completed",
+      "archived": "Archived"
+    },
+    "event": {
+      "notFound": "We couldn't find that event",
+      "loadFailed": "Couldn't load this event",
+      "backToEvents": "Back to my events",
+      "retry": "Try again"
+    },
+    "myEvents": {
+      "title": "Your events",
+      "subtitle": "Every event you're planning, in one place.",
+      "newEvent": "New event",
+      "open": "Open",
+      "today": "Today",
+      "daysToGo": "{days, plural, one {# day to go} other {# days to go}}",
+      "emptyTitle": "Plan your first event",
+      "emptyBody": "Pick a template and we'll set up the sub-events and modules. You can change everything later.",
+      "createFirst": "Create an event",
+      "loadFailed": "Couldn't load your events."
     }
   },
   "auth": {
@@ -614,6 +639,160 @@
       "unreachable": "Can't reach Plan My Event",
       "unreachableBody": "Check your connection. Your plans are safe; we'll load them once we're back.",
       "retry": "Try again"
+    }
+  },
+  "wizard": {
+    "title": "New event",
+    "brand": "Plan My Event",
+    "cancel": "Cancel",
+    "back": "Back",
+    "continue": "Continue",
+    "create": "Create event",
+    "stepOf": "Step {step} of {total}",
+    "steps": {
+      "template": "Template",
+      "details": "Details",
+      "review": "Review"
+    },
+    "template": {
+      "title": "What are you planning?",
+      "subtitle": "Pick the closest match. You can change anything later."
+    },
+    "templates": {
+      "wedding": {
+        "name": "Wedding",
+        "description": "Several functions, families and card distribution"
+      },
+      "conference": {
+        "name": "Conference",
+        "description": "Sessions, speakers and registrations"
+      },
+      "fair": {
+        "name": "Fair or exhibition",
+        "description": "Days, zones, stalls and visitors"
+      },
+      "celebration": {
+        "name": "Celebration",
+        "description": "Birthdays, anniversaries and parties"
+      },
+      "custom": {
+        "name": "Start from scratch",
+        "description": "A blank event; add what you need"
+      }
+    },
+    "details": {
+      "title": "Event details",
+      "name": "Event name",
+      "namePlaceholder": "e.g. Sharma Wedding",
+      "startsOn": "Start date",
+      "endsOn": "End date",
+      "optional": "Optional",
+      "venue": "Main venue",
+      "venuePlaceholder": "e.g. Radisson Lawn, Indore",
+      "venueHint": "You can add more venues later.",
+      "timeZone": "Time zone",
+      "timeZoneHint": "Every time in this event is shown in this zone.",
+      "preview": "Live preview",
+      "daysToGo": "days to go",
+      "youGet": "You'll get",
+      "subEvents": "starter sub-events",
+      "modules": "{count, plural, one {# module switched on} other {# modules switched on}}"
+    },
+    "review": {
+      "title": "Here's your starting plan",
+      "subtitle": "Nothing is final; edit or remove anything after.",
+      "schedule": "{count, plural, =0 {Schedule} one {Schedule · # sub-event} other {Schedule · # sub-events}}",
+      "noSubEvents": "No sub-events yet. Add your own after creating the event.",
+      "modulesTitle": "Modules",
+      "responseMode": "How people join:",
+      "changeLater": "You can change all of this in the event's settings."
+    },
+    "modules": {
+      "guests": "Guests and invitations",
+      "registration": "Open registration",
+      "gallery": "Photo gallery"
+    },
+    "responseModes": {
+      "invite_only": "Invite only",
+      "invite_rsvp": "Invite and RSVP",
+      "open_registration": "Open registration"
+    },
+    "done": {
+      "title": "Your plan is ready",
+      "body": "{name} is set up with {subEvents, plural, =0 {no sub-events yet} one {# sub-event} other {# sub-events}}.",
+      "open": "Open event",
+      "myEvents": "My events"
+    },
+    "errors": {
+      "name": "Enter a name",
+      "startsOn": "Pick a start date",
+      "endsOn": "Must be on or after the start date",
+      "failed": "Couldn't create the event. Try again in a moment."
+    }
+  },
+  "schedule": {
+    "title": "Schedule",
+    "summary": "{count, plural, =0 {No sub-events} one {# sub-event} other {# sub-events}} · times in {timeZone}",
+    "add": "Add sub-event",
+    "emptyTitle": "No sub-events yet",
+    "emptyBody": "Add the functions, sessions or days that make up your event.",
+    "capacity": "{count} seats",
+    "newTitle": "New sub-event",
+    "editTitle": "Edit sub-event",
+    "form": {
+      "name": "Name",
+      "date": "Date",
+      "start": "Starts",
+      "end": "Ends",
+      "timeZoneNote": "Times are in {timeZone}.",
+      "venue": "Venue",
+      "noVenue": "No venue",
+      "capacity": "Capacity",
+      "notes": "Notes",
+      "optional": "Optional",
+      "save": "Save changes",
+      "create": "Add sub-event",
+      "delete": "Delete",
+      "confirmDelete": "Tap again to delete",
+      "nameRequired": "Enter a name",
+      "saveFailed": "Couldn't save. Try again in a moment.",
+      "deleteFailed": "Couldn't delete. Try again in a moment.",
+      "conflict": "Someone changed this a moment ago. Here's the latest version; make your change again."
+    },
+    "venues": {
+      "title": "Venues",
+      "subtitle": "Places your sub-events happen. Removing one keeps its sub-events.",
+      "newVenue": "New venue name",
+      "add": "Add",
+      "remove": "Remove {name}"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "details": {
+      "title": "Event details",
+      "name": "Name",
+      "description": "Description",
+      "optional": "Optional",
+      "startsOn": "Start date",
+      "endsOn": "End date",
+      "status": "Status",
+      "timeZone": "Time zone",
+      "save": "Save",
+      "saved": "Saved",
+      "failed": "Couldn't save. Try again in a moment.",
+      "conflict": "Someone changed these details a moment ago. Here's the latest version; make your change again."
+    },
+    "modules": {
+      "title": "Modules",
+      "subtitle": "Switch on only what this event needs.",
+      "conflict": "The event changed a moment ago. Try again.",
+      "failed": "Couldn't save. Try again in a moment.",
+      "help": {
+        "guests": "Guest lists, households and invitations",
+        "registration": "A public page where people sign up",
+        "gallery": "Photos shared with the team"
+      }
     }
   }
 }

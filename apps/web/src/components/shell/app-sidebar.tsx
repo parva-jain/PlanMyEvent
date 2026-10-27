@@ -9,8 +9,9 @@ import { LogoMark } from '@/components/motion/logo-mark';
 import { useMe } from '@/lib/me';
 import { cn } from '@/lib/utils';
 
+import { useCurrentEvent } from './current-event';
 import { EventSwitcherPopover } from './event-switcher';
-import { isActive, SIDEBAR_ITEMS } from './nav';
+import { isActive, MY_EVENTS_HREF, sidebarItems } from './nav';
 import { StatusWidget } from './status-widget';
 import { ThemeToggle } from './theme-toggle';
 
@@ -22,11 +23,13 @@ export function AppSidebar() {
   const t = useTranslations('app');
   const pathname = usePathname();
   const { data: me } = useMe();
+  const { eventId } = useCurrentEvent();
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-18 flex-col border-r border-border bg-surface sm:flex lg:w-62">
       <Link
-        href="/"
+        href={MY_EVENTS_HREF}
+        title={t('myEvents.title')}
         className="flex h-16 shrink-0 items-center justify-center gap-2 border-b border-border lg:justify-start lg:px-4"
       >
         <LogoMark size={32} />
@@ -40,8 +43,8 @@ export function AppSidebar() {
 
       <nav aria-label={t('nav.label')} className="flex-1 overflow-y-auto px-3 py-3">
         <ul className="flex flex-col gap-1">
-          {SIDEBAR_ITEMS.map(({ key, href, icon: Icon }) => {
-            const active = isActive(href, pathname);
+          {sidebarItems(eventId).map(({ key, href, icon: Icon }) => {
+            const active = isActive(href, pathname, eventId);
             return (
               <li key={key}>
                 <Link

@@ -15,10 +15,10 @@ import { useCurrentEvent } from './current-event';
  */
 export function ContentFade({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { event } = useCurrentEvent();
+  const { eventId } = useCurrentEvent();
   return (
     <m.div
-      key={`${event.id}:${pathname}`}
+      key={`${eventId}:${pathname}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: duration.base, ease: ease.out }}

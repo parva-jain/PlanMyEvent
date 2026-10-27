@@ -12,24 +12,29 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { spring } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
-import { APP_ROOT } from './nav';
+import { useCurrentEvent } from './current-event';
+import { eventHref } from './nav';
 
-/** Until the create forms exist (milestones 3–7), each entry opens its section. */
+/**
+ * A new sub-event opens its form straight away; the others open their section until their
+ * create forms exist (milestones 6–7).
+ */
 const ACTIONS = [
-  { key: 'task', href: `${APP_ROOT}/tasks`, icon: ListPlus },
-  { key: 'expense', href: `${APP_ROOT}/budget`, icon: ReceiptIndianRupee },
-  { key: 'guest', href: `${APP_ROOT}/people`, icon: UserPlus },
-  { key: 'session', href: `${APP_ROOT}/schedule`, icon: CalendarPlus },
+  { key: 'session', section: 'schedule', query: '?add=1', icon: CalendarPlus },
+  { key: 'task', section: 'tasks', query: '', icon: ListPlus },
+  { key: 'expense', section: 'budget', query: '', icon: ReceiptIndianRupee },
+  { key: 'guest', section: 'people', query: '', icon: UserPlus },
 ] as const;
 
 function ActionList({ onChosen }: { onChosen: () => void }) {
   const t = useTranslations('app.quickAdd');
+  const { eventId } = useCurrentEvent();
   return (
     <ul className="flex flex-col gap-1">
-      {ACTIONS.map(({ key, href, icon: Icon }) => (
+      {ACTIONS.map(({ key, section, query, icon: Icon }) => (
         <li key={key}>
           <Link
-            href={href}
+            href={`${eventHref(eventId, section)}${query}`}
             onClick={onChosen}
             className="flex min-h-12 items-center gap-3 rounded-control px-3 text-label transition-colors duration-(--dur-fast) hover:bg-surface-muted"
           >

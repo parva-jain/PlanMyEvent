@@ -1,28 +1,37 @@
 'use client';
 
+import type { Event } from '@pme/contracts';
 import { Check, ChevronsUpDown, Plus } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { Sheet } from '@/components/motion/sheet';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useMyEvents } from '@/lib/events';
 import { formatEventDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 import { useCurrentEvent } from './current-event';
-import { ACCENT, type PreviewEvent } from './preview-events';
+import { ACCENT } from './accents';
+import { eventHref, NEW_EVENT_HREF, sectionOf } from './nav';
 
-function EventDot({ event }: { event: PreviewEvent }) {
-  return (
-    <span aria-hidden className={cn('size-2.5 shrink-0 rounded-full', ACCENT[event.type].bg)} />
-  );
+function EventDot({ type }: { type: Event['type'] }) {
+  return <span aria-hidden className={cn('size-2.5 shrink-0 rounded-full', ACCENT[type].bg)} />;
 }
 
-/** The list inside both the popover and the sheet. */
+/**
+ * The list inside both the popover and the sheet. Choosing an event keeps the current
+ * section (Schedule stays Schedule), and the content crossfades (MOTION.md 6.9).
+ */
 function EventList({ onChosen }: { onChosen: () => void }) {
   const t = useTranslations('app.switcher');
   const tTypes = useTranslations('app.eventTypes');
-  const { event: current, events, setEventId } = useCurrentEvent();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { event: current } = useCurrentEvent();
+  const { data: events = [current] } = useMyEvents();
 
   return (
     <div className="flex flex-col gap-1">
@@ -36,8 +45,8 @@ function EventList({ onChosen }: { onChosen: () => void }) {
                 type="button"
                 aria-current={selected || undefined}
                 onClick={() => {
-                  setEventId(event.id);
                   onChosen();
+                  if (!selected) router.push(eventHref(event.id, sectionOf(pathname)));
                 }}
                 className={cn(
                   'flex min-h-12 w-full items-center gap-3 rounded-control px-3 py-2 text-left',
@@ -45,7 +54,7 @@ function EventList({ onChosen }: { onChosen: () => void }) {
                   selected && 'bg-primary-tint',
                 )}
               >
-                <EventDot event={event} />
+                <EventDot type={event.type} />
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-label">{event.name}</span>
                   <span className="truncate text-caption text-fg-muted">
@@ -59,16 +68,14 @@ function EventList({ onChosen }: { onChosen: () => void }) {
         })}
       </ul>
       <div className="mt-1 border-t border-border pt-1">
-        {/* Event creation arrives in milestone 3. */}
-        <button
-          type="button"
-          disabled
-          className="flex min-h-12 w-full items-center gap-3 rounded-control px-3 text-label text-fg-muted"
+        <Link
+          href={NEW_EVENT_HREF}
+          onClick={onChosen}
+          className="flex min-h-12 w-full items-center gap-3 rounded-control px-3 text-label text-primary-text transition-colors duration-(--dur-fast) hover:bg-surface-muted"
         >
           <Plus aria-hidden className="size-5" />
           {t('create')}
-          <span className="ml-auto text-caption">{t('soon')}</span>
-        </button>
+        </Link>
       </div>
     </div>
   );
@@ -79,7 +86,7 @@ function TriggerLabel({ compact }: { compact: boolean }) {
   const { event } = useCurrentEvent();
   return (
     <>
-      <EventDot event={event} />
+      <EventDot type={event.type} />
       <span className={cn('truncate text-label', compact ? 'max-w-48' : 'flex-1 text-left')}>
         {event.name}
       </span>

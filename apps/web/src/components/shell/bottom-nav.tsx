@@ -9,12 +9,8 @@ import { useTranslations } from 'next-intl';
 import { spring } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
-import { BOTTOM_ITEMS, isActive, MORE_HREF, MORE_ITEMS, type NavKey } from './nav';
-
-const TABS: { key: NavKey | 'more'; href: string; icon: LucideIcon }[] = [
-  ...BOTTOM_ITEMS,
-  { key: 'more', href: MORE_HREF, icon: Ellipsis },
-];
+import { useCurrentEvent } from './current-event';
+import { bottomItems, eventHref, isActive, moreItems, type NavKey } from './nav';
 
 /**
  * Phone bottom bar (DESIGN.md "Layout"): Home, Tasks, People, Budget, More. The active
@@ -24,7 +20,12 @@ const TABS: { key: NavKey | 'more'; href: string; icon: LucideIcon }[] = [
 export function BottomNav() {
   const t = useTranslations('app.nav');
   const pathname = usePathname();
-  const onMoreSection = MORE_ITEMS.some((item) => isActive(item.href, pathname));
+  const { eventId } = useCurrentEvent();
+  const tabs: { key: NavKey | 'more'; href: string; icon: LucideIcon }[] = [
+    ...bottomItems(eventId),
+    { key: 'more', href: eventHref(eventId, 'more'), icon: Ellipsis },
+  ];
+  const onMoreSection = moreItems(eventId).some((item) => isActive(item.href, pathname, eventId));
 
   return (
     <nav
@@ -32,9 +33,11 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden"
     >
       <ul className="grid grid-cols-5">
-        {TABS.map(({ key, href, icon: Icon }) => {
+        {tabs.map(({ key, href, icon: Icon }) => {
           const active =
-            key === 'more' ? isActive(href, pathname) || onMoreSection : isActive(href, pathname);
+            key === 'more'
+              ? isActive(href, pathname, eventId) || onMoreSection
+              : isActive(href, pathname, eventId);
           return (
             <li key={key}>
               <Link
