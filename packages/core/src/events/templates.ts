@@ -1,5 +1,7 @@
 import type { EventTemplate, TemplateKey } from '@pme/contracts';
 
+// Placement on dates (starterSubEvents) lives in @pme/contracts so the web app can preview it.
+
 /**
  * Event templates (PRD "Event setup"): which modules start on, the default response mode
  * and starter sub-events. Starter tasks and budget categories join in milestone 6, when
@@ -47,7 +49,7 @@ export const EVENT_TEMPLATES: Record<TemplateKey, EventTemplate> = {
       { module: 'gallery', enabled: true },
     ],
     responseMode: 'open_registration',
-    // One "Day N" per day of the fair; see `starterSubEvents`.
+    // One "Day N" per day of the fair; see `starterSubEvents` in @pme/contracts.
     subEvents: [{ name: 'Day {n}', dayOffset: 0, start: '10:00', end: '20:00' }],
   },
   celebration: {
@@ -71,49 +73,3 @@ export const EVENT_TEMPLATES: Record<TemplateKey, EventTemplate> = {
     subEvents: [],
   },
 };
-
-/** A fair gets at most this many "Day N" sub-events. */
-const MAX_FAIR_DAYS = 14;
-
-export interface StarterSubEvent {
-  name: string;
-  /** `YYYY-MM-DD` */
-  date: string;
-  start: string;
-  end: string;
-}
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-export function addDays(date: string, days: number): string {
-  return new Date(Date.parse(`${date}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10);
-}
-
-export function daysBetween(from: string, to: string): number {
-  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
-}
-
-/** The template's sub-events placed on the event's dates. */
-export function starterSubEvents(
-  template: EventTemplate,
-  startsOn: string,
-  endsOn: string,
-): StarterSubEvent[] {
-  const lastDay = daysBetween(startsOn, endsOn);
-  if (template.key === 'fair') {
-    const [day] = template.subEvents;
-    if (!day) return [];
-    return Array.from({ length: Math.min(lastDay + 1, MAX_FAIR_DAYS) }, (_, index) => ({
-      name: day.name.replace('{n}', String(index + 1)),
-      date: addDays(startsOn, index),
-      start: day.start,
-      end: day.end,
-    }));
-  }
-  return template.subEvents.map((item) => ({
-    name: item.name,
-    date: addDays(startsOn, Math.min(item.dayOffset, lastDay)),
-    start: item.start,
-    end: item.end,
-  }));
-}

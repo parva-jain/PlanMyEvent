@@ -25,7 +25,7 @@ export {
   updateVenue,
 } from './events/program-actions.js';
 export { eventSlug, SLUG_PATTERN } from './events/slug.js';
-export { EVENT_TEMPLATES, starterSubEvents } from './events/templates.js';
+export { EVENT_TEMPLATES } from './events/templates.js';
 export { ActionError } from './errors.js';
 export type {
   CoreTx,
