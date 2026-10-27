@@ -17,6 +17,11 @@ const reuse = !process.env.CI;
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
+  // Every worker drives the real API, worker and database: two at a time keeps a laptop (and
+  // CI's 4-core runner) from starving them into timeouts.
+  workers: 2,
+  // Writes run real transactions; give them headroom on a busy laptop.
+  expect: { timeout: 10_000 },
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',

@@ -55,8 +55,38 @@ const SIGNED_IN = {
   },
 };
 
+const event = (id: string, name: string, type: string) => ({
+  id,
+  slug: `${type}-abcd`,
+  name,
+  type,
+  description: null,
+  startsOn: '2026-11-14',
+  endsOn: '2026-11-15',
+  timeZone: 'Asia/Kolkata',
+  status: 'planning',
+  guestScope: 'whole_event',
+  responseMode: 'open_registration',
+  budgetPaise: null,
+  version: 1,
+  createdAt: '2026-10-27T00:00:00.000Z',
+});
+const DEVFEST = event('0192f7aa-0000-7000-8000-00000000000a', 'DevFest Bhopal 2026', 'conference');
+const WEDDING = event('0192f7aa-0000-7000-8000-00000000000b', 'Sharma Wedding', 'wedding');
+const list = (data: unknown[]) => ({ data, nextCursor: null, hasMore: false });
+const HOME = `/events/${DEVFEST.id}`;
+
+/**
+ * These tests cover the shell, not sign-in or the API (auth.spec.ts and events.spec.ts do):
+ * a fake signed-in user and fake event responses, so they run without the API.
+ */
 test.beforeEach(async ({ page }) => {
   await page.route('**/v1/me', (route) => route.fulfill({ json: SIGNED_IN }));
+  await page.route('**/v1/me/events', (route) => route.fulfill({ json: list([DEVFEST, WEDDING]) }));
+  for (const fake of [DEVFEST, WEDDING]) {
+    await page.route(`**/v1/events/${fake.id}`, (route) => route.fulfill({ json: fake }));
+    await page.route(`**/v1/events/${fake.id}/*`, (route) => route.fulfill({ json: list([]) }));
+  }
 });
 
 function collectErrors(page: Page) {
@@ -83,12 +113,12 @@ test.describe('app shell', () => {
 
   test('navigates between sections without errors', async ({ page }) => {
     const errors = collectErrors(page);
-    await page.goto('/app');
+    await page.goto(HOME);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('DevFest Bhopal 2026');
     await expect(navLink(page, app.nav.home!)).toHaveAttribute('aria-current', 'page');
 
     await navLink(page, app.nav.tasks!).click();
-    await expect(page).toHaveURL(/\/app\/tasks$/);
+    await expect(page).toHaveURL(new RegExp(`${HOME}/tasks$`));
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(app.nav.tasks!);
     await expect(page.getByText(app.sections.tasks!.headline)).toBeVisible();
     await expect(navLink(page, app.nav.tasks!)).toHaveAttribute('aria-current', 'page');
@@ -98,10 +128,10 @@ test.describe('app shell', () => {
   });
 
   test('reaches every section: sidebar on desktop, More on phone', async ({ page }) => {
-    await page.goto('/app');
+    await page.goto(HOME);
     if (isPhone()) {
       await navLink(page, app.nav.more!).click();
-      await expect(page).toHaveURL(/\/app\/more$/);
+      await expect(page).toHaveURL(new RegExp(`${HOME}/more$`));
       await page.getByRole('link', { name: app.nav.activity! }).click();
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(app.nav.activity!);
       // More stays highlighted on the sections it lists.
@@ -115,16 +145,18 @@ test.describe('app shell', () => {
   });
 
   test('switches event', async ({ page }) => {
-    await page.goto('/app');
+    await page.goto(HOME);
     await visible(page, 'event-switcher').click();
     await page.getByRole('button', { name: /Sharma Wedding/ }).click();
+    // Switching keeps the section and moves to the other event's URL.
+    await expect(page).toHaveURL(new RegExp(`/events/${WEDDING.id}$`));
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sharma Wedding');
     await expect(visible(page, 'event-switcher')).toContainText('Sharma Wedding');
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
   test('quick add opens a section', async ({ page }) => {
-    await page.goto('/app');
+    await page.goto(HOME);
     if (isPhone()) {
       await page.getByRole('button', { name: app.quickAdd.title! }).click();
       await expect(page.getByRole('dialog', { name: app.quickAdd.title! })).toBeVisible();
@@ -132,13 +164,15 @@ test.describe('app shell', () => {
       await page.getByRole('button', { name: app.quickAdd.add!, exact: true }).click();
     }
     await page.getByRole('link', { name: app.quickAdd.expense! }).click();
-    await expect(page).toHaveURL(/\/app\/budget$/);
+    await expect(page).toHaveURL(new RegExp(`${HOME}/budget$`));
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
-  test('unknown sections are 404', async ({ page }) => {
-    const response = await page.goto('/app/nope');
-    expect(response?.status()).toBe(404);
+  test('unknown sections show not found', async ({ page }) => {
+    // Under the dynamic [eventId] route Next streams the shell first, so the status stays 200;
+    // the page still renders not-found (with noindex, and signed-in pages aren't indexed).
+    await page.goto(`${HOME}/nope`);
+    await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
   });
 });
 
@@ -150,7 +184,7 @@ test.describe('API status widget', () => {
   ] as const) {
     test(`shows ${response}`, async ({ page }) => {
       await mockReadiness(page, response);
-      await page.goto('/app');
+      await page.goto(HOME);
       const status = visible(page, 'api-status');
       await expect(status).toHaveAttribute('data-status', response);
       await expect(status).toContainText(label!);
@@ -173,7 +207,7 @@ test.describe('sheet motion', () => {
   test.beforeEach(async ({ page }) => {
     test.skip(!isPhone(), 'Sheets are the phone and tablet pattern');
     await mockReadiness(page, 'ok');
-    await page.goto('/app');
+    await page.goto(HOME);
   });
 
   test('slides up normally', async ({ page }) => {
