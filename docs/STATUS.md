@@ -9,7 +9,7 @@ Last updated: Oct 26, 2026 · Updated at the end of every working step.
 | Step | What | Status |
 | --- | --- | --- |
 | 2a | Backend: identity, workspace and outbox tables; Better Auth (Google, email OTP) at `/v1/auth`; session guard and CSRF origin check; `GET /v1/me`; OTP rate limits in Redis; outbox relay and `email-critical` queue (SMTP/Resend) in the worker | Done (`6aeb58b`); decisions 009 and 010 accepted |
-| 2b | Web: sign-in and code screens, Welcome (name, optional +91 phone), `PATCH /v1/me`, shell behind sign-in, sign-out, Playwright for the email flow | Done; Google sign-in waits for OAuth credentials |
+| 2b | Web: sign-in and code screens, Welcome (name, optional +91 phone), `PATCH /v1/me`, shell behind sign-in, sign-out, Playwright for the email flow | Done; Google sign-in verified locally on Oct 27 (consent round trip, linked to the existing email account, no duplicate) |
 
 Verified end to end on Oct 26: a code requested through the API reached Mailpit through the outbox, relay and worker; signing in with it gave a session; `/v1/me` returned the user and personal workspace; without the cookie, 401 problem+json.
 
@@ -151,6 +151,7 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | TanStack Query 5.104.3 (11 days old; 5.104.4/5 too new); `QueryProvider` only in the `/app` layout | Marketing pages don't need it; release-age rule | `src/components/query-provider.tsx` |
 | Event dates always day-month ("Sat, 14 Nov 2026") via `formatEventDate` | DESIGN.md date style; the `en` locale would give US order | `src/lib/format.ts` |
 | Milestone 2 gets a minimal outbox relay (outbox table, relay into BullMQ, email queue) so sign-in OTP emails follow rule 2; milestone 5 adds activity log, undo and sockets on top. Configurable through env: relay on/off, poll interval, batch size, email transport (SMTP to Mailpit locally, Resend in production) | Approved Oct 26; avoids a temporary exception for auth emails. A decision record and the CLAUDE.md milestone list change come with the milestone 2 commit | This file |
+| Better Auth's origin and callback-URL checks are forced on (`disableOriginCheck: false`) | It skips them under `NODE_ENV=test`, so tests would pass for redirects production refuses | `apps/api/src/auth/auth.ts`, `apps/api/test/google.test.ts` |
 | Web session check runs in the browser (`SessionGate` on GET /v1/me), not in Next middleware | The session cookie belongs to the API host, which the web server never sees in production | `src/components/auth/session-gate.tsx` |
 | Sign-in uses Better Auth's client; everything else `apiFetch` with problem+json errors | Decision 010 | `src/lib/auth-client.ts`, `src/lib/api.ts` |
 | Google button shows only with `NEXT_PUBLIC_GOOGLE_SIGN_IN=true` | The API enables Google only when its credentials are set | `apps/web/.env.example` |
@@ -165,7 +166,8 @@ None right now.
 ## Follow-ups
 
 - Rate limits trust the first `X-Forwarded-For` value. In production behind Cloudflare, read `CF-Connecting-IP` instead (make the header configurable), or clients can rotate the header to dodge per-IP limits; the per-email limit still holds.
-- Google sign-in: create an OAuth client, set `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` and `NEXT_PUBLIC_GOOGLE_SIGN_IN=true`, then test it.
+- Google sign-in before launch: publish the OAuth consent screen (Google verification; until then only test users can sign in) and add the production redirect URI `{API_URL}/v1/auth/callback/google`.
+- Google linked to an existing email account doesn't copy the profile photo (Better Auth leaves user info alone on linking). Fill `avatar_url` on link only when it's empty, without overwriting the name.
 - Outbox cleanup job for published rows older than 7 days (milestone 5 with the scheduled queue).
 - Only home-page messages need to reach the browser; today all namespaces (including `devUi`) are sent. Trim if step G needs the bytes.
 - Footer privacy and terms links once those pages exist.

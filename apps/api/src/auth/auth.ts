@@ -124,6 +124,9 @@ export function createAuth({ env, db, rateLimiter, signInCodes, onUserCreated }:
       },
     },
     advanced: {
+      // Explicit, because Better Auth skips origin and callback-URL checks under
+      // NODE_ENV=test: tests then exercise exactly what production runs.
+      disableOriginCheck: false,
       database: { generateId: () => newId() },
       useSecureCookies: env.API_URL.startsWith('https://'),
       defaultCookieAttributes: { httpOnly: true, sameSite: 'lax' },
