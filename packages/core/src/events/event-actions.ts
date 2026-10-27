@@ -1,4 +1,5 @@
 import {
+  starterSubEvents,
   zonedTimeToUtc,
   type CreatedEvent,
   type CreateEvent,
@@ -12,7 +13,7 @@ import type { ActionDefinition } from '../action.js';
 import { ActionError } from '../errors.js';
 import type { CoreTx } from '../ports.js';
 import { eventSlug } from './slug.js';
-import { EVENT_TEMPLATES, starterSubEvents } from './templates.js';
+import { EVENT_TEMPLATES } from './templates.js';
 import { versionMismatch } from './versioned.js';
 
 /** Slug collisions are rare (4 random characters per name); retry a few times. */
