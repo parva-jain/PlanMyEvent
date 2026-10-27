@@ -15,6 +15,13 @@
       "when": 1793007762221,
       "tag": "0001_identity_and_outbox",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793081121295,
+      "tag": "0002_events_and_program",
+      "breakpoints": true
     }
   ]
 }

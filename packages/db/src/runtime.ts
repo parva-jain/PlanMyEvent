@@ -1,18 +1,24 @@
 import {
+  ActionError,
   placeholderHooks,
   type ActionRuntime,
   type CoreTx,
+  type EventStore,
   type PersonalWorkspace,
+  type SubEventStore,
   type UserStore,
+  type VenueStore,
   type WorkspaceStore,
 } from '@pme/core';
-import type { ValueOf } from '@pme/contracts';
+import { PERMISSIONS, type Permission, type ValueOf } from '@pme/contracts';
 import { and, eq, sql } from 'drizzle-orm';
 
+import { canAccessEvent } from './access.js';
 import type { Database } from './client.js';
 import { users } from './schema/auth.js';
 import { outbox } from './schema/outbox.js';
 import { workspaces } from './schema/workspaces.js';
+import { eventStore, subEventStore, venueStore } from './stores/events.js';
 
 /** The Drizzle transaction handle `db.transaction` passes to its callback. */
 export type DrizzleTx = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -66,10 +72,16 @@ function userStore(db: DrizzleTx): UserStore {
 export class DbTx implements CoreTx {
   readonly users: UserStore;
   readonly workspaces: WorkspaceStore;
+  readonly events: EventStore;
+  readonly venues: VenueStore;
+  readonly subEvents: SubEventStore;
 
   constructor(readonly db: DrizzleTx) {
     this.users = userStore(db);
     this.workspaces = workspaceStore(db);
+    this.events = eventStore(db);
+    this.venues = venueStore(db);
+    this.subEvents = subEventStore(db);
   }
 }
 
@@ -78,7 +90,8 @@ const LOCK_TIMEOUT = '2s';
 
 /**
  * The ActionRuntime that core's `runAction` uses in the API and worker. Permission checks
- * (milestone 4) and the activity log (milestone 5) are still placeholders; the outbox is real.
+ * use the interim owner-only rule (`canAccessEvent`) until milestone 4; the activity log
+ * (milestone 5) is still a placeholder; the outbox is real.
  */
 export function createActionRuntime(db: Database): ActionRuntime<DbTx> {
   return {
@@ -87,7 +100,18 @@ export function createActionRuntime(db: Database): ActionRuntime<DbTx> {
         await tx.execute(sql.raw(`set local lock_timeout = '${LOCK_TIMEOUT}'`));
         return fn(new DbTx(tx));
       }),
-    checkPermission: placeholderHooks.checkPermission,
+    async checkPermission(tx, ctx, permission) {
+      if (!(PERMISSIONS as readonly string[]).includes(permission)) {
+        throw new Error(`Unknown permission ${permission}`);
+      }
+      const allowed =
+        ctx.eventId !== null &&
+        ctx.actor.kind === 'user' &&
+        (await canAccessEvent(tx.db, ctx.eventId, ctx.actor.userId, permission as Permission));
+      if (!allowed) {
+        throw new ActionError('not_found', 'Event not found');
+      }
+    },
     recordActivity: placeholderHooks.recordActivity,
     async writeOutbox(tx, ctx, messages) {
       await tx.db.insert(outbox).values(
