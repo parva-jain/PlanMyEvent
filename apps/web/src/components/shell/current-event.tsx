@@ -1,22 +1,67 @@
 'use client';
 
-import { createContext, use, useState, type ReactNode } from 'react';
+import type { Event } from '@pme/contracts';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { createContext, use, type ReactNode } from 'react';
 
-import { PREVIEW_EVENTS, type PreviewEvent } from './preview-events';
+import { FullPageLoading } from '@/components/auth/full-page-loading';
+import { Button } from '@/components/ui/button';
+import { ApiError } from '@/lib/api';
+import { useEvent } from '@/lib/events';
+
+import { MY_EVENTS_HREF } from './nav';
 
 interface CurrentEventContext {
-  event: PreviewEvent;
-  events: PreviewEvent[];
-  setEventId: (id: string) => void;
+  eventId: string;
+  event: Event;
 }
 
 const Context = createContext<CurrentEventContext | null>(null);
 
-/** The event the shell shows. Milestone 3 replaces this with the event id in the URL. */
-export function CurrentEventProvider({ children }: { children: ReactNode }) {
-  const [eventId, setEventId] = useState(PREVIEW_EVENTS[0]!.id);
-  const event = PREVIEW_EVENTS.find((candidate) => candidate.id === eventId) ?? PREVIEW_EVENTS[0]!;
-  return <Context value={{ event, events: PREVIEW_EVENTS, setEventId }}>{children}</Context>;
+/**
+ * Loads the event in the URL for the whole shell. A 404 (missing, deleted, or not yours,
+ * which the API answers the same way) shows a way back to My events.
+ */
+export function CurrentEventProvider({
+  eventId,
+  children,
+}: {
+  eventId: string;
+  children: ReactNode;
+}) {
+  const t = useTranslations('app.event');
+  const { data: event, error, refetch, isFetching } = useEvent(eventId);
+
+  if (error) {
+    const missing = error instanceof ApiError && error.status === 404;
+    return (
+      <div
+        role="alert"
+        className="flex min-h-dvh flex-col items-center justify-center gap-4 px-4 text-center"
+      >
+        <p className="text-h3">{missing ? t('notFound') : t('loadFailed')}</p>
+        {missing ? (
+          <Button asChild variant="secondary" icon={<ArrowLeft aria-hidden />}>
+            <Link href={MY_EVENTS_HREF}>{t('backToEvents')}</Link>
+          </Button>
+        ) : (
+          <Button variant="secondary" loading={isFetching} onClick={() => void refetch()}>
+            {t('retry')}
+          </Button>
+        )}
+      </div>
+    );
+  }
+  if (!event) {
+    return (
+      <div className="flex min-h-dvh">
+        <FullPageLoading />
+      </div>
+    );
+  }
+  return <Context value={{ eventId, event }}>{children}</Context>;
 }
 
 export function useCurrentEvent(): CurrentEventContext {

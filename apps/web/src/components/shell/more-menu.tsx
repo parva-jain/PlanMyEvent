@@ -10,7 +10,8 @@ import { Card } from '@/components/ui/card';
 import { distance, duration, ease } from '@/lib/motion';
 
 import { useShouldReduceMotion } from '@/components/motion/motion-provider';
-import { MORE_ITEMS } from './nav';
+import { useCurrentEvent } from './current-event';
+import { moreItems } from './nav';
 import { StatusWidget } from './status-widget';
 import { ThemeToggle } from './theme-toggle';
 
@@ -21,6 +22,7 @@ import { ThemeToggle } from './theme-toggle';
 export function MoreMenu() {
   const t = useTranslations('app');
   const reduced = useShouldReduceMotion();
+  const { eventId } = useCurrentEvent();
 
   return (
     <m.div
@@ -33,7 +35,7 @@ export function MoreMenu() {
 
       <Card className="gap-0 p-2 sm:p-2">
         <ul>
-          {MORE_ITEMS.map(({ key, href, icon: Icon }) => (
+          {moreItems(eventId).map(({ key, href, icon: Icon }) => (
             <li key={key}>
               <Link
                 href={href}

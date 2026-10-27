@@ -32,8 +32,12 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
-/** The shell lives at /app until events exist; milestone 3 moves it under /events/[eventId]. */
-export const APP_ROOT = '/app';
+/** My events: the signed-in landing page. */
+export const MY_EVENTS_HREF = '/app';
+export const NEW_EVENT_HREF = '/events/new';
+
+export const eventHref = (eventId: string, section?: NavKey | 'more') =>
+  !section || section === 'home' ? `/events/${eventId}` : `/events/${eventId}/${section}`;
 
 const ICONS: Record<NavKey, LucideIcon> = {
   home: LayoutGrid,
@@ -47,24 +51,37 @@ const ICONS: Record<NavKey, LucideIcon> = {
   settings: Settings,
 };
 
-function item(key: NavKey): NavItem {
-  return { key, href: key === 'home' ? APP_ROOT : `${APP_ROOT}/${key}`, icon: ICONS[key] };
-}
+export const sectionIcon = (key: NavKey): LucideIcon => ICONS[key];
+
+const item = (eventId: string, key: NavKey): NavItem => ({
+  key,
+  href: eventHref(eventId, key),
+  icon: ICONS[key],
+});
 
 /** Desktop sidebar and tablet rail: every section. */
-export const SIDEBAR_ITEMS: NavItem[] = (['home', ...SECTIONS] as const).map(item);
+export const sidebarItems = (eventId: string) =>
+  (['home', ...SECTIONS] as const).map((key) => item(eventId, key));
 
 /** Phone bottom bar (DESIGN.md "Layout"): four sections, the rest under More. */
-export const BOTTOM_ITEMS: NavItem[] = (['home', 'tasks', 'people', 'budget'] as const).map(item);
+export const BOTTOM_KEYS = ['home', 'tasks', 'people', 'budget'] as const;
+export const bottomItems = (eventId: string) => BOTTOM_KEYS.map((key) => item(eventId, key));
 
 /** Phone "More" screen: the sections that don't fit in the bottom bar. */
-export const MORE_ITEMS: NavItem[] = SECTIONS.filter(
-  (key) => !BOTTOM_ITEMS.some((bottom) => bottom.key === key),
-).map(item);
-
-export const MORE_HREF = `${APP_ROOT}/more`;
+export const moreItems = (eventId: string) =>
+  SECTIONS.filter((key) => !(BOTTOM_KEYS as readonly string[]).includes(key)).map((key) =>
+    item(eventId, key),
+  );
 
 /** Home matches only itself; a section also matches its sub-pages. */
-export function isActive(href: string, pathname: string): boolean {
-  return href === APP_ROOT ? pathname === APP_ROOT : pathname.startsWith(href);
+export function isActive(href: string, pathname: string, eventId: string): boolean {
+  return href === eventHref(eventId) ? pathname === href : pathname.startsWith(href);
+}
+
+/** The section a path is on, so switching events can keep it. */
+export function sectionOf(pathname: string): NavKey | 'more' {
+  const segment = pathname.split('/')[3];
+  return (SECTIONS as readonly string[]).includes(segment ?? '') || segment === 'more'
+    ? (segment as Section | 'more')
+    : 'home';
 }

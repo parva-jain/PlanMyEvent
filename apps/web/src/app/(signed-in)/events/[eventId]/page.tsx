@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** Event home; the dashboard (MOTION.md 6.5) arrives in milestone 8. */
-export default function AppHomePage() {
+export default function EventHomePage() {
   return (
     <div className="flex flex-col gap-6 lg:gap-8">
       <EventHeader />
