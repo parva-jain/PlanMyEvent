@@ -9,7 +9,7 @@ Last updated: Oct 26, 2026 · Updated at the end of every working step.
 | Step | What | Status |
 | --- | --- | --- |
 | 3a | Backend: events, modules, venues, sub-events and idempotency-key tables; templates; core actions; endpoints with ETag, If-Match and Idempotency-Key | Done |
-| 3b | Web: create-event wizard, My events, the shell on real events under `/events/[eventId]`, sub-events and venues screens | Next |
+| 3b | Web: My events (`/app`), create-event wizard (`/events/new`), the shell on real events (`/events/[eventId]`), Schedule (sub-events, venues) and Settings (details, modules) with If-Match and 409 recovery | Done |
 
 **Interim access rule (until milestone 4):** an event's owner holds every permission and anyone else gets 404, through one function (`canAccessEvent` in `packages/db`) used by the API guard and by core's permission check. Milestone 4 replaces its body with members, roles and sub-event scope; callers don't change.
 
@@ -65,7 +65,7 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | Check | Result |
 | --- | --- |
 | `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test` | Pass |
-| `pnpm test:e2e` (Playwright, builds web, API and worker first) | 40 pass, 2 skipped (sheet tests on desktop); sign-in tests run the real API and worker and read codes from Mailpit |
+| `pnpm test:e2e` (Playwright, builds web, API and worker first) | 52 pass, 2 skipped (sheet tests on desktop); sign-in and events tests run the real API and worker (codes from Mailpit) |
 | `docker compose -f infra/docker-compose.yml --profile app up -d --build --wait` | migrate exits 0 ("Migrations applied"); API ready with Postgres and Redis up, `/v1/docs` 404 in production; worker processes its sample job; web serves the home page and CSS, `/dev/ui` 404; containers run as `node` |
 | `docker compose -f infra/docker-compose.yml up -d --wait` | All four healthy in about 12 s; migrations apply; API ready reports Postgres and Redis up; worker processes its sample job; S3 auth and public/private access verified; Mailpit receives SMTP; data survives restart |
 | `pnpm db:migrate` against Postgres 17.11 | Applies `0000_extensions` (citext, pg_trgm); idempotent |
@@ -162,6 +162,13 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Idempotency keys: stored per user for 24 h; the route's status is stored (Nest sets it after interceptors); failures release the key | APIDesign "Idempotency-Key" | `apps/api/src/http/idempotency.interceptor.ts` |
 | Worker Vitest runs on `src/` only | `nest start --watch` compiles test files into `dist/` | `apps/worker/vitest.config.mts` |
 | Better Auth's origin and callback-URL checks are forced on (`disableOriginCheck: false`) | It skips them under `NODE_ENV=test`, so tests would pass for redirects production refuses | `apps/api/src/auth/auth.ts`, `apps/api/test/google.test.ts` |
+| Signed-in routes: `/app` is My events, `/events/new` the wizard, `/events/[eventId]/…` the shell; sample events removed | Real events replace the preview data; URLs carry the event so links and reloads work | `apps/web/src/app/(signed-in)/` |
+| Time-zone helpers and starter sub-event placement live in `@pme/contracts` | The wizard previews exactly what the API creates; core can't be bundled for the browser (node:crypto) | `packages/contracts/src/time.ts`, `templates.ts` |
+| Wizard leaves out Stitch's College fest card, attendee size and per-day toggles | Five PRD templates; the create API has no fields for the rest yet | `components/events/create-event-wizard.tsx` |
+| New motion pieces: `Skeleton`, `ListPresence`/`ListItem`, `SidePanel`/`EditPanel` | MOTION.md section 4 patterns, built when first needed | `src/components/motion/` |
+| Time-zone pickers always include the current zone | Chrome lists India as Asia/Calcutta, so Asia/Kolkata silently fell back to the first option | `src/lib/format.ts` (`timeZoneOptions`) |
+| Unknown event sections render not-found with status 200 | Next streams the dynamic `[eventId]` layout before the page calls `notFound()`; signed-in pages are noindex anyway | `app/(signed-in)/events/[eventId]/[section]/page.tsx` |
+| Playwright: 2 workers, 10 s expect timeout | Each worker drives the real API, worker and database; more starved a busy laptop into timeouts | `apps/web/playwright.config.ts` |
 | Web session check runs in the browser (`SessionGate` on GET /v1/me), not in Next middleware | The session cookie belongs to the API host, which the web server never sees in production | `src/components/auth/session-gate.tsx` |
 | Sign-in uses Better Auth's client; everything else `apiFetch` with problem+json errors | Decision 010 | `src/lib/auth-client.ts`, `src/lib/api.ts` |
 | Google button shows only with `NEXT_PUBLIC_GOOGLE_SIGN_IN=true` | The API enables Google only when its credentials are set | `apps/web/.env.example` |
@@ -196,4 +203,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [24 Events, versions and retries](learning/backend/24-events-versions-retries.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [25 Events in the web app](learning/frontend/25-events-web.md).
