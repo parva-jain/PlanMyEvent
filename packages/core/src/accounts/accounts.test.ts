@@ -1,48 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { runAction, type ActionRuntime, type OutboxMessage } from '../action.js';
+import { runAction } from '../action.js';
 import type { ActionContext } from '../context.js';
-import type { CoreTx, PersonalWorkspace } from '../ports.js';
-import { updateProfile } from './update-profile.js';
+import { memoryRuntime } from '../testing/memory-tx.js';
 import { ensurePersonalWorkspace, personalWorkspaceName } from './ensure-personal-workspace.js';
 import { queueSignInCode } from './queue-sign-in-code.js';
-
-/** In-memory stores and an outbox list standing in for packages/db. */
-function fakeRuntime() {
-  const workspaces = new Map<string, PersonalWorkspace>();
-  const outbox: OutboxMessage[] = [];
-  let inserts = 0;
-  const profiles = new Map<string, { name?: string; phone?: string | null }>([['u1', {}]]);
-  const tx: CoreTx = {
-    users: {
-      updateProfile: (userId, changes) => {
-        const profile = profiles.get(userId);
-        if (!profile) return Promise.resolve(false);
-        Object.assign(profile, changes);
-        return Promise.resolve(true);
-      },
-    },
-    workspaces: {
-      findPersonal: (ownerUserId) => Promise.resolve(workspaces.get(ownerUserId) ?? null),
-      createPersonal: ({ ownerUserId, name }) => {
-        inserts += 1;
-        const workspace = { id: `ws-${inserts}`, name, plan: 'free' as const };
-        workspaces.set(ownerUserId, workspace);
-        return Promise.resolve({ workspace, created: true });
-      },
-    },
-  };
-  const runtime: ActionRuntime<CoreTx> = {
-    transaction: (fn) => fn(tx),
-    checkPermission: () => Promise.reject(new Error('these actions need no permission')),
-    recordActivity: () => Promise.resolve(),
-    writeOutbox: (_tx, _ctx, messages) => {
-      outbox.push(...messages);
-      return Promise.resolve();
-    },
-  };
-  return { runtime, outbox, profiles, inserts: () => inserts };
-}
+import { updateProfile } from './update-profile.js';
 
 const ctx: ActionContext = {
   requestId: 'req_test',
@@ -51,18 +14,23 @@ const ctx: ActionContext = {
   eventId: null,
   now: new Date('2026-10-26T00:00:00Z'),
 };
+const userCtx: ActionContext = {
+  ...ctx,
+  channel: 'app',
+  actor: { kind: 'user', userId: 'u1', memberId: null },
+};
 
 describe('ensurePersonalWorkspace', () => {
   it('creates the workspace once and returns the same one afterwards', async () => {
-    const { runtime, inserts } = fakeRuntime();
+    const { runtime, workspaces } = memoryRuntime();
     const input = { userId: 'u1', userName: 'Priya Sharma' };
 
     const first = await runAction(runtime, ctx, ensurePersonalWorkspace, input);
     const second = await runAction(runtime, ctx, ensurePersonalWorkspace, input);
 
-    expect(first).toEqual({ id: 'ws-1', name: "Priya's workspace", plan: 'free' });
+    expect(first).toMatchObject({ name: "Priya's workspace", plan: 'free' });
     expect(second).toEqual(first);
-    expect(inserts()).toBe(1);
+    expect(workspaces.size).toBe(1);
   });
 
   it('names the workspace after the first name, with a fallback', () => {
@@ -73,7 +41,7 @@ describe('ensurePersonalWorkspace', () => {
 
 describe('queueSignInCode', () => {
   it('writes one email.critical outbox row and sends nothing directly', async () => {
-    const { runtime, outbox } = fakeRuntime();
+    const { runtime, outbox } = memoryRuntime();
 
     await runAction(runtime, ctx, queueSignInCode, {
       email: 'Neha@Example.com',
@@ -90,7 +58,7 @@ describe('queueSignInCode', () => {
 
   it('derives a stable dedupe key that reveals neither the email nor the code', async () => {
     const send = async (code: string) => {
-      const { runtime, outbox } = fakeRuntime();
+      const { runtime, outbox } = memoryRuntime();
       await runAction(runtime, ctx, queueSignInCode, {
         email: 'neha@example.com',
         code,
@@ -107,14 +75,9 @@ describe('queueSignInCode', () => {
 });
 
 describe('updateProfile', () => {
-  const userCtx: ActionContext = {
-    ...ctx,
-    channel: 'app',
-    actor: { kind: 'user', userId: 'u1', memberId: null },
-  };
-
   it("changes the signed-in user's own profile", async () => {
-    const { runtime, profiles } = fakeRuntime();
+    const { runtime, profiles } = memoryRuntime();
+    profiles.set('u1', {});
     await runAction(runtime, userCtx, updateProfile, {
       name: 'Neha Verma',
       phone: '+919876543210',
@@ -123,15 +86,11 @@ describe('updateProfile', () => {
   });
 
   it('refuses non-user actors and unknown users', async () => {
-    const { runtime } = fakeRuntime();
+    const { runtime } = memoryRuntime();
     await expect(runAction(runtime, ctx, updateProfile, { name: 'X' })).rejects.toMatchObject({
       code: 'forbidden',
     });
-    const ghost: ActionContext = {
-      ...userCtx,
-      actor: { kind: 'user', userId: 'nobody', memberId: null },
-    };
-    await expect(runAction(runtime, ghost, updateProfile, { name: 'X' })).rejects.toMatchObject({
+    await expect(runAction(runtime, userCtx, updateProfile, { name: 'X' })).rejects.toMatchObject({
       code: 'not_found',
     });
   });
