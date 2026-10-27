@@ -4,6 +4,12 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
 // Expected text comes from the translation file, so copy edits don't break the tests.
+const messages = JSON.parse(
+  readFileSync(new URL('../messages/en.json', import.meta.url), 'utf8'),
+) as {
+  app: { myEvents: Record<string, string> };
+};
+const myEvents = messages.app.myEvents;
 const auth = (
   JSON.parse(readFileSync(new URL('../messages/en.json', import.meta.url), 'utf8')) as {
     auth: {
@@ -81,11 +87,10 @@ test.describe('sign-in', () => {
     await page.getByLabel(auth.welcome.phoneLabel!).fill('9876543210');
     await page.getByRole('button', { name: auth.welcome.continue }).click();
 
+    // A brand-new account lands on My events, with nothing in it yet.
     await expect(page).toHaveURL(/\/app$/);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    if (test.info().project.name === 'desktop') {
-      await expect(page.getByTestId('signed-in-user')).toContainText('Neha Verma');
-    }
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(myEvents.title!);
+    await expect(page.getByRole('heading', { name: myEvents.emptyTitle })).toBeVisible();
   });
 
   test('a wrong code shows an error and keeps you on the code step', async ({ page }) => {
@@ -112,10 +117,7 @@ test.describe('sign-in', () => {
     await page.getByRole('button', { name: auth.welcome.continue }).click();
     await expect(page).toHaveURL(/\/app$/);
 
-    if (test.info().project.name === 'phone') {
-      await page.getByRole('link', { name: 'More' }).click();
-    }
-    await page.getByRole('button', { name: auth.signOut }).locator('visible=true').first().click();
+    await page.getByRole('button', { name: auth.signOut }).click();
     await expect(page).toHaveURL(/\/sign-in$/);
 
     await page.goto('/app');
