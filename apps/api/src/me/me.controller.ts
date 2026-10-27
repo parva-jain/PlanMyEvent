@@ -12,12 +12,26 @@ import { ZodResponse } from 'nestjs-zod';
 
 import { CurrentUser, UserContext, type SessionUser } from '../auth/session';
 import { ACTION_RUNTIME } from '../database/database.module';
+import type { EventQueries } from '@pme/db';
+
+import { MyEventsDto, whole } from '../events/events.dto';
+import { EVENT_QUERIES } from '../events/events.tokens';
 import { MeDto, UpdateMeDto } from './me.dto';
 
 @ApiTags('account')
 @Controller('me')
 export class MeController {
-  constructor(@Inject(ACTION_RUNTIME) private readonly runtime: ActionRuntime<CoreTx>) {}
+  constructor(
+    @Inject(ACTION_RUNTIME) private readonly runtime: ActionRuntime<CoreTx>,
+    @Inject(EVENT_QUERIES) private readonly queries: EventQueries,
+  ) {}
+
+  /** Events I belong to (APIDesign "Account"); role names arrive with members (milestone 4). */
+  @Get('events')
+  @ZodResponse({ type: MyEventsDto })
+  async events(@CurrentUser() user: SessionUser) {
+    return whole(await this.queries.listEventsForUser(user.id));
+  }
 
   /**
    * Profile and personal workspace (APIDesign "Account"). Ensures the workspace exists:

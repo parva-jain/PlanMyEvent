@@ -15,6 +15,7 @@ API, worker, database and the shared packages behind them.
 - [19 Unit tests](backend/19-unit-tests.md)
 - [20 API tests](backend/20-api-tests.md)
 - [22 Sign-in and the outbox](backend/22-sign-in-and-outbox.md)
+- [24 Events, versions and retries](backend/24-events-versions-retries.md)
 
 ## Frontend
 
