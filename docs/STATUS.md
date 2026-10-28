@@ -9,7 +9,7 @@ Last updated: Oct 28, 2026 · Updated at the end of every working step.
 | Step | What | Status |
 | --- | --- | --- |
 | 4a | Backend: members, roles, role assignments with sub-event scopes, member invites (migration 0003 with a backfill); effective permissions in core; the API guard with the Redis permission cache; team endpoints; invite email | Done |
-| 4b | Web: Team page (members, invite by email or link, roles and the role editor), join page `/join/[token]`, buttons hidden by permission (`GET E/me`), role names on My events | Next |
+| 4b | Web: Team page (members, invite by email or link, member panel), roles and the role editor, join page `/join/[token]` with return through sign-in, nav and buttons by permission (`GET E/me`), role names on My events | Done |
 
 ### Milestone 3 (done)
 
@@ -179,6 +179,11 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Removing a member deletes their role assignments and keeps the member row (status `removed`); re-joining reuses the row | DatabaseDesign "Removed members keep their history" | `packages/db/src/stores/team.ts` |
 | Permissions are read inside the action's transaction; only the API guard uses the Redis cache (`perm:{event}:{user}:{roles_version}`, 10 min); non-members aren't cached | SystemDesign 5.5; a just-committed role change must count for writes | `apps/api/src/events/permission-cache.ts` |
 | Migration 0003 backfills existing events (five roles, owner as member with Owner), ids from a SQL UUIDv7 function | Owners of earlier events would otherwise get 404 | `packages/db/drizzle/0003_members_and_roles.sql` |
+| The shell loads `GET E/me` with the event; nav sections, quick add and edit controls show only what the member can use; a section opened by URL that they can't use says which permission is missing | MOTION.md 6.9 "rows hidden by role are absent"; APIDesign "Permissions the client can read" | `components/shell/current-event.tsx`, `nav.ts`, `no-access.tsx` |
+| Sign-in returns to where you came from via `?next=` (email code, Google callback, Welcome, session gate); only same-site paths | Join links must survive sign-in; no open redirect | `src/lib/return-to.ts` |
+| Join page lives in the `(auth)` layout and works signed out; email-invite mismatch offers "Use another account" | Stitch "Team invite sign-in" / "Accept team invite" | `app/(auth)/join/[token]/page.tsx`, `components/team/join.tsx` |
+| Invite panel offers one role (plus scope) per invite; the member panel edits several | Stitch shows one role per invite; the API takes up to 10 | `components/team/invite-panel.tsx` |
+| Revoke invite, remove member, transfer and leave use tap-twice confirmation instead of MOTION.md's UndoSnackbar | Undo arrives with the activity log (milestone 5) | `components/team/` |
 | Playwright: 2 workers, 10 s expect timeout | Each worker drives the real API, worker and database; more starved a busy laptop into timeouts | `apps/web/playwright.config.ts` |
 | Web session check runs in the browser (`SessionGate` on GET /v1/me), not in Next middleware | The session cookie belongs to the API host, which the web server never sees in production | `src/components/auth/session-gate.tsx` |
 | Sign-in uses Better Auth's client; everything else `apiFetch` with problem+json errors | Decision 010 | `src/lib/auth-client.ts`, `src/lib/api.ts` |
@@ -204,6 +209,7 @@ None right now.
 - Footer privacy and terms links once those pages exist.
 - Rate limits on `GET /v1/member-invites/{token}` and accept (APIDesign lists none for member invites; tokens are 32 random bytes).
 - Undo of a sub-event deletion (milestone 5) won't bring back the scoped role assignments it removed.
+- Team list search, role filter chips, "online" dots and CSV export from Stitch "Team" (online needs sockets, milestone 5).
 - Nightly consistency check (owner has an Owner assignment, no scope-less assignments left by deletes) arrives with scheduled jobs.
 - `@sentry/nestjs` 11.8 pulls in `@sentry/bundler-plugins`, whose webpack peer brings webpack, SWC, esbuild and lightningcss (~60 MB) into the API image. Revisit with a Sentry update or a pnpm override.
 - Logo SVG/PNG files and app icons still use the warm ink #1F1B16 and warm white #FAF8F5 (BRAND.md note); regenerate in a brand pass.
@@ -217,4 +223,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [26 Members, roles and permissions](learning/backend/26-members-roles-permissions.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [27 The team in the web app](learning/frontend/27-team-web.md).

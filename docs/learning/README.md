@@ -33,6 +33,7 @@ The web app: foundation, motion, UI components and the home page.
 - [21 App shell](frontend/21-app-shell.md)
 - [23 Sign-in screens](frontend/23-sign-in-screens.md)
 - [25 Events in the web app](frontend/25-events-web.md)
+- [27 The team in the web app](frontend/27-team-web.md)
 
 ## Infra
 
