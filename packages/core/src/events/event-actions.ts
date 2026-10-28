@@ -1,4 +1,5 @@
 import {
+  STANDARD_ROLES,
   starterSubEvents,
   zonedTimeToUtc,
   type CreatedEvent,
@@ -28,8 +29,8 @@ function userId(actor: { kind: string; userId?: string }): string {
 
 /**
  * POST /v1/events: an event from a template in the user's personal workspace, with the
- * template's modules and starter sub-events, and an optional first venue. The creator owns
- * it (milestone 4 adds the Owner role assignment). Any signed-in user may create one.
+ * template's modules and starter sub-events, an optional first venue, and the standard roles.
+ * The creator joins as the first member holding Owner. Any signed-in user may create one.
  */
 export const createEvent: ActionDefinition<CreateEvent, CreatedEvent, CoreTx> = {
   name: 'events.create',
@@ -75,6 +76,25 @@ export const createEvent: ActionDefinition<CreateEvent, CreatedEvent, CoreTx> = 
         venueId: venue?.id ?? null,
         position,
       })),
+    );
+
+    const roles = await tx.roles.insert(
+      event.id,
+      STANDARD_ROLES.map((role) => ({
+        name: role.name,
+        isStandard: true,
+        isOwner: role.isOwner,
+        permissions: role.permissions,
+      })),
+    );
+    if (roles === 'name_taken') throw new Error('Standard role names must be unique');
+    const owner = await tx.members.join(event.id, ownerUserId, null);
+    const ownerRole = roles.find((role) => role.isOwner)!;
+    await tx.members.replaceAssignments(
+      event.id,
+      owner.id,
+      [{ roleId: ownerRole.id, subEventIds: [] }],
+      ownerUserId,
     );
 
     return {

@@ -118,6 +118,7 @@ export const updateSubEvent: ActionDefinition<
 > = {
   name: 'subEvents.update',
   permission: 'subevents.edit',
+  subEventOf: (_tx, _ctx, input) => input.subEventId,
   async execute(tx, ctx, { subEventId, expectedVersion, changes }) {
     const eventId = ctx.eventId!;
     const before = await tx.subEvents.find(eventId, subEventId);
@@ -147,12 +148,17 @@ export const deleteSubEvent: ActionDefinition<
 > = {
   name: 'subEvents.delete',
   permission: 'subevents.edit',
+  subEventOf: (_tx, _ctx, input) => input.subEventId,
   async execute(tx, ctx, { subEventId, expectedVersion }) {
     const eventId = ctx.eventId!;
     const before = await tx.subEvents.find(eventId, subEventId);
     if (!before) throw new ActionError('not_found', 'Sub-event not found');
     if (!(await tx.subEvents.softDelete(eventId, subEventId, expectedVersion))) {
       versionMismatch(await tx.subEvents.find(eventId, subEventId), expectedVersion);
+    }
+    // Scoped grants lose this sub-event; ones left with no scope go rather than widen.
+    if (await tx.access.removeSubEventScopes(eventId, subEventId)) {
+      await tx.access.bumpRolesVersion(eventId);
     }
     return {
       result: undefined,

@@ -1,7 +1,29 @@
-import type { Event, EventModule, SubEvent, Venue } from '@pme/contracts';
+import {
+  can,
+  type Event,
+  type EventModule,
+  type Grant,
+  type Member,
+  type MemberInvite,
+  type Role,
+  type SubEvent,
+  type Venue,
+} from '@pme/contracts';
 
 import type { ActionRuntime, OutboxMessage } from '../action.js';
-import type { CoreTx, PersonalWorkspace } from '../ports.js';
+import { ActionError } from '../errors.js';
+import type { CoreTx, LockedMemberInvite, PersonalWorkspace } from '../ports.js';
+import { resolvePermissions } from '../team/access.js';
+
+interface MemoryMember {
+  id: string;
+  eventId: string;
+  userId: string;
+  status: Member['status'];
+  joinedAt: string;
+  version: number;
+  assignments: Grant[];
+}
 
 /**
  * In-memory stores behaving like packages/db's (version guards, soft deletes, unique
@@ -16,8 +38,55 @@ export function memoryRuntime() {
   const modules = new Map<string, EventModule[]>();
   const venues = new Map<string, Venue & { eventId: string; deleted?: boolean }>();
   const subEvents = new Map<string, SubEvent & { eventId: string; deleted?: boolean }>();
+  const roles = new Map<
+    string,
+    Omit<Role, 'memberCount'> & { eventId: string; deleted?: boolean }
+  >();
+  const members = new Map<string, MemoryMember>();
+  const invites = new Map<string, LockedMemberInvite & { tokenHash: string; revokedAt?: string }>();
+  const rolesVersion = new Map<string, number>();
+  const owners = new Map<string, string>();
   const outbox: OutboxMessage[] = [];
   const takenSlugs = new Set<string>();
+
+  const memberCount = (roleId: string) =>
+    [...members.values()].filter(
+      (member) =>
+        member.status === 'active' && member.assignments.some((item) => item.roleId === roleId),
+    ).length;
+  const toRole = (row: Omit<Role, 'memberCount'> & { eventId: string }): Role => ({
+    ...strip({ ...row }),
+    permissions: [...row.permissions],
+    memberCount: memberCount(row.id),
+  });
+  const liveRole = (eventId: string, roleId: string) => {
+    const role = roles.get(roleId);
+    return role && role.eventId === eventId && !role.deleted ? role : undefined;
+  };
+  const nameTaken = (eventId: string, name: string, except?: string) =>
+    [...roles.values()].some(
+      (role) =>
+        role.eventId === eventId &&
+        !role.deleted &&
+        role.id !== except &&
+        role.name.toLowerCase() === name.toLowerCase(),
+    );
+  const toMember = (row: MemoryMember): Member => ({
+    id: row.id,
+    userId: row.userId,
+    name: profiles.get(row.userId)?.name ?? `User ${row.userId}`,
+    email: `${row.userId}@test.local`,
+    avatarUrl: null,
+    status: row.status,
+    isOwner: row.assignments.some((item) => roles.get(item.roleId)?.isOwner),
+    joinedAt: row.joinedAt,
+    version: row.version,
+    assignments: row.assignments.map((item) => ({
+      roleId: item.roleId,
+      roleName: roles.get(item.roleId)?.name ?? '',
+      subEventIds: [...item.subEventIds],
+    })),
+  });
 
   const strip = <T extends object>(row: T & { eventId?: string; deleted?: boolean }): T => {
     const { eventId: _eventId, deleted: _deleted, ...rest } = row;
@@ -36,7 +105,8 @@ export function memoryRuntime() {
     return row && row.eventId === eventId && !row.deleted ? row : undefined;
   };
 
-  const tx: CoreTx = {
+  // Team stores are attached below, once the helpers they share are defined.
+  const base: Omit<CoreTx, 'roles' | 'members' | 'access' | 'memberInvites'> = {
     users: {
       updateProfile: (userId, changes) => {
         const profile = profiles.get(userId);
@@ -90,6 +160,10 @@ export function memoryRuntime() {
           id,
           list.map((item) => ({ ...item })),
         );
+        return Promise.resolve();
+      },
+      setOwner: (id, userId) => {
+        owners.set(id, userId);
         return Promise.resolve();
       },
     },
@@ -166,11 +240,212 @@ export function memoryRuntime() {
       },
     },
   };
+  const tx = base as CoreTx;
+
+  tx.roles = {
+    insert: (eventId, list) => {
+      if (list.some((role) => nameTaken(eventId, role.name))) {
+        return Promise.resolve('name_taken' as const);
+      }
+      return Promise.resolve(
+        list.map((input) => {
+          const role = {
+            id: nextId(),
+            eventId,
+            name: input.name,
+            description: input.description ?? null,
+            isStandard: input.isStandard,
+            isOwner: input.isOwner,
+            permissions: [...input.permissions],
+            version: 1,
+          };
+          roles.set(role.id, role);
+          return toRole(role);
+        }),
+      );
+    },
+    find: (eventId, roleId) => {
+      const role = liveRole(eventId, roleId);
+      return Promise.resolve(role ? toRole(role) : null);
+    },
+    update: (eventId, roleId, expected, changes) => {
+      const role = liveRole(eventId, roleId);
+      if (!role || role.version !== expected) return Promise.resolve(null);
+      if (changes.name && nameTaken(eventId, changes.name, roleId)) {
+        return Promise.resolve('name_taken' as const);
+      }
+      Object.assign(role, changes, {
+        permissions: [...(changes.permissions ?? role.permissions)],
+        version: role.version + 1,
+      });
+      return Promise.resolve(toRole(role));
+    },
+    softDelete: (eventId, roleId, expected) => {
+      const role = liveRole(eventId, roleId);
+      if (!role || role.version !== expected) return Promise.resolve(false);
+      role.deleted = true;
+      return Promise.resolve(true);
+    },
+  };
+
+  const memberIn = (eventId: string, memberId: string) => {
+    const member = members.get(memberId);
+    return member?.eventId === eventId ? member : undefined;
+  };
+  tx.members = {
+    find: (eventId, memberId) => {
+      const member = memberIn(eventId, memberId);
+      return Promise.resolve(member ? toMember(member) : null);
+    },
+    findByUser: (eventId, userId) => {
+      const member = [...members.values()].find(
+        (row) => row.eventId === eventId && row.userId === userId,
+      );
+      return Promise.resolve(member ? toMember(member) : null);
+    },
+    join: (eventId, userId) => {
+      let member = [...members.values()].find(
+        (row) => row.eventId === eventId && row.userId === userId,
+      );
+      if (member) {
+        Object.assign(member, { status: 'active', version: member.version + 1 });
+      } else {
+        member = {
+          id: nextId(),
+          eventId,
+          userId,
+          status: 'active',
+          joinedAt: new Date().toISOString(),
+          version: 1,
+          assignments: [],
+        };
+        members.set(member.id, member);
+      }
+      return Promise.resolve(toMember(member));
+    },
+    replaceAssignments: (eventId, memberId, grants, _grantedBy, expected) => {
+      const member = memberIn(eventId, memberId);
+      if (!member || (expected !== undefined && member.version !== expected)) {
+        return Promise.resolve(false);
+      }
+      member.assignments = grants.map((grant) => ({
+        ...grant,
+        subEventIds: [...grant.subEventIds],
+      }));
+      member.version += 1;
+      return Promise.resolve(true);
+    },
+    remove: (eventId, memberId, expected) => {
+      const member = memberIn(eventId, memberId);
+      if (!member || (expected !== undefined && member.version !== expected)) {
+        return Promise.resolve(false);
+      }
+      Object.assign(member, { status: 'removed', assignments: [], version: member.version + 1 });
+      return Promise.resolve(true);
+    },
+  };
+
+  tx.access = {
+    forUser: (eventId, userId) => {
+      const member = [...members.values()].find(
+        (row) => row.eventId === eventId && row.userId === userId && row.status === 'active',
+      );
+      if (!member || !liveEvent(eventId)) return Promise.resolve(null);
+      const live = member.assignments.filter((item) => liveRole(eventId, item.roleId));
+      const rows = live.flatMap((item) =>
+        (item.subEventIds.length ? item.subEventIds : [null]).map((subEventId) => ({
+          subEventId,
+          permissions: roles.get(item.roleId)!.permissions,
+        })),
+      );
+      return Promise.resolve({
+        ...resolvePermissions(rows),
+        memberId: member.id,
+        isOwner: live.some((item) => roles.get(item.roleId)!.isOwner),
+      });
+    },
+    bumpRolesVersion: (eventId) => {
+      rolesVersion.set(eventId, (rolesVersion.get(eventId) ?? 1) + 1);
+      return Promise.resolve();
+    },
+    removeSubEventScopes: (eventId, subEventId) => {
+      let changed = false;
+      for (const member of members.values()) {
+        if (member.eventId !== eventId) continue;
+        member.assignments = member.assignments.flatMap((item) => {
+          if (!item.subEventIds.includes(subEventId)) return [item];
+          changed = true;
+          const rest = item.subEventIds.filter((id) => id !== subEventId);
+          return rest.length ? [{ ...item, subEventIds: rest }] : [];
+        });
+      }
+      return Promise.resolve(changed);
+    },
+  };
+
+  const publicInvite = (row: LockedMemberInvite): MemberInvite => ({
+    id: row.id,
+    email: row.email,
+    grants: row.grants,
+    maxUses: row.maxUses,
+    usedCount: row.usedCount,
+    expiresAt: row.expiresAt,
+    createdAt: row.createdAt,
+    createdBy: row.createdBy,
+  });
+  tx.memberInvites = {
+    insert: (eventId, input) => {
+      const invite = {
+        id: nextId(),
+        eventId,
+        tokenHash: input.tokenHash.toString('hex'),
+        email: input.email,
+        grants: input.grants,
+        maxUses: input.maxUses,
+        usedCount: 0,
+        expiresAt: input.expiresAt.toISOString(),
+        createdAt: new Date().toISOString(),
+        createdBy: { name: profiles.get(input.createdByUserId)?.name ?? 'Someone' },
+        createdByUserId: input.createdByUserId,
+        revoked: false,
+      };
+      invites.set(invite.id, invite);
+      return Promise.resolve(publicInvite(invite));
+    },
+    lockByTokenHash: (hash) => {
+      const invite = [...invites.values()].find((row) => row.tokenHash === hash.toString('hex'));
+      return Promise.resolve(invite ? { ...publicInvite(invite), ...pick(invite) } : null);
+    },
+    recordUse: (inviteId) => {
+      invites.get(inviteId)!.usedCount += 1;
+      return Promise.resolve();
+    },
+    revoke: (eventId, inviteId) => {
+      const invite = invites.get(inviteId);
+      if (!invite || invite.eventId !== eventId || invite.revoked) return Promise.resolve(false);
+      invite.revoked = true;
+      return Promise.resolve(true);
+    },
+  };
+  const pick = ({ eventId, createdByUserId, revoked }: LockedMemberInvite) => ({
+    eventId,
+    createdByUserId,
+    revoked,
+  });
 
   const runtime: ActionRuntime<CoreTx> = {
     transaction: (fn) => fn(tx),
-    // Permission checks are the runtime's job (packages/db); these tests cover the actions.
-    checkPermission: () => Promise.resolve(),
+    // Mirrors packages/db's check: 404 for non-members, 403 naming the missing permission.
+    checkPermission: async (_tx, ctx, permission, subEventId) => {
+      const access =
+        ctx.eventId && ctx.actor.kind === 'user'
+          ? await tx.access.forUser(ctx.eventId, ctx.actor.userId)
+          : null;
+      if (!access) throw new ActionError('not_found', 'Event not found');
+      if (!can(access, permission, subEventId)) {
+        throw new ActionError('forbidden', `You need ${permission}`, { permission });
+      }
+    },
     recordActivity: () => Promise.resolve(),
     writeOutbox: (_tx, _ctx, messages) => {
       outbox.push(...messages);
@@ -181,6 +456,11 @@ export function memoryRuntime() {
   return {
     runtime,
     tx,
+    roles,
+    members,
+    invites,
+    rolesVersion,
+    owners,
     profiles,
     workspaces,
     events,

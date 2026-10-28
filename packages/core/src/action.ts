@@ -1,3 +1,5 @@
+import type { Permission } from '@pme/contracts';
+
 import type { ActionContext } from './context.js';
 import { ActionError } from './errors.js';
 
@@ -27,7 +29,12 @@ export interface ActionOutcome<TResult> {
 export interface ActionDefinition<TInput, TResult, TTx> {
   name: string;
   /** Permission from the catalog, or null for actions any signed-in user may run. */
-  permission: string | null;
+  permission: Permission | null;
+  /**
+   * The sub-event the target belongs to, so a grant scoped to it counts (APIDesign
+   * "Authorization"). Omitted, or returning null: only a whole-event grant does.
+   */
+  subEventOf?(tx: TTx, ctx: ActionContext, input: TInput): Promise<string | null> | string | null;
   execute(tx: TTx, ctx: ActionContext, input: TInput): Promise<ActionOutcome<TResult>>;
 }
 
@@ -38,7 +45,13 @@ export interface ActionDefinition<TInput, TResult, TTx> {
 export interface ActionRuntime<TTx> {
   /** Opens one transaction (with local lock and statement timeouts) and commits or rolls back. */
   transaction<T>(fn: (tx: TTx) => Promise<T>): Promise<T>;
-  checkPermission(tx: TTx, ctx: ActionContext, permission: string): Promise<void>;
+  /** Throws not_found for non-members and forbidden (naming the permission) for the rest. */
+  checkPermission(
+    tx: TTx,
+    ctx: ActionContext,
+    permission: Permission,
+    subEventId: string | null,
+  ): Promise<void>;
   recordActivity(tx: TTx, ctx: ActionContext, entries: ActivityEntry[]): Promise<void>;
   writeOutbox(tx: TTx, ctx: ActionContext, messages: OutboxMessage[]): Promise<void>;
 }
@@ -55,7 +68,8 @@ export async function runAction<TInput, TResult, TTx>(
 ): Promise<TResult> {
   return runtime.transaction(async (tx) => {
     if (action.permission !== null) {
-      await runtime.checkPermission(tx, ctx, action.permission);
+      const subEventId = (await action.subEventOf?.(tx, ctx, input)) ?? null;
+      await runtime.checkPermission(tx, ctx, action.permission, subEventId);
     }
     const outcome = await action.execute(tx, ctx, input);
     if (outcome.activity?.length) {

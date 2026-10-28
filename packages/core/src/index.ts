@@ -27,9 +27,40 @@ export {
 export { eventSlug, SLUG_PATTERN } from './events/slug.js';
 export { EVENT_TEMPLATES } from './events/templates.js';
 export { ActionError } from './errors.js';
+export {
+  actorAccess,
+  assertCovers,
+  assertWithinOwn,
+  resolvePermissions,
+  type GrantRow,
+} from './team/access.js';
+export {
+  acceptMemberInvite,
+  createMemberInvite,
+  hashInviteToken,
+  inviteProblem,
+  maskEmail,
+  revokeMemberInvite,
+} from './team/invite-actions.js';
+export {
+  leaveEvent,
+  removeMember,
+  replaceMemberRoles,
+  transferOwnership,
+} from './team/member-actions.js';
+export { createRole, deleteRole, updateRole } from './team/role-actions.js';
 export type {
+  AccessStore,
   CoreTx,
   EventStore,
+  LockedMemberInvite,
+  MemberAccess,
+  MemberInviteStore,
+  MemberStore,
+  NewMemberInvite,
+  NewRole,
+  RoleChanges,
+  RoleStore,
   NewEvent,
   NewSubEvent,
   NewVenue,
