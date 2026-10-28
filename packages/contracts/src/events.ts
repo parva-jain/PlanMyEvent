@@ -117,7 +117,7 @@ export const UpdateEventSchema = z
   .refine(dateOrder, dateOrderIssue);
 export type UpdateEvent = z.infer<typeof UpdateEventSchema>;
 
-/** GET /v1/me/events item. Role names arrive with members in milestone 4. */
+/** GET /v1/me/events item: an event I'm an active member of, with my role names. */
 export const MyEventSchema = EventSchema.pick({
   id: true,
   slug: true,
@@ -127,7 +127,7 @@ export const MyEventSchema = EventSchema.pick({
   endsOn: true,
   timeZone: true,
   status: true,
-});
+}).extend({ roles: z.array(z.string()) });
 export type MyEvent = z.infer<typeof MyEventSchema>;
 
 // ---- Modules ----------------------------------------------------------------------------
