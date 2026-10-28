@@ -3,4 +3,5 @@ export { accounts, sessions, users, verifications } from './auth.js';
 export { eventModules, events, subEvents, venues } from './events.js';
 export { idempotencyKeys } from './idempotency.js';
 export { outbox } from './outbox.js';
+export { memberInvites, members, roleAssignments, roleAssignmentScopes, roles } from './team.js';
 export { workspaces } from './workspaces.js';

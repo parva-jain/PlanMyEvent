@@ -4,7 +4,6 @@ import { createEvent, createSubEvent, runAction, updateEvent, type ActionContext
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { canAccessEvent } from './access.js';
 import {
   claimIdempotencyKey,
   completeIdempotencyKey,
@@ -14,7 +13,12 @@ import { createActionRuntime } from './runtime.js';
 import { eventModules, events, subEvents, venues } from './schema/events.js';
 import { idempotencyKeys } from './schema/idempotency.js';
 import { workspaces } from './schema/workspaces.js';
-import { connectTestDb, deleteTestUser, insertTestUser } from './testing/test-db.js';
+import {
+  connectTestDb,
+  deleteTestEvents,
+  deleteTestUser,
+  insertTestUser,
+} from './testing/test-db.js';
 import { newId } from './uuid.js';
 
 const { pool, db } = connectTestDb();
@@ -51,12 +55,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  for (const eventId of createdEvents) {
-    await db.delete(subEvents).where(eq(subEvents.eventId, eventId));
-    await db.delete(venues).where(eq(venues.eventId, eventId));
-    await db.delete(eventModules).where(eq(eventModules.eventId, eventId));
-    await db.delete(events).where(eq(events.id, eventId));
-  }
+  await deleteTestEvents(db, createdEvents);
   await deleteTestUser(db, owner);
   await deleteTestUser(db, stranger);
   await pool.end();
@@ -109,11 +108,9 @@ describe('createEvent against Postgres', () => {
   });
 });
 
-describe('access (interim owner-only rule)', () => {
-  it('lets the owner in and answers 404 to everyone else', async () => {
+describe('access', () => {
+  it('answers 404 to non-members', async () => {
     const event = await newEvent();
-    expect(await canAccessEvent(db, event.id, owner, 'event.view')).toBe(true);
-    expect(await canAccessEvent(db, event.id, stranger, 'event.view')).toBe(false);
     await expect(
       runAction(runtime, ctxFor(stranger, event.id), updateEvent, {
         expectedVersion: 1,

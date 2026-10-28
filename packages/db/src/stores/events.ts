@@ -58,7 +58,7 @@ const pgCode = (error: unknown): unknown =>
 
 /** Postgres unique_violation, e.g. a slug another event took a moment ago. Drizzle wraps the
  * driver's error, so the code may be on `cause`. */
-const isUniqueViolation = (error: unknown) =>
+export const isUniqueViolation = (error: unknown) =>
   pgCode(error) === '23505' || (error instanceof Error && pgCode(error.cause) === '23505');
 
 const liveEvent = (eventId: string) => and(eq(events.id, eventId), isNull(events.deletedAt));
@@ -106,6 +106,9 @@ export function eventStore(db: Queryable): EventStore {
       if (list.length) {
         await db.insert(eventModules).values(list.map((item) => ({ eventId, ...item })));
       }
+    },
+    async setOwner(eventId, userId) {
+      await db.update(events).set({ ownerUserId: userId }).where(liveEvent(eventId));
     },
   };
 }

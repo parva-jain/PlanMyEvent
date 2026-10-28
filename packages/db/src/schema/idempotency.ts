@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
   check,
-  customType,
   index,
   jsonb,
   pgTable,
@@ -11,7 +10,7 @@ import {
   timestamp,
 } from 'drizzle-orm/pg-core';
 
-const bytea = customType<{ data: Buffer }>({ dataType: () => 'bytea' });
+import { bytea } from './columns.js';
 
 /** Stored POST outcomes for Idempotency-Key replays (DatabaseDesign "idempotency_keys"). */
 export const idempotencyKeys = pgTable(
