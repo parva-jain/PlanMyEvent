@@ -22,6 +22,20 @@ export function capturingSender() {
   return { codes, sender };
 }
 
+/** An authenticated client for one signed-in user; writes carry the web app's Origin. */
+export function asUser(app: () => NestExpressApplication, cookie: string[]) {
+  const http = () => request(app().getHttpServer());
+  const write = (method: 'post' | 'patch' | 'put' | 'delete', path: string) =>
+    http()[method](path).set('Origin', WEB_ORIGIN).set('Cookie', cookie);
+  return {
+    get: (path: string) => http().get(path).set('Cookie', cookie),
+    post: (path: string) => write('post', path),
+    patch: (path: string) => write('patch', path),
+    put: (path: string) => write('put', path),
+    delete: (path: string) => write('delete', path),
+  };
+}
+
 export const randomIp = () => `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`;
 
 /**
@@ -68,11 +82,32 @@ export function testUsers(app: () => NestExpressApplication, codes: Map<string, 
         [emails],
       );
       const userIds = rows.map((row) => row.id);
-      const owned = 'select id from events where owner_user_id = any($1)';
-      for (const table of ['sub_events', 'venues', 'event_modules']) {
-        await pool.query(`delete from ${table} where event_id in (${owned})`, [userIds]);
+      // Events they created (ownership may have moved to another test user since).
+      const created = `select id from events where owner_user_id = any($1)
+        or id in (select event_id from members where user_id = any($1) and invited_by_user_id is null)`;
+      const { rows: eventRows } = await pool.query<{ id: string }>(created, [userIds]);
+      const eventIds = eventRows.map((row) => row.id);
+      for (const table of [
+        'role_assignment_scopes',
+        'role_assignments',
+        'member_invites',
+        'members',
+        'roles',
+        'sub_events',
+        'venues',
+        'event_modules',
+      ]) {
+        await pool.query(`delete from ${table} where event_id = any($1)`, [eventIds]);
       }
-      await pool.query(`delete from events where id in (${owned})`, [userIds]);
+      await pool.query('delete from outbox where event_id = any($1)', [eventIds]);
+      await pool.query('delete from events where id = any($1)', [eventIds]);
+      // Memberships and invites in other users' events.
+      await pool.query(
+        'delete from role_assignments where member_id in (select id from members where user_id = any($1))',
+        [userIds],
+      );
+      await pool.query('delete from members where user_id = any($1)', [userIds]);
+      await pool.query('delete from member_invites where created_by_user_id = any($1)', [userIds]);
       await pool.query('delete from idempotency_keys where scope = any($1)', [
         userIds.map((id) => `user:${id}`),
       ]);

@@ -16,6 +16,7 @@ import { LiveModule } from './live/live.module';
 import { LoggingModule } from './logging/logging.module';
 import { MeModule } from './me/me.module';
 import { RedisModule } from './redis/redis.module';
+import { TeamModule } from './team/team.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { RedisModule } from './redis/redis.module';
     HealthModule,
     MeModule,
     EventsModule,
+    TeamModule,
     LiveModule,
   ],
   providers: [

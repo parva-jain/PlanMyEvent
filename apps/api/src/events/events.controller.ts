@@ -45,15 +45,16 @@ export class EventsController {
     return whole(Object.values(EVENT_TEMPLATES));
   }
 
-  /** Create from a template; the creator owns it. Accepts Idempotency-Key. */
+  /** Create from a template; the creator joins as Owner. Accepts Idempotency-Key. */
   @Post('events')
   @ZodResponse({ status: 201, type: CreatedEventDto })
   create(@UserContext() ctx: ActionContext, @Body() body: CreateEventDto) {
     return runAction(this.runtime, ctx, createEvent, body);
   }
 
+  /** Any grant of event.view, even one scoped to a sub-event, shows the event itself. */
   @Get('events/:eventId')
-  @EventRoute('event.view')
+  @EventRoute('event.view', 'list')
   @ZodResponse({ type: EventDto })
   async get(@Param('eventId', UuidPipe) eventId: string) {
     return (await this.queries.getEvent(eventId))!;
@@ -71,7 +72,7 @@ export class EventsController {
   }
 
   @Get('events/:eventId/modules')
-  @EventRoute('event.view')
+  @EventRoute('event.view', 'list')
   @ZodResponse({ type: ModulesDto })
   async modules(@Param('eventId', UuidPipe) eventId: string) {
     return whole(await this.queries.listModules(eventId));
