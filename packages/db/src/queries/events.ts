@@ -1,8 +1,9 @@
 import type { Event, EventModule, MyEvent, SubEvent, Venue } from '@pme/contracts';
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 
 import type { Database } from '../client.js';
 import { events, subEvents, venues } from '../schema/events.js';
+import { members, roleAssignments, roles } from '../schema/team.js';
 import { eventStore, subEventStore, toSubEvent, toVenue, venueStore } from '../stores/events.js';
 
 /**
@@ -42,7 +43,7 @@ export function eventQueries(db: Database) {
       return rows.map(toSubEvent);
     },
 
-    /** GET /v1/me/events: until members exist, the events a user owns. */
+    /** GET /v1/me/events: events where I'm an active member, with my role names. */
     async listEventsForUser(userId: string): Promise<MyEvent[]> {
       const rows = await db
         .select({
@@ -54,9 +55,16 @@ export function eventQueries(db: Database) {
           endsOn: events.endsOn,
           timeZone: events.timeZone,
           status: events.status,
+          roles: sql<string[]>`coalesce(
+            array_agg(${roles.name} order by ${roles.createdAt}) filter (where ${roles.id} is not null),
+            '{}'::text[])`,
         })
-        .from(events)
-        .where(and(eq(events.ownerUserId, userId), isNull(events.deletedAt)))
+        .from(members)
+        .innerJoin(events, and(eq(events.id, members.eventId), isNull(events.deletedAt)))
+        .leftJoin(roleAssignments, eq(roleAssignments.memberId, members.id))
+        .leftJoin(roles, and(eq(roles.id, roleAssignments.roleId), isNull(roles.deletedAt)))
+        .where(and(eq(members.userId, userId), eq(members.status, 'active')))
+        .groupBy(events.id)
         .orderBy(asc(events.startsOn), asc(events.id));
       return rows.map((row) => ({
         ...row,

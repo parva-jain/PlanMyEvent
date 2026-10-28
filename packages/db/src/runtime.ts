@@ -1,24 +1,28 @@
 import {
   ActionError,
   placeholderHooks,
+  type AccessStore,
   type ActionRuntime,
   type CoreTx,
   type EventStore,
+  type MemberInviteStore,
+  type MemberStore,
+  type RoleStore,
   type PersonalWorkspace,
   type SubEventStore,
   type UserStore,
   type VenueStore,
   type WorkspaceStore,
 } from '@pme/core';
-import { PERMISSIONS, type Permission, type ValueOf } from '@pme/contracts';
+import { can, type ValueOf } from '@pme/contracts';
 import { and, eq, sql } from 'drizzle-orm';
 
-import { canAccessEvent } from './access.js';
 import type { Database } from './client.js';
 import { users } from './schema/auth.js';
 import { outbox } from './schema/outbox.js';
 import { workspaces } from './schema/workspaces.js';
 import { eventStore, subEventStore, venueStore } from './stores/events.js';
+import { accessStore, memberInviteStore, memberStore, roleStore } from './stores/team.js';
 
 /** The Drizzle transaction handle `db.transaction` passes to its callback. */
 export type DrizzleTx = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -75,6 +79,10 @@ export class DbTx implements CoreTx {
   readonly events: EventStore;
   readonly venues: VenueStore;
   readonly subEvents: SubEventStore;
+  readonly roles: RoleStore;
+  readonly members: MemberStore;
+  readonly access: AccessStore;
+  readonly memberInvites: MemberInviteStore;
 
   constructor(readonly db: DrizzleTx) {
     this.users = userStore(db);
@@ -82,6 +90,10 @@ export class DbTx implements CoreTx {
     this.events = eventStore(db);
     this.venues = venueStore(db);
     this.subEvents = subEventStore(db);
+    this.roles = roleStore(db);
+    this.members = memberStore(db);
+    this.access = accessStore(db);
+    this.memberInvites = memberInviteStore(db);
   }
 }
 
@@ -89,9 +101,9 @@ export class DbTx implements CoreTx {
 const LOCK_TIMEOUT = '2s';
 
 /**
- * The ActionRuntime that core's `runAction` uses in the API and worker. Permission checks
- * use the interim owner-only rule (`canAccessEvent`) until milestone 4; the activity log
- * (milestone 5) is still a placeholder; the outbox is real.
+ * The ActionRuntime that core's `runAction` uses in the API and worker. Permissions are read
+ * inside the action's transaction (never from cache), so a role change committed a moment
+ * ago already counts. The activity log (milestone 5) is still a placeholder.
  */
 export function createActionRuntime(db: Database): ActionRuntime<DbTx> {
   return {
@@ -100,16 +112,17 @@ export function createActionRuntime(db: Database): ActionRuntime<DbTx> {
         await tx.execute(sql.raw(`set local lock_timeout = '${LOCK_TIMEOUT}'`));
         return fn(new DbTx(tx));
       }),
-    async checkPermission(tx, ctx, permission) {
-      if (!(PERMISSIONS as readonly string[]).includes(permission)) {
-        throw new Error(`Unknown permission ${permission}`);
-      }
-      const allowed =
-        ctx.eventId !== null &&
-        ctx.actor.kind === 'user' &&
-        (await canAccessEvent(tx.db, ctx.eventId, ctx.actor.userId, permission as Permission));
-      if (!allowed) {
-        throw new ActionError('not_found', 'Event not found');
+    async checkPermission(tx, ctx, permission, subEventId) {
+      const access =
+        ctx.eventId !== null && ctx.actor.kind === 'user'
+          ? await tx.access.forUser(ctx.eventId, ctx.actor.userId)
+          : null;
+      // Non-members can't tell the event exists (APIDesign "404 or 403").
+      if (!access) throw new ActionError('not_found', 'Event not found');
+      if (!can(access, permission, subEventId)) {
+        throw new ActionError('forbidden', `You need the ${permission} permission`, {
+          permission,
+        });
       }
     },
     recordActivity: placeholderHooks.recordActivity,

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { createDb, createPool, type Database } from '../client.js';
 import { loadDbEnv } from '../env.js';
@@ -29,3 +29,27 @@ export async function deleteTestUser(db: Database, userId: string) {
 
 /** A topic no running relay knows, so a local worker never takes these rows. */
 export const testTopic = (name: string) => `test.${name}-${newId()}`;
+
+/** Event-owned tables, children first, for removing a test's events. */
+const EVENT_TABLES = [
+  'role_assignment_scopes',
+  'role_assignments',
+  'member_invites',
+  'members',
+  'roles',
+  'sub_events',
+  'venues',
+  'event_modules',
+];
+
+export async function deleteTestEvents(db: Database, eventIds: string[]) {
+  if (!eventIds.length) return;
+  const ids = sql.join(
+    eventIds.map((id) => sql`${id}::uuid`),
+    sql`, `,
+  );
+  for (const table of EVENT_TABLES) {
+    await db.execute(sql`delete from ${sql.identifier(table)} where event_id in (${ids})`);
+  }
+  await db.execute(sql`delete from events where id in (${ids})`);
+}
