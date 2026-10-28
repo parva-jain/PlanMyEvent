@@ -1,17 +1,19 @@
 # Project status
 
-Last updated: Oct 26, 2026 · Updated at the end of every working step.
+Last updated: Oct 28, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Milestone 3 — events**, branch `feat/m3-events`. Milestones 1 and 2 are merged to `main` (PRs #1 and #2, squashed). From milestone 3, PRs are rebase-merged so every commit lands on `main`.
+**Milestone 4 — members, roles and permissions**, branch `feat/m4-members`. Milestones 1–3 are merged to `main` (PRs #1 and #2 squashed, #3 rebase-merged).
 
 | Step | What | Status |
 | --- | --- | --- |
-| 3a | Backend: events, modules, venues, sub-events and idempotency-key tables; templates; core actions; endpoints with ETag, If-Match and Idempotency-Key | Done |
-| 3b | Web: My events (`/app`), create-event wizard (`/events/new`), the shell on real events (`/events/[eventId]`), Schedule (sub-events, venues) and Settings (details, modules) with If-Match and 409 recovery | Done |
+| 4a | Backend: members, roles, role assignments with sub-event scopes, member invites (migration 0003 with a backfill); effective permissions in core; the API guard with the Redis permission cache; team endpoints; invite email | Done |
+| 4b | Web: Team page (members, invite by email or link, roles and the role editor), join page `/join/[token]`, buttons hidden by permission (`GET E/me`), role names on My events | Next |
 
-**Interim access rule (until milestone 4):** an event's owner holds every permission and anyone else gets 404, through one function (`canAccessEvent` in `packages/db`) used by the API guard and by core's permission check. Milestone 4 replaces its body with members, roles and sub-event scope; callers don't change.
+### Milestone 3 (done)
+
+Events from templates, sub-events, venues, modules; the web app's My events, wizard, Schedule and Settings. Merged as rebase of PR #3 (`b999f80`).
 
 ### Milestone 2 (done)
 
@@ -168,6 +170,15 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | New motion pieces: `Skeleton`, `ListPresence`/`ListItem`, `SidePanel`/`EditPanel` | MOTION.md section 4 patterns, built when first needed | `src/components/motion/` |
 | Time-zone pickers always include the current zone | Chrome lists India as Asia/Calcutta, so Asia/Kolkata silently fell back to the first option | `src/lib/format.ts` (`timeZoneOptions`) |
 | Unknown event sections render not-found with status 200 | Next streams the dynamic `[eventId]` layout before the page calls `notFound()`; signed-in pages are noindex anyway | `app/(signed-in)/events/[eventId]/[section]/page.tsx` |
+| Standard role presets: Admin = all but `event.delete`; Editor = plan content (sub-events, tasks, budget, guests, registrations, check-in, gallery upload) plus `members.view` and `activity.view`; Helper = view, `tasks.update_own`, `checkin.perform`, `gallery.upload`; Viewer = every `.view` permission | PRD gives one-line summaries only | `packages/contracts/src/permissions.ts` |
+| Any `event.view` grant, even one scoped to a sub-event, opens the event (GET E, modules, venues, members, roles) | Otherwise a member scoped to Mehendi couldn't open the event at all | `apps/api/src/events/event-access.ts` (scope `'list'`) |
+| Changing or removing a member needs at least their permissions; the Owner's roles change only by transfer | Extends PRD rule 3, so a narrow role holding `members.manage` can't demote an Admin | `packages/core/src/team/member-actions.ts` |
+| Email invites are single use and need the invited address on accept (403 with a masked hint); shareable links take any signed-in user, up to `maxUses` | An emailed link forwarded to someone else shouldn't let them in | `packages/core/src/team/invite-actions.ts` |
+| Accept re-checks the invite: deleted roles or sub-events drop out, the inviter must still hold `members.manage` and cover the grants, otherwise 410 `link_revoked` | DatabaseDesign "re-validated then" | Same file |
+| Transfer ownership takes `keepRoleId`, the role the old owner keeps for the whole event (usually Admin) | Standard roles have no fixed key once renamed; the UI defaults to Admin | `TransferOwnershipSchema` |
+| Removing a member deletes their role assignments and keeps the member row (status `removed`); re-joining reuses the row | DatabaseDesign "Removed members keep their history" | `packages/db/src/stores/team.ts` |
+| Permissions are read inside the action's transaction; only the API guard uses the Redis cache (`perm:{event}:{user}:{roles_version}`, 10 min); non-members aren't cached | SystemDesign 5.5; a just-committed role change must count for writes | `apps/api/src/events/permission-cache.ts` |
+| Migration 0003 backfills existing events (five roles, owner as member with Owner), ids from a SQL UUIDv7 function | Owners of earlier events would otherwise get 404 | `packages/db/drizzle/0003_members_and_roles.sql` |
 | Playwright: 2 workers, 10 s expect timeout | Each worker drives the real API, worker and database; more starved a busy laptop into timeouts | `apps/web/playwright.config.ts` |
 | Web session check runs in the browser (`SessionGate` on GET /v1/me), not in Next middleware | The session cookie belongs to the API host, which the web server never sees in production | `src/components/auth/session-gate.tsx` |
 | Sign-in uses Better Auth's client; everything else `apiFetch` with problem+json errors | Decision 010 | `src/lib/auth-client.ts`, `src/lib/api.ts` |
@@ -191,6 +202,9 @@ None right now.
 - Outbox cleanup job for published rows older than 7 days (milestone 5 with the scheduled queue).
 - Only home-page messages need to reach the browser; today all namespaces (including `devUi`) are sent. Trim if step G needs the bytes.
 - Footer privacy and terms links once those pages exist.
+- Rate limits on `GET /v1/member-invites/{token}` and accept (APIDesign lists none for member invites; tokens are 32 random bytes).
+- Undo of a sub-event deletion (milestone 5) won't bring back the scoped role assignments it removed.
+- Nightly consistency check (owner has an Owner assignment, no scope-less assignments left by deletes) arrives with scheduled jobs.
 - `@sentry/nestjs` 11.8 pulls in `@sentry/bundler-plugins`, whose webpack peer brings webpack, SWC, esbuild and lightningcss (~60 MB) into the API image. Revisit with a Sentry update or a pnpm override.
 - Logo SVG/PNG files and app icons still use the warm ink #1F1B16 and warm white #FAF8F5 (BRAND.md note); regenerate in a brand pass.
 
@@ -203,4 +217,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [25 Events in the web app](learning/frontend/25-events-web.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [26 Members, roles and permissions](learning/backend/26-members-roles-permissions.md).
