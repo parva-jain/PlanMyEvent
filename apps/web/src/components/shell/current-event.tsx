@@ -1,6 +1,6 @@
 'use client';
 
-import type { Event } from '@pme/contracts';
+import { can, type Event, type MyMembership, type Permission } from '@pme/contracts';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -10,19 +10,26 @@ import { FullPageLoading } from '@/components/auth/full-page-loading';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
 import { useEvent } from '@/lib/events';
+import { useMyMembership } from '@/lib/team';
 
 import { MY_EVENTS_HREF } from './nav';
 
 interface CurrentEventContext {
   eventId: string;
   event: Event;
+  membership: MyMembership;
+  /**
+   * Whether I hold `permission`, for the whole event or inside `subEventId`. Only hides
+   * what I can't do; the API enforces it either way (APIDesign "Permissions the client can read").
+   */
+  can: (permission: Permission, subEventId?: string | null) => boolean;
 }
 
 const Context = createContext<CurrentEventContext | null>(null);
 
 /**
- * Loads the event in the URL for the whole shell. A 404 (missing, deleted, or not yours,
- * which the API answers the same way) shows a way back to My events.
+ * Loads the event in the URL, and my membership in it, for the whole shell. A 404 (missing,
+ * deleted, or not a member, which the API answers the same way) shows a way back to My events.
  */
 export function CurrentEventProvider({
   eventId,
@@ -32,7 +39,13 @@ export function CurrentEventProvider({
   children: ReactNode;
 }) {
   const t = useTranslations('app.event');
-  const { data: event, error, refetch, isFetching } = useEvent(eventId);
+  const eventQuery = useEvent(eventId);
+  const membershipQuery = useMyMembership(eventId);
+  const event = eventQuery.data;
+  const membership = membershipQuery.data;
+  const error = eventQuery.error ?? membershipQuery.error;
+  const isFetching = eventQuery.isFetching || membershipQuery.isFetching;
+  const refetch = () => Promise.all([eventQuery.refetch(), membershipQuery.refetch()]);
 
   if (error) {
     const missing = error instanceof ApiError && error.status === 404;
@@ -54,14 +67,25 @@ export function CurrentEventProvider({
       </div>
     );
   }
-  if (!event) {
+  if (!event || !membership) {
     return (
       <div className="flex min-h-dvh">
         <FullPageLoading />
       </div>
     );
   }
-  return <Context value={{ eventId, event }}>{children}</Context>;
+  return (
+    <Context
+      value={{
+        eventId,
+        event,
+        membership,
+        can: (permission, subEventId) => can(membership.permissions, permission, subEventId),
+      }}
+    >
+      {children}
+    </Context>
+  );
 }
 
 export function useCurrentEvent(): CurrentEventContext {

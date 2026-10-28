@@ -586,7 +586,12 @@
       "emptyTitle": "Plan your first event",
       "emptyBody": "Pick a template and we'll set up the sub-events and modules. You can change everything later.",
       "createFirst": "Create an event",
-      "loadFailed": "Couldn't load your events."
+      "loadFailed": "Couldn't load your events.",
+      "yourRoles": "You: {roles}"
+    },
+    "noAccess": {
+      "title": "You don't have access to this",
+      "body": "Your roles in this event don't include “{permission}”. Ask the event's owner or an admin if you need it."
     }
   },
   "auth": {
@@ -792,6 +797,283 @@
         "guests": "Guest lists, households and invitations",
         "registration": "A public page where people sign up",
         "gallery": "Photos shared with the team"
+      }
+    }
+  },
+  "team": {
+    "title": "Team",
+    "summary": "{members, plural, one {# member} other {# members}} · {invites, plural, =0 {no open invites} one {# open invite} other {# open invites}}",
+    "noRoles": "No roles",
+    "hiddenSubEvent": "another sub-event",
+    "areas": {
+      "event": "Event",
+      "members": "Team",
+      "roles": "Roles",
+      "subevents": "Schedule",
+      "tasks": "Tasks",
+      "budget": "Budget",
+      "guests": "Guests",
+      "registrations": "Registrations",
+      "checkin": "Check-in",
+      "website": "Event page",
+      "gallery": "Gallery",
+      "activity": "Activity"
+    },
+    "permissions": {
+      "event": {
+        "view": {
+          "label": "See the event",
+          "help": "Name, dates, venues and modules."
+        },
+        "settings": {
+          "label": "Change event settings",
+          "help": "Name, dates, time zone, status and modules."
+        },
+        "delete": {
+          "label": "Delete the event",
+          "help": "Removes the event and everything in it."
+        }
+      },
+      "members": {
+        "view": {
+          "label": "See the team",
+          "help": "Members, their roles and the role list."
+        },
+        "manage": {
+          "label": "Manage the team",
+          "help": "Invite people, change their roles, remove members."
+        }
+      },
+      "roles": {
+        "manage": {
+          "label": "Create and edit roles",
+          "help": "Custom roles and the standard ones, except Owner."
+        }
+      },
+      "subevents": {
+        "view": {
+          "label": "See the schedule",
+          "help": "Sub-events with their times and venues."
+        },
+        "edit": {
+          "label": "Edit the schedule",
+          "help": "Add, change and remove sub-events and venues."
+        }
+      },
+      "tasks": {
+        "view": {
+          "label": "See tasks",
+          "help": "The task list and board."
+        },
+        "edit": {
+          "label": "Create and edit tasks",
+          "help": "Add, change and close any task."
+        },
+        "assign": {
+          "label": "Assign tasks",
+          "help": "Choose who does what."
+        },
+        "update_own": {
+          "label": "Update their own tasks",
+          "help": "Mark tasks assigned to them as done or in progress."
+        }
+      },
+      "budget": {
+        "view": {
+          "label": "See the budget",
+          "help": "Categories, expenses and payments."
+        },
+        "edit": {
+          "label": "Edit the budget",
+          "help": "Add expenses and record payments."
+        }
+      },
+      "guests": {
+        "view": {
+          "label": "See guests",
+          "help": "The guest list, households and responses."
+        },
+        "edit": {
+          "label": "Edit guests",
+          "help": "Add, change and remove guests."
+        },
+        "invite": {
+          "label": "Send invitations",
+          "help": "Share invitation links and track delivery."
+        }
+      },
+      "registrations": {
+        "view": {
+          "label": "See registrations",
+          "help": "Who signed up through the public page."
+        },
+        "manage": {
+          "label": "Manage registrations",
+          "help": "Approve, cancel and move registrations."
+        }
+      },
+      "checkin": {
+        "perform": {
+          "label": "Check people in",
+          "help": "Mark guests as arrived on the day."
+        }
+      },
+      "website": {
+        "edit": {
+          "label": "Edit the event page",
+          "help": "The public page guests see."
+        }
+      },
+      "gallery": {
+        "upload": {
+          "label": "Upload photos",
+          "help": "Add photos to the event gallery."
+        },
+        "manage": {
+          "label": "Manage the gallery",
+          "help": "Remove or hide anyone's photos."
+        }
+      },
+      "activity": {
+        "view": {
+          "label": "See activity",
+          "help": "Every change the team made, with undo."
+        }
+      }
+    },
+    "grant": {
+      "role": "Role",
+      "beyondYours": "{role} (beyond your own permissions)",
+      "where": "Where can they work?",
+      "whole": {
+        "title": "Whole event",
+        "body": "Everything this role allows, everywhere."
+      },
+      "some": {
+        "title": "Only some sub-events",
+        "body": "Only inside the sub-events you choose."
+      },
+      "subEvents": "Sub-events"
+    },
+    "invite": {
+      "title": "Invite people",
+      "how": "How to invite",
+      "byEmail": "By email",
+      "byLink": "Share a link",
+      "email": "Email address",
+      "emailHint": "We'll email them a link that only works for this address.",
+      "expires": "Link expires",
+      "inDays": "{days, plural, one {In # day} other {In # days}}",
+      "maxUses": "How many people can join",
+      "send": "Send invite",
+      "sent": "Invite sent to {email}.",
+      "done": "Done",
+      "createLink": "Create link",
+      "linkReady": "Your invite link",
+      "copy": "Copy link",
+      "copied": "Copied",
+      "whatsapp": "Share on WhatsApp",
+      "whatsappText": "Join the team planning {event} on Plan My Event: {url}",
+      "onceNote": "Copy it now: for safety we only show a link once. You can always revoke it and make a new one.",
+      "revokeNote": "Anyone with the link can join until it expires, it's used up, or you revoke it.",
+      "noRoles": "There are no roles you can give. Ask the owner or an admin.",
+      "beyondYours": "You can only give roles within your own permissions.",
+      "failed": "Couldn't create the invite. Try again in a moment."
+    },
+    "pending": {
+      "title": "{count, plural, one {# open invite} other {# open invites}}",
+      "subtitle": "Invites that can still be used.",
+      "link": "Shareable link",
+      "emailMeta": "Emailed by {by}",
+      "linkMeta": "{used} of {max} joined",
+      "expires": "expires {date}",
+      "revoke": "Revoke",
+      "confirmRevoke": "Tap again to revoke"
+    },
+    "member": {
+      "title": "Member",
+      "you": "you",
+      "roles": "Roles",
+      "addRole": "Add another role",
+      "removeRole": "Remove this role",
+      "save": "Save roles",
+      "canDo": "What {name} can do",
+      "remove": "Remove from team",
+      "confirmRemove": "Tap again to remove {name}",
+      "transferTitle": "Make them the owner",
+      "transferBody": "{name} becomes the owner, with every permission including deleting the event. You keep the role you choose.",
+      "keepRole": "Your role afterwards",
+      "transfer": "Transfer ownership",
+      "confirmTransfer": "Tap again to transfer",
+      "leave": "Leave this event",
+      "confirmLeave": "Tap again to leave",
+      "failed": "Couldn't save. Try again in a moment.",
+      "conflict": "Someone changed this member a moment ago. Here's the latest; make your change again.",
+      "forbidden": "You can't change someone with more permissions than you, or give more than you have."
+    },
+    "roles": {
+      "title": "Roles",
+      "subtitle": "A role is a set of permissions. People can hold several, for the whole event or only some sub-events.",
+      "backToTeam": "Team",
+      "backToRoles": "Roles",
+      "create": "Create role",
+      "standard": "Standard",
+      "custom": "Custom",
+      "permissionCount": "{count, plural, one {# permission} other {# permissions}}",
+      "memberCount": "{count, plural, =0 {No one has it} one {# person} other {# people}}",
+      "newTitle": "New role",
+      "editTitle": "Edit role: {name}",
+      "name": "Role name",
+      "description": "Description",
+      "optional": "Optional",
+      "save": "Save changes",
+      "createSave": "Create role",
+      "enabledCount": "{on} of {total} on",
+      "notYours": "You can't give a permission you don't have",
+      "ownerLocked": "The Owner role always has every permission. It can't be edited, and it only changes hands when the owner transfers ownership.",
+      "summaryTitle": "People with this role can",
+      "summaryEmpty": "Nothing yet. Turn on the permissions this role needs.",
+      "delete": "Delete role",
+      "confirmDelete": "Tap again to delete",
+      "inUse": "Remove this role from everyone who has it before deleting it.",
+      "conflict": "Someone changed this role a moment ago. Here's the latest version; make your change again.",
+      "beyondYours": "You can only give permissions you have yourself.",
+      "failed": "Couldn't save. Try again in a moment."
+    }
+  },
+  "join": {
+    "metaTitle": "Join the team · Plan My Event",
+    "title": "{name} invited you to help plan {event}",
+    "rolesLabel": "Your roles",
+    "expires": "Invite expires {date}",
+    "emailOnly": "This invite is for {email}.",
+    "join": "Join event",
+    "signedInAs": "Signed in as {email}.",
+    "switchAccount": "Use another account",
+    "signInToJoin": "Sign in to join",
+    "signInHint": "New to Plan My Event? Signing in creates your account.",
+    "wrongEmail": "This invite was sent to {email}. Sign in with that address to join.",
+    "failed": "Couldn't join. Try again in a moment.",
+    "joinedTitle": "You're in!",
+    "joinedBody": "You're now on the team planning {event}.",
+    "alreadyTitle": "You're already on this team",
+    "alreadyBody": "You're a member of {event}, so nothing changed.",
+    "openEvent": "Open the event",
+    "toMyEvents": "Go to My events",
+    "toHome": "Go to the home page",
+    "hint": "Sign in to join {name}'s team for {event}.",
+    "dead": {
+      "invalid": {
+        "title": "This invite link doesn't work",
+        "body": "Check you have the whole link, or ask the person who sent it for a new one."
+      },
+      "expired": {
+        "title": "This invite has expired",
+        "body": "It ran out of time or has been used up. Ask the person who sent it for a new link."
+      },
+      "revoked": {
+        "title": "This invite was cancelled",
+        "body": "The person who sent it cancelled it. Ask them for a new link if you still need one."
       }
     }
   }

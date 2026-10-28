@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 
+import { PERMISSIONS } from '@pme/contracts';
 import { expect, test, type Page } from '@playwright/test';
 
 // Expected text comes from the translation file, so copy edits don't break the tests.
@@ -74,6 +75,22 @@ const event = (id: string, name: string, type: string) => ({
 const DEVFEST = event('0192f7aa-0000-7000-8000-00000000000a', 'DevFest Bhopal 2026', 'conference');
 const WEDDING = event('0192f7aa-0000-7000-8000-00000000000b', 'Sharma Wedding', 'wedding');
 const list = (data: unknown[]) => ({ data, nextCursor: null, hasMore: false });
+/** GET E/me for the fake user: the Owner, with every permission. */
+const OWNER = {
+  member: {
+    id: '0192f7aa-0000-7000-8000-000000000003',
+    userId: SIGNED_IN.user.id,
+    name: SIGNED_IN.user.name,
+    email: SIGNED_IN.user.email,
+    avatarUrl: null,
+    status: 'active',
+    isOwner: true,
+    joinedAt: '2026-10-27T00:00:00.000Z',
+    assignments: [],
+    version: 1,
+  },
+  permissions: { wholeEvent: [...PERMISSIONS], subEvents: {} },
+};
 const HOME = `/events/${DEVFEST.id}`;
 
 /**
@@ -82,10 +99,16 @@ const HOME = `/events/${DEVFEST.id}`;
  */
 test.beforeEach(async ({ page }) => {
   await page.route('**/v1/me', (route) => route.fulfill({ json: SIGNED_IN }));
-  await page.route('**/v1/me/events', (route) => route.fulfill({ json: list([DEVFEST, WEDDING]) }));
+  await page.route('**/v1/me/events', (route) =>
+    route.fulfill({
+      json: list([DEVFEST, WEDDING].map((item) => ({ ...item, roles: ['Owner'] }))),
+    }),
+  );
   for (const fake of [DEVFEST, WEDDING]) {
     await page.route(`**/v1/events/${fake.id}`, (route) => route.fulfill({ json: fake }));
     await page.route(`**/v1/events/${fake.id}/*`, (route) => route.fulfill({ json: list([]) }));
+    // Registered last, so it wins over the wildcard above.
+    await page.route(`**/v1/events/${fake.id}/me`, (route) => route.fulfill({ json: OWNER }));
   }
 });
 

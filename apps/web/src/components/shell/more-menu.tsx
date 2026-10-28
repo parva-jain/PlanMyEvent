@@ -22,7 +22,8 @@ import { ThemeToggle } from './theme-toggle';
 export function MoreMenu() {
   const t = useTranslations('app');
   const reduced = useShouldReduceMotion();
-  const { eventId } = useCurrentEvent();
+  const { eventId, membership } = useCurrentEvent();
+  const { permissions } = membership;
 
   return (
     <m.div
@@ -35,7 +36,7 @@ export function MoreMenu() {
 
       <Card className="gap-0 p-2 sm:p-2">
         <ul>
-          {moreItems(eventId).map(({ key, href, icon: Icon }) => (
+          {moreItems(eventId, permissions).map(({ key, href, icon: Icon }) => (
             <li key={key}>
               <Link
                 href={href}

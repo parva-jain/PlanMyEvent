@@ -8,6 +8,7 @@ import { useCurrentEvent } from '@/components/shell/current-event';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field, Input } from '@/components/ui/input';
+import { NoAccess } from '@/components/shell/no-access';
 import { ApiError } from '@/lib/api';
 import { useModules, useReplaceModules, useUpdateEvent } from '@/lib/events';
 import { timeZoneOptions } from '@/lib/format';
@@ -21,6 +22,8 @@ const isConflict = (error: unknown) =>
 /** Event settings (Stitch "Event Settings"): details and modules, both version-guarded. */
 export function EventSettings() {
   const t = useTranslations('settings');
+  const { can } = useCurrentEvent();
+  if (!can('event.settings')) return <NoAccess permission="event.settings" />;
   return (
     <div className="flex flex-col gap-6 lg:gap-8">
       <h1 className="text-h1-phone sm:text-h1">{t('title')}</h1>
