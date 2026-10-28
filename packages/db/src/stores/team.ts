@@ -86,9 +86,21 @@ export function roleStore(db: Queryable): RoleStore {
                 permissions: [...role.permissions],
               })),
             )
-            .returning({ id: roles.id }),
+            .returning(),
         );
-        return Promise.all(rows.map((row) => find(eventId, row.id).then((role) => role!)));
+        // New roles have no members yet: no need to read them back for the count.
+        return rows.map(({ id, name, description, isStandard, isOwner, permissions, version }) =>
+          toRole({
+            id,
+            name,
+            description,
+            isStandard,
+            isOwner,
+            permissions,
+            version,
+            memberCount: 0,
+          }),
+        );
       } catch (error) {
         if (isUniqueViolation(error)) return 'name_taken';
         throw error;
