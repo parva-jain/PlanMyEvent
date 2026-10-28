@@ -21,6 +21,7 @@ import {
   type AuthErrorKey,
 } from '@/lib/auth-client';
 import { ME_KEY } from '@/lib/me';
+import { currentReturnTo, withReturnTo } from '@/lib/return-to';
 import { distance, duration, ease } from '@/lib/motion';
 
 import { CodeInput } from './code-input';
@@ -99,16 +100,17 @@ export function SignInFlow() {
     // go to the app anyway: its session gate shows a retry instead of a stuck page.
     const destination = await queryClient
       .fetchQuery({ queryKey: ME_KEY, queryFn: () => apiFetch<Me>('/v1/me'), staleTime: 0 })
-      .then(destinationFor, () => '/app');
+      .then(destinationFor, () => currentReturnTo() ?? '/app');
     setTimeout(() => router.replace(destination), SUCCESS_PAUSE_MS);
   }
 
   function signInWithGoogle() {
     const origin = window.location.origin;
+    const next = currentReturnTo();
     void authClient.signIn.social({
       provider: 'google',
-      callbackURL: `${origin}/app`,
-      newUserCallbackURL: `${origin}/welcome`,
+      callbackURL: `${origin}${next ?? '/app'}`,
+      newUserCallbackURL: `${origin}${withReturnTo('/welcome', next)}`,
       errorCallbackURL: `${origin}/sign-in`,
     });
   }

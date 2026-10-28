@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Field, Input, PhoneInput } from '@/components/ui/input';
 import { ApiError } from '@/lib/api';
 import { useMe, useUpdateMe } from '@/lib/me';
+import { currentReturnTo, withReturnTo } from '@/lib/return-to';
 
 import { FullPageLoading } from './full-page-loading';
 
@@ -28,7 +29,7 @@ export function WelcomeForm() {
   const [phone, setPhone] = useState('');
 
   useEffect(() => {
-    if (me === null) router.replace('/sign-in');
+    if (me === null) router.replace(withReturnTo('/sign-in', currentReturnTo()));
   }, [me, router]);
 
   if (isPending || !me) {
@@ -48,7 +49,7 @@ export function WelcomeForm() {
     event.preventDefault();
     update.mutate(
       { name: nameValue, phone: phone ? `+91${phone}` : null },
-      { onSuccess: () => router.replace('/app') },
+      { onSuccess: () => router.replace(currentReturnTo() ?? '/app') },
     );
   }
 
