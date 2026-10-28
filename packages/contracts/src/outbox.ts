@@ -17,7 +17,20 @@ export const SignInCodeEmailSchema = z.object({
   expiresInMinutes: z.number().int().positive(),
 });
 
-export const EmailJobSchema = z.discriminatedUnion('template', [SignInCodeEmailSchema]);
+/** A member invite email. Carries the link token, so it is sensitive too. */
+export const MemberInviteEmailSchema = z.object({
+  template: z.literal('member-invite'),
+  to: z.email(),
+  eventName: z.string(),
+  inviterName: z.string(),
+  url: z.url(),
+  expiresAt: z.iso.datetime({ offset: true }),
+});
+
+export const EmailJobSchema = z.discriminatedUnion('template', [
+  SignInCodeEmailSchema,
+  MemberInviteEmailSchema,
+]);
 export type EmailJob = z.infer<typeof EmailJobSchema>;
 
 interface OutboxRoute {
@@ -28,7 +41,7 @@ interface OutboxRoute {
   /** First retry delay in ms; doubles each attempt. */
   backoffMs: number;
   /**
-   * Payload holds a secret (a sign-in code): the relay deletes the row as soon as it is
+   * Payload holds a secret (a sign-in code or invite link): the relay deletes the row as soon as it is
    * published instead of keeping it 7 days, and the job is removed from Redis once done.
    */
   sensitive: boolean;
