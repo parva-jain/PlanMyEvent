@@ -75,8 +75,8 @@ test.describe('sign-in', () => {
   }) => {
     const email = newEmail();
     await page.goto('/app');
-    // Signed out: the session gate sends us to sign-in.
-    await expect(page).toHaveURL(/\/sign-in$/);
+    // Signed out: the session gate sends us to sign-in, to come back to /app afterwards.
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Fapp$/);
 
     await requestCode(page, email);
     await page.getByTestId('code-input').fill(await codeFromMailpit(email));
@@ -120,7 +120,8 @@ test.describe('sign-in', () => {
     await page.getByRole('button', { name: auth.signOut }).click();
     await expect(page).toHaveURL(/\/sign-in$/);
 
+    // Back to sign-in, which returns to the page asked for afterwards.
     await page.goto('/app');
-    await expect(page).toHaveURL(/\/sign-in$/);
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Fapp$/);
   });
 });

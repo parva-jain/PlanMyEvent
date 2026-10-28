@@ -7,22 +7,26 @@ import { useEffect, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { needsWelcome, useMe } from '@/lib/me';
+import { withReturnTo } from '@/lib/return-to';
 
 import { FullPageLoading } from './full-page-loading';
 
 /**
  * The app shell renders only for a signed-in user with a name. The session cookie belongs
  * to the API's host, so the check runs in the browser through GET /v1/me: signed out goes
- * to /sign-in, a new account to /welcome, and an unreachable API gets a retry.
+ * to /sign-in, a new account to /welcome (both with `?next=` back here), and an unreachable
+ * API gets a retry.
  */
 export function SessionGate({ children }: { children: ReactNode }) {
   const t = useTranslations('auth.gate');
   const router = useRouter();
   const { data: me, isPending, isError, refetch, isFetching } = useMe();
 
+  // Signed-out visitors come back to the page they opened once they've signed in.
   useEffect(() => {
-    if (me === null) router.replace('/sign-in');
-    else if (me && needsWelcome(me)) router.replace('/welcome');
+    const here = window.location.pathname + window.location.search;
+    if (me === null) router.replace(withReturnTo('/sign-in', here));
+    else if (me && needsWelcome(me)) router.replace(withReturnTo('/welcome', here));
   }, [me, router]);
 
   if (isError) {
