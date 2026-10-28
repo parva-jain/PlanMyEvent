@@ -1,24 +1,7 @@
-import type { CreatedEvent, Event } from '@pme/contracts';
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import type { Event } from '@pme/contracts';
+import { expect, test, type Page } from '@playwright/test';
 
-import { API_URL, isPhone, signUp, text, WEB_ORIGIN } from './helpers';
-
-/** Creates a wedding through the API, to start tests that are about using an event. */
-async function weddingVia(api: APIRequestContext, name = 'Sharma Wedding') {
-  const res = await api.post(`${API_URL}/v1/events`, {
-    headers: { Origin: WEB_ORIGIN },
-    data: {
-      templateKey: 'wedding',
-      name,
-      startsOn: '2026-12-10',
-      endsOn: '2026-12-12',
-      timeZone: 'Asia/Kolkata',
-      venue: { name: 'Radisson Lawn' },
-    },
-  });
-  expect(res.status()).toBe(201);
-  return (await res.json()) as CreatedEvent;
-}
+import { API_URL, isPhone, signUp, text, WEB_ORIGIN, weddingVia } from './helpers';
 
 const nav = (page: Page, label: string) =>
   page.getByRole('navigation', { name: text('app.nav.label') }).getByRole('link', { name: label });
