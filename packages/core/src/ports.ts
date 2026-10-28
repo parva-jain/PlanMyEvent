@@ -1,6 +1,12 @@
 import type {
+  EffectivePermissions,
   Event,
   EventModule,
+  Grant,
+  Member,
+  MemberInvite,
+  Permission,
+  Role,
   SubEvent,
   UpdateEvent,
   UpdateSubEvent,
@@ -63,6 +69,8 @@ export interface EventStore {
   update(eventId: string, expectedVersion: number, changes: UpdateEvent): Promise<Event | null>;
   listModules(eventId: string): Promise<EventModule[]>;
   replaceModules(eventId: string, modules: EventModule[]): Promise<void>;
+  /** events.owner_user_id follows the Owner role assignment (transfer ownership). */
+  setOwner(eventId: string, userId: string): Promise<void>;
 }
 
 export interface NewVenue {
@@ -104,6 +112,100 @@ export interface SubEventStore {
   softDelete(eventId: string, subEventId: string, expectedVersion: number): Promise<boolean>;
 }
 
+export interface NewRole {
+  name: string;
+  description?: string | null;
+  isStandard: boolean;
+  isOwner: boolean;
+  permissions: readonly Permission[];
+}
+
+export interface RoleChanges {
+  name?: string;
+  description?: string | null;
+  permissions?: readonly Permission[];
+}
+
+/** Roles skip soft-deleted rows. Names are unique per event, ignoring case. */
+export interface RoleStore {
+  insert(eventId: string, roles: NewRole[]): Promise<Role[] | 'name_taken'>;
+  find(eventId: string, roleId: string): Promise<Role | null>;
+  update(
+    eventId: string,
+    roleId: string,
+    expectedVersion: number,
+    changes: RoleChanges,
+  ): Promise<Role | null | 'name_taken'>;
+  softDelete(eventId: string, roleId: string, expectedVersion: number): Promise<boolean>;
+}
+
+/** Members in any status; `assignments` is empty for removed members. */
+export interface MemberStore {
+  find(eventId: string, memberId: string): Promise<Member | null>;
+  findByUser(eventId: string, userId: string): Promise<Member | null>;
+  /** A new active member, or a removed one made active again. */
+  join(eventId: string, userId: string, invitedByUserId: string | null): Promise<Member>;
+  /**
+   * Replaces every role assignment and scope and bumps the member's version, only if the
+   * version still matches (when given). False on a mismatch.
+   */
+  replaceAssignments(
+    eventId: string,
+    memberId: string,
+    grants: Grant[],
+    grantedByUserId: string,
+    expectedVersion?: number,
+  ): Promise<boolean>;
+  /** Marks the member removed and drops their assignments; false on a version mismatch. */
+  remove(eventId: string, memberId: string, expectedVersion?: number): Promise<boolean>;
+}
+
+/** Effective permissions of one active member, with what the guard and actions need. */
+export interface MemberAccess extends EffectivePermissions {
+  memberId: string;
+  isOwner: boolean;
+}
+
+export interface AccessStore {
+  /** Null when the user isn't an active member of a live event. */
+  forUser(eventId: string, userId: string): Promise<MemberAccess | null>;
+  /**
+   * events.roles_version + 1 after any role or assignment change: serializes role edits per
+   * event and retires every cached permission set (DatabaseDesign "row locks").
+   */
+  bumpRolesVersion(eventId: string): Promise<void>;
+  /**
+   * Drops scope rows for a deleted sub-event, and assignments left with none (they would
+   * otherwise widen to the whole event). True if anything changed.
+   */
+  removeSubEventScopes(eventId: string, subEventId: string): Promise<boolean>;
+}
+
+export interface NewMemberInvite {
+  tokenHash: Buffer;
+  email: string | null;
+  grants: Grant[];
+  maxUses: number;
+  expiresAt: Date;
+  createdByUserId: string;
+}
+
+/** A member invite as accept sees it, locked for the rest of the transaction. */
+export interface LockedMemberInvite extends MemberInvite {
+  eventId: string;
+  createdByUserId: string;
+  revoked: boolean;
+}
+
+export interface MemberInviteStore {
+  insert(eventId: string, invite: NewMemberInvite): Promise<MemberInvite>;
+  /** select ... for update, so used_count can't pass max_uses. */
+  lockByTokenHash(tokenHash: Buffer): Promise<LockedMemberInvite | null>;
+  recordUse(inviteId: string): Promise<void>;
+  /** False if missing or already revoked. */
+  revoke(eventId: string, inviteId: string): Promise<boolean>;
+}
+
 /** The transaction handle every action receives. */
 export interface CoreTx {
   users: UserStore;
@@ -111,4 +213,8 @@ export interface CoreTx {
   events: EventStore;
   venues: VenueStore;
   subEvents: SubEventStore;
+  roles: RoleStore;
+  members: MemberStore;
+  access: AccessStore;
+  memberInvites: MemberInviteStore;
 }
