@@ -9,8 +9,8 @@ interface Props {
   params: Promise<{ section: string }>;
 }
 
-/** Sections without their own page yet (schedule and settings have theirs). */
-const PLACEHOLDERS = ['tasks', 'people', 'budget', 'team', 'gallery', 'activity'] as const;
+/** Sections without their own page yet (schedule, team and settings have theirs). */
+const PLACEHOLDERS = ['tasks', 'people', 'budget', 'gallery', 'activity'] as const;
 
 function isPlaceholder(value: string): value is (typeof PLACEHOLDERS)[number] & Section {
   return (PLACEHOLDERS as readonly string[]).includes(value);
