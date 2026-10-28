@@ -20,18 +20,36 @@ import { eventHref } from './nav';
  * create forms exist (milestones 6–7).
  */
 const ACTIONS = [
-  { key: 'session', section: 'schedule', query: '?add=1', icon: CalendarPlus },
-  { key: 'task', section: 'tasks', query: '', icon: ListPlus },
-  { key: 'expense', section: 'budget', query: '', icon: ReceiptIndianRupee },
-  { key: 'guest', section: 'people', query: '', icon: UserPlus },
+  {
+    key: 'session',
+    section: 'schedule',
+    query: '?add=1',
+    icon: CalendarPlus,
+    permission: 'subevents.edit',
+  },
+  { key: 'task', section: 'tasks', query: '', icon: ListPlus, permission: 'tasks.edit' },
+  {
+    key: 'expense',
+    section: 'budget',
+    query: '',
+    icon: ReceiptIndianRupee,
+    permission: 'budget.edit',
+  },
+  { key: 'guest', section: 'people', query: '', icon: UserPlus, permission: 'guests.edit' },
 ] as const;
+
+/** The quick-add actions I can use; adding is event-wide, so whole-event grants only. */
+export function useQuickAddActions() {
+  const { can } = useCurrentEvent();
+  return ACTIONS.filter((action) => can(action.permission));
+}
 
 function ActionList({ onChosen }: { onChosen: () => void }) {
   const t = useTranslations('app.quickAdd');
   const { eventId } = useCurrentEvent();
   return (
     <ul className="flex flex-col gap-1">
-      {ACTIONS.map(({ key, section, query, icon: Icon }) => (
+      {useQuickAddActions().map(({ key, section, query, icon: Icon }) => (
         <li key={key}>
           <Link
             href={`${eventHref(eventId, section)}${query}`}
@@ -53,6 +71,7 @@ function ActionList({ onChosen }: { onChosen: () => void }) {
 export function QuickAddButton() {
   const t = useTranslations('app.quickAdd');
   const [open, setOpen] = useState(false);
+  if (!useQuickAddActions().length) return null;
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -74,6 +93,7 @@ export function QuickAddButton() {
 export function QuickAddFab({ className }: { className?: string }) {
   const t = useTranslations('app.quickAdd');
   const [open, setOpen] = useState(false);
+  if (!useQuickAddActions().length) return null;
   return (
     <>
       <button

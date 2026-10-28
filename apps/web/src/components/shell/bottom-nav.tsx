@@ -20,12 +20,15 @@ import { bottomItems, eventHref, isActive, moreItems, type NavKey } from './nav'
 export function BottomNav() {
   const t = useTranslations('app.nav');
   const pathname = usePathname();
-  const { eventId } = useCurrentEvent();
+  const { eventId, membership } = useCurrentEvent();
+  const { permissions } = membership;
   const tabs: { key: NavKey | 'more'; href: string; icon: LucideIcon }[] = [
-    ...bottomItems(eventId),
+    ...bottomItems(eventId, permissions),
     { key: 'more', href: eventHref(eventId, 'more'), icon: Ellipsis },
   ];
-  const onMoreSection = moreItems(eventId).some((item) => isActive(item.href, pathname, eventId));
+  const onMoreSection = moreItems(eventId, permissions).some((item) =>
+    isActive(item.href, pathname, eventId),
+  );
 
   return (
     <nav

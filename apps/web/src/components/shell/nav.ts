@@ -1,3 +1,4 @@
+import { canSomewhere, type EffectivePermissions, type Permission } from '@pme/contracts';
 import {
   CalendarDays,
   CircleCheckBig,
@@ -53,25 +54,49 @@ const ICONS: Record<NavKey, LucideIcon> = {
 
 export const sectionIcon = (key: NavKey): LucideIcon => ICONS[key];
 
+/**
+ * What a section needs to appear (granted anywhere, since lists filter by scope). Sections
+ * someone can't use are simply absent (MOTION.md 6.9), never shown and refused.
+ */
+const SECTION_PERMISSION: Record<NavKey, Permission | null> = {
+  home: null,
+  schedule: 'subevents.view',
+  tasks: 'tasks.view',
+  people: 'guests.view',
+  budget: 'budget.view',
+  team: 'members.view',
+  gallery: null,
+  activity: 'activity.view',
+  settings: 'event.settings',
+};
+
+export function canSeeSection(key: NavKey, permissions: EffectivePermissions): boolean {
+  const permission = SECTION_PERMISSION[key];
+  return permission === null || canSomewhere(permissions, permission);
+}
+
 const item = (eventId: string, key: NavKey): NavItem => ({
   key,
   href: eventHref(eventId, key),
   icon: ICONS[key],
 });
 
-/** Desktop sidebar and tablet rail: every section. */
-export const sidebarItems = (eventId: string) =>
-  (['home', ...SECTIONS] as const).map((key) => item(eventId, key));
+/** Desktop sidebar and tablet rail: every section I can see. */
+export const sidebarItems = (eventId: string, permissions: EffectivePermissions) =>
+  (['home', ...SECTIONS] as const)
+    .filter((key) => canSeeSection(key, permissions))
+    .map((key) => item(eventId, key));
 
 /** Phone bottom bar (DESIGN.md "Layout"): four sections, the rest under More. */
 export const BOTTOM_KEYS = ['home', 'tasks', 'people', 'budget'] as const;
-export const bottomItems = (eventId: string) => BOTTOM_KEYS.map((key) => item(eventId, key));
+export const bottomItems = (eventId: string, permissions: EffectivePermissions) =>
+  BOTTOM_KEYS.filter((key) => canSeeSection(key, permissions)).map((key) => item(eventId, key));
 
 /** Phone "More" screen: the sections that don't fit in the bottom bar. */
-export const moreItems = (eventId: string) =>
-  SECTIONS.filter((key) => !(BOTTOM_KEYS as readonly string[]).includes(key)).map((key) =>
-    item(eventId, key),
-  );
+export const moreItems = (eventId: string, permissions: EffectivePermissions) =>
+  SECTIONS.filter(
+    (key) => !(BOTTOM_KEYS as readonly string[]).includes(key) && canSeeSection(key, permissions),
+  ).map((key) => item(eventId, key));
 
 /** Home matches only itself; a section also matches its sub-pages. */
 export function isActive(href: string, pathname: string, eventId: string): boolean {

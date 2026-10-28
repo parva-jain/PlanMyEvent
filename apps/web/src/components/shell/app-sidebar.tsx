@@ -23,7 +23,8 @@ export function AppSidebar() {
   const t = useTranslations('app');
   const pathname = usePathname();
   const { data: me } = useMe();
-  const { eventId } = useCurrentEvent();
+  const { eventId, membership } = useCurrentEvent();
+  const { permissions } = membership;
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-18 flex-col border-r border-border bg-surface sm:flex lg:w-62">
@@ -43,7 +44,7 @@ export function AppSidebar() {
 
       <nav aria-label={t('nav.label')} className="flex-1 overflow-y-auto px-3 py-3">
         <ul className="flex flex-col gap-1">
-          {sidebarItems(eventId).map(({ key, href, icon: Icon }) => {
+          {sidebarItems(eventId, permissions).map(({ key, href, icon: Icon }) => {
             const active = isActive(href, pathname, eventId);
             return (
               <li key={key}>

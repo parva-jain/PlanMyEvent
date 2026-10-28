@@ -23,6 +23,7 @@ import {
   useVenues,
 } from '@/lib/events';
 import { formatEventDate } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 /** The server's answer to a stale If-Match: 409 with the row as it is now. */
 function conflictCurrent<T>(error: unknown): T | null {
@@ -37,7 +38,7 @@ function conflictCurrent<T>(error: unknown): T | null {
  */
 export function Schedule() {
   const t = useTranslations('schedule');
-  const { eventId, event } = useCurrentEvent();
+  const { eventId, event, can } = useCurrentEvent();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: subEvents } = useSubEvents(eventId);
@@ -66,9 +67,11 @@ export function Schedule() {
             {t('summary', { count: subEvents?.length ?? 0, timeZone: event.timeZone })}
           </p>
         </div>
-        <Button icon={<CalendarPlus aria-hidden />} onClick={() => setEditing('new')}>
-          {t('add')}
-        </Button>
+        {can('subevents.edit') && (
+          <Button icon={<CalendarPlus aria-hidden />} onClick={() => setEditing('new')}>
+            {t('add')}
+          </Button>
+        )}
       </div>
 
       {!subEvents && <Skeleton className="h-48" />}
@@ -94,13 +97,18 @@ export function Schedule() {
               const start = utcToZonedParts(subEvent.startsAt, event.timeZone);
               const end = utcToZonedParts(subEvent.endsAt, event.timeZone);
               const venue = venueName(subEvent.venueId);
+              // Only sub-events I can edit open the form; the rest are plain rows.
+              const editable = can('subevents.edit', subEvent.id);
+              const Row = editable ? 'button' : 'div';
               return (
                 <ListItem key={subEvent.id}>
-                  <button
-                    type="button"
-                    onClick={() => setEditing(subEvent)}
+                  <Row
+                    {...(editable ? { type: 'button', onClick: () => setEditing(subEvent) } : {})}
                     data-testid="sub-event"
-                    className="hover-lift flex w-full flex-col gap-2 rounded-card border border-border bg-surface p-4 text-left shadow-card sm:flex-row sm:items-center sm:gap-6"
+                    className={cn(
+                      'flex w-full flex-col gap-2 rounded-card border border-border bg-surface p-4 text-left shadow-card sm:flex-row sm:items-center sm:gap-6',
+                      editable && 'hover-lift',
+                    )}
                   >
                     <span className="flex items-center gap-1.5 text-label tabular-nums sm:w-36">
                       <Clock aria-hidden className="size-4 text-fg-muted" />
@@ -126,7 +134,7 @@ export function Schedule() {
                         )}
                       </span>
                     </span>
-                  </button>
+                  </Row>
                 </ListItem>
               );
             })}
@@ -134,7 +142,7 @@ export function Schedule() {
         </section>
       ))}
 
-      <Venues venues={venues} />
+      <Venues venues={venues} editable={can('subevents.edit')} />
 
       <EditPanel
         open={editing !== null}
@@ -368,7 +376,7 @@ function SubEventForm({
   );
 }
 
-function Venues({ venues }: { venues: Venue[] }) {
+function Venues({ venues, editable }: { venues: Venue[]; editable: boolean }) {
   const t = useTranslations('schedule.venues');
   const { eventId } = useCurrentEvent();
   const create = useCreateVenue(eventId);
@@ -389,41 +397,45 @@ function Venues({ venues }: { venues: Venue[] }) {
           >
             <MapPin aria-hidden className="size-4 text-fg-muted" />
             <span className="flex-1 text-body">{venue.name}</span>
-            <button
-              type="button"
-              aria-label={t('remove', { name: venue.name })}
-              onClick={() => remove.mutate(venue.id)}
-              className="flex size-10 items-center justify-center rounded-control text-fg-muted hover:bg-surface hover:text-danger-text"
-            >
-              <Trash2 aria-hidden className="size-4" />
-            </button>
+            {editable && (
+              <button
+                type="button"
+                aria-label={t('remove', { name: venue.name })}
+                onClick={() => remove.mutate(venue.id)}
+                className="flex size-10 items-center justify-center rounded-control text-fg-muted hover:bg-surface hover:text-danger-text"
+              >
+                <Trash2 aria-hidden className="size-4" />
+              </button>
+            )}
           </ListItem>
         ))}
       </ListPresence>
-      <form
-        className="flex gap-2"
-        onSubmit={(formEvent) => {
-          formEvent.preventDefault();
-          if (!name.trim()) return;
-          create.mutate({ name: name.trim() }, { onSuccess: () => setName('') });
-        }}
-      >
-        <Input
-          aria-label={t('newVenue')}
-          placeholder={t('newVenue')}
-          value={name}
-          maxLength={120}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Button
-          type="submit"
-          variant="secondary"
-          icon={<Plus aria-hidden />}
-          loading={create.isPending}
+      {editable && (
+        <form
+          className="flex gap-2"
+          onSubmit={(formEvent) => {
+            formEvent.preventDefault();
+            if (!name.trim()) return;
+            create.mutate({ name: name.trim() }, { onSuccess: () => setName('') });
+          }}
         >
-          {t('add')}
-        </Button>
-      </form>
+          <Input
+            aria-label={t('newVenue')}
+            placeholder={t('newVenue')}
+            value={name}
+            maxLength={120}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Button
+            type="submit"
+            variant="secondary"
+            icon={<Plus aria-hidden />}
+            loading={create.isPending}
+          >
+            {t('add')}
+          </Button>
+        </form>
+      )}
     </Card>
   );
 }

@@ -43,10 +43,17 @@ function EventCard({ event }: { event: MyEvent }) {
           <CalendarDays aria-hidden className="size-4" />
           {formatEventRange(event.startsOn, event.endsOn)}
         </p>
-        <span className="mt-auto flex items-center gap-1 self-end text-label text-primary-text">
-          {t('myEvents.open')}
-          <ArrowRight aria-hidden className="size-4" />
-        </span>
+        <div className="mt-auto flex items-center justify-between gap-2">
+          {event.roles.length > 0 && (
+            <span className="text-small text-fg-secondary" data-testid="event-roles">
+              {t('myEvents.yourRoles', { roles: event.roles.join(', ') })}
+            </span>
+          )}
+          <span className="ml-auto flex items-center gap-1 text-label text-primary-text">
+            {t('myEvents.open')}
+            <ArrowRight aria-hidden className="size-4" />
+          </span>
+        </div>
       </Card>
     </Link>
   );
