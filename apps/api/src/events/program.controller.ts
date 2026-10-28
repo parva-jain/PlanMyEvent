@@ -22,14 +22,16 @@ import {
   type ActionContext,
   type ActionRuntime,
   type CoreTx,
+  type MemberAccess,
 } from '@pme/core';
+import { subEventsWith } from '@pme/contracts';
 import type { EventQueries } from '@pme/db';
 import { ZodResponse } from 'nestjs-zod';
 
 import { ACTION_RUNTIME } from '../database/database.module';
 import { IfMatch } from '../http/if-match';
 import { UuidPipe } from '../http/uuid.pipe';
-import { EventContext, EventRoute } from './event-access';
+import { EventAccess, EventContext, EventRoute } from './event-access';
 import {
   CreateSubEventDto,
   CreateVenueDto,
@@ -60,7 +62,7 @@ export class ProgramController {
   // ---- Venues: no version column, so no If-Match --------------------------------------
 
   @Get('venues')
-  @EventRoute('event.view')
+  @EventRoute('event.view', 'list')
   @ZodResponse({ type: VenuesDto })
   async venues(@Param('eventId', UuidPipe) eventId: string) {
     return whole(await this.queries.listVenues(eventId));
@@ -96,11 +98,17 @@ export class ProgramController {
 
   // ---- Sub-events ------------------------------------------------------------------------
 
+  /** Filtered, not refused: a member scoped to Mehendi sees Mehendi (APIDesign). */
   @Get('sub-events')
-  @EventRoute('subevents.view')
+  @EventRoute('subevents.view', 'list')
   @ZodResponse({ type: SubEventsDto })
-  async subEvents(@Param('eventId', UuidPipe) eventId: string) {
-    return whole(await this.queries.listSubEvents(eventId));
+  async subEvents(
+    @Param('eventId', UuidPipe) eventId: string,
+    @EventAccess() access: MemberAccess,
+  ) {
+    const visible = subEventsWith(access, 'subevents.view');
+    const list = await this.queries.listSubEvents(eventId);
+    return whole(visible === 'all' ? list : list.filter((item) => visible.has(item.id)));
   }
 
   @Post('sub-events')
@@ -111,7 +119,7 @@ export class ProgramController {
   }
 
   @Get('sub-events/:subEventId')
-  @EventRoute('subevents.view')
+  @EventRoute('subevents.view', { param: 'subEventId' })
   @ZodResponse({ type: SubEventDto })
   async subEvent(
     @Param('eventId', UuidPipe) eventId: string,
@@ -121,7 +129,7 @@ export class ProgramController {
   }
 
   @Patch('sub-events/:subEventId')
-  @EventRoute('subevents.edit')
+  @EventRoute('subevents.edit', { param: 'subEventId' })
   @ZodResponse({ type: SubEventDto })
   updateSubEvent(
     @EventContext() ctx: ActionContext,
@@ -137,7 +145,7 @@ export class ProgramController {
   }
 
   @Delete('sub-events/:subEventId')
-  @EventRoute('subevents.edit')
+  @EventRoute('subevents.edit', { param: 'subEventId' })
   @HttpCode(204)
   async deleteSubEvent(
     @EventContext() ctx: ActionContext,

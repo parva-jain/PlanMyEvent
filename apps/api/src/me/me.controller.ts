@@ -26,7 +26,7 @@ export class MeController {
     @Inject(EVENT_QUERIES) private readonly queries: EventQueries,
   ) {}
 
-  /** Events I belong to (APIDesign "Account"); role names arrive with members (milestone 4). */
+  /** Events I'm an active member of, with my role names (APIDesign "Account"). */
   @Get('events')
   @ZodResponse({ type: MyEventsDto })
   async events(@CurrentUser() user: SessionUser) {

@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { SIGN_IN_CODE_SENDER } from '../src/auth/sign-in-codes';
 import { createApp } from './create-app';
-import { capturingSender, testUsers, WEB_ORIGIN } from './users';
+import { asUser, capturingSender, testUsers } from './users';
 
 const { codes, sender } = capturingSender();
 let app: NestExpressApplication;
@@ -21,19 +21,7 @@ afterAll(async () => {
   await app.close();
 });
 
-/** An authenticated client for one signed-in user. */
-function as(cookie: string[]) {
-  const http = () => request(app.getHttpServer());
-  const write = (method: 'post' | 'patch' | 'put' | 'delete', path: string) =>
-    http()[method](path).set('Origin', WEB_ORIGIN).set('Cookie', cookie);
-  return {
-    get: (path: string) => http().get(path).set('Cookie', cookie),
-    post: (path: string) => write('post', path),
-    patch: (path: string) => write('patch', path),
-    put: (path: string) => write('put', path),
-    delete: (path: string) => write('delete', path),
-  };
-}
+const as = (cookie: string[]) => asUser(() => app, cookie);
 
 const wedding = {
   templateKey: 'wedding',
