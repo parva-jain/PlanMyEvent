@@ -1,7 +1,6 @@
 'use client';
 
 import { utcToZonedParts, zonedTimeToUtc, type SubEvent, type Venue } from '@pme/contracts';
-import { useQueryClient } from '@tanstack/react-query';
 import { CalendarPlus, Clock, MapPin, Plus, Trash2, Users } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -10,13 +9,12 @@ import { useState, type FormEvent } from 'react';
 import { ListItem, ListPresence } from '@/components/motion/list-presence';
 import { EditPanel } from '@/components/motion/side-panel';
 import { Skeleton } from '@/components/motion/skeleton';
-import { useSnackbar } from '@/components/motion/undo-snackbar';
 import { useCurrentEvent } from '@/components/shell/current-event';
 import { LiveRow } from '@/components/shell/live-row';
+import { useOfferUndo } from '@/components/shell/use-offer-undo';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field, Input } from '@/components/ui/input';
-import { undoRequest } from '@/lib/activity';
 import { ApiError } from '@/lib/api';
 import {
   useCreateVenue,
@@ -34,24 +32,6 @@ function conflictCurrent<T>(error: unknown): T | null {
   return error instanceof ApiError && error.problem?.code === 'version_conflict'
     ? ((error.problem as { current?: T }).current ?? null)
     : null;
-}
-
-/**
- * After a delete: "Haldi deleted · Undo" for 5 s (MOTION.md 6.12). Undo finds the delete in
- * the activity log, so it's offered only to those who can read it (everyone who can delete).
- */
-function useOfferUndo() {
-  const t = useTranslations('schedule');
-  const { eventId, can } = useCurrentEvent();
-  const show = useSnackbar();
-  const queryClient = useQueryClient();
-  return (name: string, entityId: string, requestId: string) =>
-    show({
-      message: t('deleted', { name }),
-      ...(can('activity.view') && {
-        onUndo: () => undoRequest(queryClient, eventId, { requestId, entityId }),
-      }),
-    });
 }
 
 /**
@@ -209,6 +189,7 @@ function SubEventForm({
   onConflict: (current: SubEvent) => void;
 }) {
   const t = useTranslations('schedule.form');
+  const tSchedule = useTranslations('schedule');
   const { eventId, event } = useCurrentEvent();
   const save = useSaveSubEvent(eventId);
   const remove = useDeleteSubEvent(eventId);
@@ -287,7 +268,7 @@ function SubEventForm({
       {
         onSuccess: (requestId) => {
           onDone();
-          offerUndo(subEvent.name, subEvent.id, requestId);
+          offerUndo(tSchedule('deleted', { name: subEvent.name }), subEvent.id, requestId);
         },
         onError: (failure) => {
           const current = conflictCurrent<SubEvent>(failure);
@@ -406,6 +387,7 @@ function SubEventForm({
 
 function Venues({ venues, editable }: { venues: Venue[]; editable: boolean }) {
   const t = useTranslations('schedule.venues');
+  const tSchedule = useTranslations('schedule');
   const { eventId } = useCurrentEvent();
   const create = useCreateVenue(eventId);
   const remove = useDeleteVenue(eventId);
@@ -431,7 +413,12 @@ function Venues({ venues, editable }: { venues: Venue[]; editable: boolean }) {
                     aria-label={t('remove', { name: venue.name })}
                     onClick={() =>
                       remove.mutate(venue.id, {
-                        onSuccess: (requestId) => offerUndo(venue.name, venue.id, requestId),
+                        onSuccess: (requestId) =>
+                          offerUndo(
+                            tSchedule('deleted', { name: venue.name }),
+                            venue.id,
+                            requestId,
+                          ),
                       })
                     }
                     className="flex size-10 items-center justify-center rounded-control text-fg-muted hover:bg-surface hover:text-danger-text"
