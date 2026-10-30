@@ -1,6 +1,7 @@
 'use client';
 
 import { utcToZonedParts, zonedTimeToUtc, type SubEvent, type Venue } from '@pme/contracts';
+import { useQueryClient } from '@tanstack/react-query';
 import { CalendarPlus, Clock, MapPin, Plus, Trash2, Users } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -9,10 +10,13 @@ import { useState, type FormEvent } from 'react';
 import { ListItem, ListPresence } from '@/components/motion/list-presence';
 import { EditPanel } from '@/components/motion/side-panel';
 import { Skeleton } from '@/components/motion/skeleton';
+import { useSnackbar } from '@/components/motion/undo-snackbar';
 import { useCurrentEvent } from '@/components/shell/current-event';
+import { LiveRow } from '@/components/shell/live-row';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field, Input } from '@/components/ui/input';
+import { undoRequest } from '@/lib/activity';
 import { ApiError } from '@/lib/api';
 import {
   useCreateVenue,
@@ -30,6 +34,24 @@ function conflictCurrent<T>(error: unknown): T | null {
   return error instanceof ApiError && error.problem?.code === 'version_conflict'
     ? ((error.problem as { current?: T }).current ?? null)
     : null;
+}
+
+/**
+ * After a delete: "Haldi deleted · Undo" for 5 s (MOTION.md 6.12). Undo finds the delete in
+ * the activity log, so it's offered only to those who can read it (everyone who can delete).
+ */
+function useOfferUndo() {
+  const t = useTranslations('schedule');
+  const { eventId, can } = useCurrentEvent();
+  const show = useSnackbar();
+  const queryClient = useQueryClient();
+  return (name: string, entityId: string, requestId: string) =>
+    show({
+      message: t('deleted', { name }),
+      ...(can('activity.view') && {
+        onUndo: () => undoRequest(queryClient, eventId, { requestId, entityId }),
+      }),
+    });
 }
 
 /**
@@ -102,39 +124,41 @@ export function Schedule() {
               const Row = editable ? 'button' : 'div';
               return (
                 <ListItem key={subEvent.id}>
-                  <Row
-                    {...(editable ? { type: 'button', onClick: () => setEditing(subEvent) } : {})}
-                    data-testid="sub-event"
-                    className={cn(
-                      'flex w-full flex-col gap-2 rounded-card border border-border bg-surface p-4 text-left shadow-card sm:flex-row sm:items-center sm:gap-6',
-                      editable && 'hover-lift',
-                    )}
-                  >
-                    <span className="flex items-center gap-1.5 text-label tabular-nums sm:w-36">
-                      <Clock aria-hidden className="size-4 text-fg-muted" />
-                      {start.time}–{end.time}
-                      {end.date !== start.date && (
-                        <span className="text-caption text-fg-muted"> +1</span>
+                  <LiveRow entityId={subEvent.id} className="rounded-card">
+                    <Row
+                      {...(editable ? { type: 'button', onClick: () => setEditing(subEvent) } : {})}
+                      data-testid="sub-event"
+                      className={cn(
+                        'flex w-full flex-col gap-2 rounded-card border border-border bg-surface p-4 text-left shadow-card sm:flex-row sm:items-center sm:gap-6',
+                        editable && 'hover-lift',
                       )}
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span className="text-h3">{subEvent.name}</span>
-                      <span className="flex flex-wrap gap-x-4 gap-y-1 text-small text-fg-secondary">
-                        {venue && (
-                          <span className="flex items-center gap-1.5">
-                            <MapPin aria-hidden className="size-4" />
-                            {venue}
-                          </span>
-                        )}
-                        {subEvent.capacity !== null && (
-                          <span className="flex items-center gap-1.5">
-                            <Users aria-hidden className="size-4" />
-                            {t('capacity', { count: subEvent.capacity })}
-                          </span>
+                    >
+                      <span className="flex items-center gap-1.5 text-label tabular-nums sm:w-36">
+                        <Clock aria-hidden className="size-4 text-fg-muted" />
+                        {start.time}–{end.time}
+                        {end.date !== start.date && (
+                          <span className="text-caption text-fg-muted"> +1</span>
                         )}
                       </span>
-                    </span>
-                  </Row>
+                      <span className="flex min-w-0 flex-1 flex-col gap-1">
+                        <span className="text-h3">{subEvent.name}</span>
+                        <span className="flex flex-wrap gap-x-4 gap-y-1 text-small text-fg-secondary">
+                          {venue && (
+                            <span className="flex items-center gap-1.5">
+                              <MapPin aria-hidden className="size-4" />
+                              {venue}
+                            </span>
+                          )}
+                          {subEvent.capacity !== null && (
+                            <span className="flex items-center gap-1.5">
+                              <Users aria-hidden className="size-4" />
+                              {t('capacity', { count: subEvent.capacity })}
+                            </span>
+                          )}
+                        </span>
+                      </span>
+                    </Row>
+                  </LiveRow>
                 </ListItem>
               );
             })}
@@ -188,6 +212,7 @@ function SubEventForm({
   const { eventId, event } = useCurrentEvent();
   const save = useSaveSubEvent(eventId);
   const remove = useDeleteSubEvent(eventId);
+  const offerUndo = useOfferUndo();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [conflicted, setConflicted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -260,7 +285,10 @@ function SubEventForm({
     remove.mutate(
       { id: subEvent.id, version: subEvent.version },
       {
-        onSuccess: onDone,
+        onSuccess: (requestId) => {
+          onDone();
+          offerUndo(subEvent.name, subEvent.id, requestId);
+        },
         onError: (failure) => {
           const current = conflictCurrent<SubEvent>(failure);
           if (current) onConflict(current);
@@ -381,6 +409,7 @@ function Venues({ venues, editable }: { venues: Venue[]; editable: boolean }) {
   const { eventId } = useCurrentEvent();
   const create = useCreateVenue(eventId);
   const remove = useDeleteVenue(eventId);
+  const offerUndo = useOfferUndo();
   const [name, setName] = useState('');
 
   return (
@@ -391,22 +420,27 @@ function Venues({ venues, editable }: { venues: Venue[]; editable: boolean }) {
       </div>
       <ListPresence className="flex flex-col gap-2" data-testid="venues">
         {venues.map((venue) => (
-          <ListItem
-            key={venue.id}
-            className="flex items-center gap-3 rounded-control bg-surface-muted px-4 py-2"
-          >
-            <MapPin aria-hidden className="size-4 text-fg-muted" />
-            <span className="flex-1 text-body">{venue.name}</span>
-            {editable && (
-              <button
-                type="button"
-                aria-label={t('remove', { name: venue.name })}
-                onClick={() => remove.mutate(venue.id)}
-                className="flex size-10 items-center justify-center rounded-control text-fg-muted hover:bg-surface hover:text-danger-text"
-              >
-                <Trash2 aria-hidden className="size-4" />
-              </button>
-            )}
+          <ListItem key={venue.id}>
+            <LiveRow entityId={venue.id} className="rounded-control">
+              <div className="flex items-center gap-3 rounded-control bg-surface-muted px-4 py-2">
+                <MapPin aria-hidden className="size-4 text-fg-muted" />
+                <span className="flex-1 text-body">{venue.name}</span>
+                {editable && (
+                  <button
+                    type="button"
+                    aria-label={t('remove', { name: venue.name })}
+                    onClick={() =>
+                      remove.mutate(venue.id, {
+                        onSuccess: (requestId) => offerUndo(venue.name, venue.id, requestId),
+                      })
+                    }
+                    className="flex size-10 items-center justify-center rounded-control text-fg-muted hover:bg-surface hover:text-danger-text"
+                  >
+                    <Trash2 aria-hidden className="size-4" />
+                  </button>
+                )}
+              </div>
+            </LiveRow>
           </ListItem>
         ))}
       </ListPresence>
