@@ -1,12 +1,13 @@
 import type { ActivityItem, ActivityPage, ActivityQuery } from '@pme/contracts';
 import { isUndoable, type StoredActivity } from '@pme/core';
-import { and, desc, eq, gte, inArray, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, notInArray, sql, type SQL } from 'drizzle-orm';
 
 import type { Database } from '../client.js';
 import { users } from '../schema/auth.js';
 import { activityLog } from '../schema/activity.js';
 import { budgetCategories, expenses } from '../schema/budget.js';
 import { events, subEvents, venues } from '../schema/events.js';
+import { contacts, households } from '../schema/guests.js';
 import { tasks } from '../schema/tasks.js';
 import { memberInvites, members, roles } from '../schema/team.js';
 import { toStoredActivity } from '../stores/activity.js';
@@ -17,6 +18,11 @@ export interface ActivityViewer {
   userId: string;
   /** Holds event.settings, so may undo anyone's change. */
   canUndoOthers: boolean;
+  /**
+   * Entity types left out of the feed: guests' entries carry phones and emails, so only
+   * those who may see the guest list see them.
+   */
+  hiddenTypes: readonly string[];
 }
 
 /** The display name a snapshot carries: `name`, or a task's `title`. */
@@ -105,6 +111,24 @@ export function activityQueries(db: Database) {
           .where(and(eq(tasks.eventId, eventId), inArray(tasks.id, taskIds))),
       );
     }
+    const householdIds = ids('household');
+    if (householdIds.length) {
+      add(
+        await db
+          .select({ id: households.id, label: households.name })
+          .from(households)
+          .where(and(eq(households.eventId, eventId), inArray(households.id, householdIds))),
+      );
+    }
+    const contactIds = ids('contact');
+    if (contactIds.length) {
+      add(
+        await db
+          .select({ id: contacts.id, label: contacts.name })
+          .from(contacts)
+          .where(and(eq(contacts.eventId, eventId), inArray(contacts.id, contactIds))),
+      );
+    }
     const inviteIds = ids('member_invite');
     if (inviteIds.length) {
       add(
@@ -190,6 +214,9 @@ export function activityQueries(db: Database) {
       if (query.entityType) filters.push(eq(activityLog.entityType, query.entityType));
       if (query.entityId) filters.push(eq(activityLog.entityId, query.entityId));
       if (query.actor) filters.push(eq(activityLog.actorUserId, query.actor));
+      if (viewer.hiddenTypes.length) {
+        filters.push(notInArray(activityLog.entityType, [...viewer.hiddenTypes]));
+      }
       if (query.cursor) {
         // Compared against that row in SQL, keeping Postgres's microseconds (a JS Date
         // would round them and skip or repeat rows).

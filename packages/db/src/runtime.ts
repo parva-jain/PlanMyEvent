@@ -3,6 +3,8 @@ import {
   type AccessStore,
   type BudgetCategoryStore,
   type ActionContext,
+  type ContactStore,
+  type HouseholdStore,
   type ActivityStore,
   type ActionRuntime,
   type CoreTx,
@@ -28,6 +30,7 @@ import { workspaces } from './schema/workspaces.js';
 import { activityStore } from './stores/activity.js';
 import { budgetCategoryStore, expenseStore } from './stores/budget.js';
 import { eventStore, subEventStore, venueStore } from './stores/events.js';
+import { contactStore, householdStore } from './stores/guests.js';
 import { taskStore } from './stores/tasks.js';
 import { accessStore, memberInviteStore, memberStore, roleStore } from './stores/team.js';
 
@@ -94,6 +97,8 @@ export class DbTx implements CoreTx {
   readonly tasks: TaskStore;
   readonly budgetCategories: BudgetCategoryStore;
   readonly expenses: ExpenseStore;
+  readonly households: HouseholdStore;
+  readonly contacts: ContactStore;
 
   constructor(readonly db: DrizzleTx) {
     this.users = userStore(db);
@@ -109,6 +114,8 @@ export class DbTx implements CoreTx {
     this.tasks = taskStore(db);
     this.budgetCategories = budgetCategoryStore(db);
     this.expenses = expenseStore(db);
+    this.households = householdStore(db);
+    this.contacts = contactStore(db);
   }
 }
 

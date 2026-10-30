@@ -33,7 +33,7 @@ const ctxFor = (userId: string, eventId: string | null = null): ActionContext =>
   eventId,
   now: new Date(),
 });
-const viewer = () => ({ userId: owner, canUndoOthers: true });
+const viewer = () => ({ userId: owner, canUndoOthers: true, hiddenTypes: [] });
 
 async function newEvent() {
   const event = await runAction(runtime, ctxFor(owner), createEvent, {
@@ -133,7 +133,11 @@ describe('activity log', () => {
     expect(deleted).toMatchObject({ action: 'sub_event.delete', entityLabel: 'Mehendi' });
     // Someone without event.settings sees it, but can't undo another person's change.
     const [asOther] = (
-      await activity.list(event.id, { limit: 1 }, { userId: 'someone', canUndoOthers: false })
+      await activity.list(
+        event.id,
+        { limit: 1 },
+        { userId: 'someone', canUndoOthers: false, hiddenTypes: [] },
+      )
     ).data;
     expect(asOther!.canUndo).toBe(false);
 
