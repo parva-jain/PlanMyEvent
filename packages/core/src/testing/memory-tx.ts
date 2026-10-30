@@ -7,6 +7,7 @@ import {
   type MemberInvite,
   type Role,
   type SubEvent,
+  type Task,
   type Venue,
 } from '@pme/contracts';
 
@@ -46,6 +47,16 @@ export function memoryRuntime() {
   const invites = new Map<string, LockedMemberInvite & { tokenHash: string; revokedAt?: string }>();
   const rolesVersion = new Map<string, number>();
   const owners = new Map<string, string>();
+  const tasks = new Map<
+    string,
+    Omit<Task, 'assignees' | 'subtasks'> & {
+      eventId: string;
+      deletedAt?: string;
+      assigneeIds: string[];
+      templateKey: string | null;
+    }
+  >();
+  let clock = 0;
   const outbox: OutboxMessage[] = [];
   const activity: StoredActivity[] = [];
   const takenSlugs = new Set<string>();
@@ -107,7 +118,10 @@ export function memoryRuntime() {
   };
 
   // Team stores are attached below, once the helpers they share are defined.
-  const base: Omit<CoreTx, 'roles' | 'members' | 'access' | 'memberInvites' | 'activity'> = {
+  const base: Omit<
+    CoreTx,
+    'roles' | 'members' | 'access' | 'memberInvites' | 'activity' | 'tasks'
+  > = {
     users: {
       updateProfile: (userId, changes) => {
         const profile = profiles.get(userId);
@@ -256,6 +270,123 @@ export function memoryRuntime() {
     },
   };
   const tx = base as CoreTx;
+
+  const toTask = (row: typeof tasks extends Map<string, infer R> ? R : never): Task => {
+    const {
+      eventId: _eventId,
+      deletedAt: _deletedAt,
+      assigneeIds,
+      templateKey: _key,
+      ...rest
+    } = row;
+    const subtasks = [...tasks.values()].filter(
+      (item) => item.parentTaskId === row.id && !item.deletedAt,
+    );
+    return {
+      ...rest,
+      assignees: assigneeIds.flatMap((memberId) => {
+        const member = members.get(memberId);
+        return member?.status === 'active'
+          ? [
+              {
+                memberId,
+                userId: member.userId,
+                name: profiles.get(member.userId)?.name ?? `User ${member.userId}`,
+              },
+            ]
+          : [];
+      }),
+      subtasks: {
+        total: subtasks.length,
+        done: subtasks.filter((item) => item.status === 'done').length,
+      },
+    };
+  };
+  const liveTask = (eventId: string, id: string) => {
+    const task = tasks.get(id);
+    return task && task.eventId === eventId && !task.deletedAt ? task : undefined;
+  };
+
+  tx.tasks = {
+    insert: (eventId, list) =>
+      Promise.resolve(
+        list.map((input) => {
+          const task = {
+            id: nextId(),
+            eventId,
+            title: input.title,
+            description: input.description ?? null,
+            status: input.status ?? 'todo',
+            priority: input.priority ?? 'medium',
+            category: input.category ?? null,
+            dueOn: input.dueOn ?? null,
+            subEventId: input.subEventId ?? null,
+            parentTaskId: input.parentTaskId ?? null,
+            position: input.position,
+            completedAt: input.completedAt?.toISOString() ?? null,
+            version: 1,
+            createdAt: new Date().toISOString(),
+            assigneeIds: [...(input.assigneeIds ?? [])],
+            templateKey: input.templateKey ?? null,
+          };
+          tasks.set(task.id, task);
+          return toTask(task);
+        }),
+      ),
+    find: (eventId, id) => {
+      const task = liveTask(eventId, id);
+      return Promise.resolve(task ? toTask(task) : null);
+    },
+    lastPosition: (eventId, column) => {
+      const positions = [...tasks.values()]
+        .filter(
+          (task) =>
+            task.eventId === eventId &&
+            !task.deletedAt &&
+            ('status' in column
+              ? task.parentTaskId === null && task.status === column.status
+              : task.parentTaskId === column.parentTaskId),
+        )
+        .map((task) => task.position)
+        .sort();
+      return Promise.resolve(positions.at(-1) ?? null);
+    },
+    update: (eventId, id, expected, changes) => {
+      const task = liveTask(eventId, id);
+      if (!task || task.version !== expected) return Promise.resolve(null);
+      const { completedAt, completedByUserId: _by, ...rest } = changes;
+      Object.assign(task, rest, { version: task.version + 1 });
+      if (completedAt !== undefined) task.completedAt = completedAt?.toISOString() ?? null;
+      return Promise.resolve(toTask(task));
+    },
+    softDelete: (eventId, id, expected) => {
+      const task = liveTask(eventId, id);
+      if (!task || task.version !== expected) return Promise.resolve(false);
+      const deletedAt = `deleted-${++clock}`;
+      for (const item of tasks.values()) {
+        if (item.parentTaskId === id && !item.deletedAt) item.deletedAt = deletedAt;
+      }
+      Object.assign(task, { deletedAt, version: task.version + 1 });
+      return Promise.resolve(true);
+    },
+    restore: (eventId, id) => {
+      const task = tasks.get(id);
+      if (!task || task.eventId !== eventId || !task.deletedAt) return Promise.resolve(null);
+      const { deletedAt } = task;
+      for (const item of tasks.values()) {
+        if (item.parentTaskId === id && item.deletedAt === deletedAt) delete item.deletedAt;
+      }
+      delete task.deletedAt;
+      task.version += 1;
+      return Promise.resolve(toTask(task));
+    },
+    replaceAssignees: (eventId, id, expected, memberIds) => {
+      const task = liveTask(eventId, id);
+      if (!task || task.version !== expected) return Promise.resolve(null);
+      Object.assign(task, { assigneeIds: [...memberIds], version: task.version + 1 });
+      return Promise.resolve(toTask(task));
+    },
+  };
 
   tx.activity = {
     insert: (rows) => {
@@ -522,6 +653,7 @@ export function memoryRuntime() {
     events,
     venues,
     subEvents,
+    tasks,
     modules,
     outbox,
     activity,

@@ -1,4 +1,10 @@
-import type { EventModule, UpdateEvent, UpdateSubEvent, UpdateVenue } from '@pme/contracts';
+import type {
+  EventModule,
+  UpdateEvent,
+  UpdateSubEvent,
+  UpdateTask,
+  UpdateVenue,
+} from '@pme/contracts';
 
 import type { ActionDefinition, ActionOutcome, ActivityEntry } from '../action.js';
 import type { ActionContext } from '../context.js';
@@ -13,6 +19,12 @@ import {
   updateVenue,
 } from '../events/program-actions.js';
 import type { CoreTx, StoredActivity } from '../ports.js';
+import {
+  deleteTask,
+  replaceTaskAssignees,
+  restoreTask,
+  updateTask,
+} from '../tasks/task-actions.js';
 import { actorAccess, requirePermission, userIdOf } from '../team/access.js';
 
 /** The fields each update action accepts, so undo writes back only what it may. */
@@ -42,6 +54,16 @@ const SUB_EVENT_FIELDS = [
   'notes',
   'position',
 ] as const satisfies readonly (keyof UpdateSubEvent)[];
+const TASK_FIELDS = [
+  'title',
+  'description',
+  'status',
+  'priority',
+  'category',
+  'dueOn',
+  'subEventId',
+  'position',
+] as const satisfies readonly (keyof UpdateTask)[];
 
 type Fields = Record<string, unknown>;
 const fields = (value: unknown): Fields => (value ?? {}) as Fields;
@@ -139,6 +161,25 @@ const PLANNERS: Record<string, Planner> = {
     }),
   'sub_event.delete': (_tx, _ctx, entry) =>
     inverse(restoreSubEvent, { subEventId: entry.entityId }),
+  'task.create': (_tx, _ctx, entry) =>
+    inverse(deleteTask, { taskId: entry.entityId, expectedVersion: versionOf(entry.after) }),
+  'task.update': (_tx, _ctx, entry) =>
+    inverse(updateTask, {
+      taskId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      changes: pick<UpdateTask>(entry.before, TASK_FIELDS),
+    }),
+  'task.assign': (_tx, _ctx, entry) =>
+    inverse(replaceTaskAssignees, {
+      taskId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      memberIds: (fields(entry.before).memberIds as string[] | undefined) ?? [],
+    }),
+  'task.delete': (_tx, _ctx, entry) =>
+    inverse(restoreTask, {
+      taskId: entry.entityId,
+      subEventId: (fields(entry.before).subEventId as string | null | undefined) ?? null,
+    }),
 };
 
 /** Whether the log can reverse this kind of entry at all (the feed's canUndo uses it). */
