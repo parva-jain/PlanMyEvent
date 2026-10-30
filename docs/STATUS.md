@@ -209,7 +209,7 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 
 ## Open questions
 
-- `activity_log` has a unique index on `id` that DatabaseDesign doesn't list: undo and "undone by" look an entry up by id, and the primary key starts with `created_at`. Add it to DatabaseDesign's index line?
+None right now.
 
 ## Follow-ups
 
