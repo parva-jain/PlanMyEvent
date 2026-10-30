@@ -89,6 +89,8 @@ test.describe('live updates and undo', () => {
     await expect(venues).not.toContainText('Radisson Lawn');
     const snackbar = page.getByTestId('snackbar');
     await expect(snackbar).toContainText('Radisson Lawn deleted');
+    // Hovering pauses the 5 s countdown, so a slow machine can't miss the window.
+    await snackbar.hover();
     await snackbar.getByRole('button', { name: text('app.snackbar.undo') }).click();
     await expect(venues).toContainText('Radisson Lawn');
     await expect(snackbar).toHaveCount(0);
