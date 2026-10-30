@@ -17,6 +17,7 @@ API, worker, database and the shared packages behind them.
 - [22 Sign-in and the outbox](backend/22-sign-in-and-outbox.md)
 - [24 Events, versions and retries](backend/24-events-versions-retries.md)
 - [26 Members, roles and permissions](backend/26-members-roles-permissions.md)
+- [28 Fixing what the reviews found](backend/28-review-fixes.md)
 
 ## Frontend
 

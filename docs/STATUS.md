@@ -1,15 +1,28 @@
 # Project status
 
-Last updated: Oct 28, 2026 · Updated at the end of every working step.
+Last updated: Oct 30, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Milestone 4 — members, roles and permissions**, branch `feat/m4-members`. Milestones 1–3 are merged to `main` (PRs #1 and #2 squashed, #3 rebase-merged).
+**Fixes from the milestone 1–4 reviews**, branch `fix/m1-m4-review`, before milestone 5. Milestones 1–4 are merged to `main` (PRs #1 and #2 squashed, #3 and #4 rebase-merged).
 
-| Step | What | Status |
-| --- | --- | --- |
-| 4a | Backend: members, roles, role assignments with sub-event scopes, member invites (migration 0003 with a backfill); effective permissions in core; the API guard with the Redis permission cache; team endpoints; invite email | Done |
-| 4b | Web: Team page (members, invite by email or link, member panel), roles and the role editor, join page `/join/[token]` with return through sign-in, nav and buttons by permission (`GET E/me`), role names on My events | Done |
+The automated reviews in `~/Desktop/PlanMyEvent-reviews/` had no blockers and 7 major findings, all still real on `main`. Each fix has a test that failed first:
+
+| Review | Fix |
+| --- | --- |
+| M4 #1 | Editing or deleting a role needs every permission it holds (a `roles.manage`-only role could strip Admin). The role editor shows such roles read-only |
+| M1 #2 | Sentry events and transactions go through `redactUrl`; cookie and authorization headers are dropped |
+| M2 #1 | `PATCH /v1/me` with nothing to change is a 422, not a 500 |
+| M2 #2 | A second Enter on the email step no longer sends a second code |
+| M3 #1 | A double click on Create makes one event; 409 `request_in_progress` is retried |
+| M1 #3 | Closing a sheet or side panel returns focus to the button that opened it |
+| M1 #1 | `runAction` refuses event actions without `ctx.eventId` and changes without an activity entry (`outsideEvent`, `noActivity` opt-outs). Not done: a version step in the runner; stores already check versions in the update itself |
+
+The milestone 4 QA spec is in `apps/web/e2e/qa-m4.spec.ts` (11 tests, desktop and phone). Minor findings are below under Follow-ups. Already fixed or not real: If-Match and ETag (M1 #7, built in milestone 3), Welcome being skipped (M2 #3, the session gate sends a nameless account to Welcome), `updated_at` never refreshing (M3 #4, `timestamps()` has `$onUpdate`).
+
+### Milestone 4 (done)
+
+Members, roles and permissions with sub-event scopes, the permission guard and cache, the Team page, roles, the role editor and the join page. Merged as rebase of PR #4 (`fb4dff4`).
 
 ### Milestone 3 (done)
 
@@ -212,6 +225,24 @@ None right now.
 - Team list search, role filter chips, "online" dots and CSV export from Stitch "Team" (online needs sockets, milestone 5).
 - Nightly consistency check (owner has an Owner assignment, no scope-less assignments left by deletes) arrives with scheduled jobs.
 - `@sentry/nestjs` 11.8 pulls in `@sentry/bundler-plugins`, whose webpack peer brings webpack, SWC, esbuild and lightningcss (~60 MB) into the API image. Revisit with a Sentry update or a pnpm override.
+- From the milestone 1–4 reviews (minor):
+  - `/v1/health/ready` returns the raw Postgres or Redis error text (internal hosts and ports). Return a fixed reason and log the detail (M1 #4).
+  - `/live` sockets accept any client with no auth or connection cap; fix with the gateway's auth in milestone 5 (M1 #5).
+  - No general rate limit or per-user event cap outside sign-in; `POST /v1/events` makes a venue and sub-events per call. Add a throttle with a Redis store that fails open, and the free-plan cap above (M1 #6, M3 #8).
+  - `formatEventDate` hard-codes `en-IN` and trusts its input; take the locale and validate `YYYY-MM-DD` before Hindi (M1 #8).
+  - `PATCH /v1/me` has no `ETag` or `If-Match` (`users` has no `version`). Add them, or record a decision that `/me` is exempt (M2 #4).
+  - Plaintext secrets in outbox rows: the sign-in code (and its BullMQ job) and the raw join URL in member-invite emails. Published rows are deleted, but failing rows keep them. Clear the payload of failed or expired sensitive rows and keep it out of `last_error` (M2 #5, M4 #3).
+  - Welcome sends `phone: null` when the field is blank, erasing a saved number on a second visit. Prefill it, or send `phone` only when touched (M2 #7).
+  - Soft-deleted users keep their sessions and can sign in again; check `users.deleted_at` in the session guard and at sign-in (M2 #8).
+  - An idempotency key left `in_progress` (crash or lost release) blocks retries for 24 hours; give in-progress rows a short lease (M3 #2).
+  - The idempotency request hash uses `JSON.stringify(body)`, so the same fields in a different order get 422; hash canonical JSON (M3 #3).
+  - Changing an event's dates doesn't check its sub-events, and sub-events aren't checked against the event's dates (M3 #5).
+  - Saving a sub-event someone else deleted says "Couldn't save"; map `not_found` to "was removed" and refresh (M3 #6).
+  - `mapUrl` accepts `javascript:` and `data:` URLs; restrict to `http(s)` before anything renders it (M3 #7).
+  - A role manager can trim `roles.manage` from their own role and lock themselves out; warn or refuse (M4 #2).
+  - `safeReturnTo` accepts `/` followed by a tab, CR or LF, which browsers may turn into `//host`; parse with `new URL(value, origin)` and require the same origin (M4 #4).
+  - Opening a used-up email invite again as the member who used it shows "expired" instead of "you're already in" (M4 #5).
+  - A double tap on Leave can write two `leave` activity rows if both pass the member check; stop when `members.remove` returns false (M4 #6).
 - Logo SVG/PNG files and app icons still use the warm ink #1F1B16 and warm white #FAF8F5 (BRAND.md note); regenerate in a brand pass.
 
 ## Known warnings (harmless)
@@ -223,4 +254,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [27 The team in the web app](learning/frontend/27-team-web.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [28 Fixing what the reviews found](learning/backend/28-review-fixes.md).
