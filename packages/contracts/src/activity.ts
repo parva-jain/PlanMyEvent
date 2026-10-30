@@ -17,6 +17,8 @@ export const ACTIVITY_ENTITY_TYPES = [
   'task',
   'budget_category',
   'expense',
+  'household',
+  'contact',
 ] as const;
 export const ActivityEntityTypeSchema = z.enum(ACTIVITY_ENTITY_TYPES);
 export type ActivityEntityType = z.infer<typeof ActivityEntityTypeSchema>;
