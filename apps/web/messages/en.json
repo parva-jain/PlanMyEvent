@@ -1105,7 +1105,9 @@
       "role": "Roles",
       "member": "Team members",
       "member_invite": "Invites",
-      "task": "Tasks"
+      "task": "Tasks",
+      "budget_category": "Budget categories",
+      "expense": "Expenses"
     },
     "actions": {
       "event": {
@@ -1150,6 +1152,18 @@
         "delete": "<b>{actor}</b> deleted the task <b>{name}</b>",
         "restore": "<b>{actor}</b> restored the task <b>{name}</b>"
       },
+      "budget_category": {
+        "create": "<b>{actor}</b> added the budget category <b>{name}</b>",
+        "update": "<b>{actor}</b> updated the budget category <b>{name}</b>",
+        "delete": "<b>{actor}</b> deleted the budget category <b>{name}</b>",
+        "restore": "<b>{actor}</b> restored the budget category <b>{name}</b>"
+      },
+      "expense": {
+        "create": "<b>{actor}</b> added the expense <b>{name}</b>",
+        "update": "<b>{actor}</b> updated the expense <b>{name}</b>",
+        "delete": "<b>{actor}</b> deleted the expense <b>{name}</b>",
+        "restore": "<b>{actor}</b> restored the expense <b>{name}</b>"
+      },
       "fallback": "<b>{actor}</b> changed <b>{name}</b>"
     },
     "something": "something",
@@ -1181,7 +1195,14 @@
       "title": "Title",
       "priority": "Priority",
       "category": "Category",
-      "dueOn": "Due"
+      "dueOn": "Due",
+      "plannedPaise": "Planned",
+      "amountPaise": "Amount",
+      "paidPaise": "Paid so far",
+      "paymentStatus": "Payment",
+      "vendorName": "Vendor",
+      "paidOn": "Paid on",
+      "transactionRef": "Reference"
     },
     "none": "none",
     "removedVenue": "a deleted venue",
@@ -1209,6 +1230,20 @@
     "retry": "Try again",
     "emptyTitle": "Nothing has happened yet",
     "emptyBody": "Every change your team makes will appear here, with undo for mistakes.",
-    "emptyFiltered": "No changes match these filters."
+    "emptyFiltered": "No changes match these filters.",
+    "values": {
+      "todo": "To do",
+      "in_progress": "In progress",
+      "blocked": "Blocked",
+      "done": "Done",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent",
+      "planned": "Planned",
+      "advance_paid": "Advance paid",
+      "partially_paid": "Partly paid",
+      "paid": "Paid"
+    }
   }
 }

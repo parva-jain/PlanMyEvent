@@ -430,19 +430,21 @@ function useFormatField() {
     if (field === 'venueId') {
       return venues.find((venue) => venue.id === value)?.name ?? t('removedVenue');
     }
-    if (field === 'budgetPaise') return inr.format(Number(value) / 100);
+    if (field.endsWith('Paise')) return inr.format(Number(value) / 100);
     if ((field === 'startsAt' || field === 'endsAt') && typeof value === 'string') {
       const { date, time } = utcToZonedParts(value, event.timeZone);
       return `${formatEventDate(date)}, ${time}`;
     }
     if (
-      (field === 'startsOn' || field === 'endsOn' || field === 'dueOn') &&
+      (field === 'startsOn' || field === 'endsOn' || field === 'dueOn' || field === 'paidOn') &&
       typeof value === 'string'
     ) {
       return formatEventDate(value);
     }
-    if (field === 'status' && typeof value === 'string' && tStatus.has(value)) {
-      return tStatus(value as 'draft');
+    if (typeof value === 'string' && ['status', 'priority', 'paymentStatus'].includes(field)) {
+      // Event statuses and task or payment values share these fields' names.
+      if (t.has(`values.${value}`)) return t(`values.${value}` as 'values.todo');
+      if (tStatus.has(value)) return tStatus(value as 'draft');
     }
     if (typeof value === 'boolean') return value ? t('on') : t('off');
     const text = typeof value === 'string' || typeof value === 'number' ? String(value) : '';
