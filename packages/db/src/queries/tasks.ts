@@ -1,5 +1,4 @@
 import type { MyTask, Task, TaskQuery } from '@pme/contracts';
-import { ActionError } from '@pme/core';
 import { and, asc, eq, gt, inArray, isNull, lte, ne, sql, type SQL } from 'drizzle-orm';
 
 import type { Database } from '../client.js';
@@ -7,18 +6,7 @@ import { events } from '../schema/events.js';
 import { members } from '../schema/team.js';
 import { taskAssignees, tasks } from '../schema/tasks.js';
 import { taskStore, withDetails } from '../stores/tasks.js';
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const encodeCursor = (id: string) => Buffer.from(JSON.stringify({ i: id })).toString('base64url');
-function decodeCursor(value: string): string {
-  try {
-    const { i } = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as { i?: unknown };
-    if (typeof i === 'string' && UUID.test(i)) return i;
-  } catch {
-    // Falls through to the error below.
-  }
-  throw new ActionError('bad_request', 'Invalid cursor');
-}
+import { decodeCursor, encodeCursor } from './cursor.js';
 
 /** Which sub-events' tasks the caller may read: all, or these (whole-event tasks excluded). */
 export type TaskVisibility = 'all' | ReadonlySet<string>;
