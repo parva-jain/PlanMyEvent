@@ -16,6 +16,16 @@ export {
   type OutboxMessage,
 } from './action.js';
 export { isUndoable, undoActivity } from './activity/undo.js';
+export {
+  createBudgetCategory,
+  createExpense,
+  deleteBudgetCategory,
+  deleteExpense,
+  restoreBudgetCategory,
+  restoreExpense,
+  updateBudgetCategory,
+  updateExpense,
+} from './budget/budget-actions.js';
 export type { ActionContext, Actor } from './context.js';
 export { createEvent, replaceModules, updateEvent } from './events/event-actions.js';
 export { liveSignals, permissionsChanged } from './live.js';
@@ -82,6 +92,11 @@ export type {
   PersonalWorkspace,
   SubEventStore,
   NewTask,
+  BudgetCategoryChanges,
+  BudgetCategoryStore,
+  ExpenseStore,
+  NewBudgetCategory,
+  NewExpense,
   TaskChanges,
   TaskStore,
   UserStore,

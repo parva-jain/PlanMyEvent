@@ -1,6 +1,8 @@
 import {
   can,
+  type BudgetCategory,
   type Event,
+  type Expense,
   type EventModule,
   type Grant,
   type Member,
@@ -57,6 +59,8 @@ export function memoryRuntime() {
     }
   >();
   let clock = 0;
+  const categories = new Map<string, BudgetCategory & { eventId: string; deleted?: boolean }>();
+  const expenses = new Map<string, Expense & { eventId: string; deleted?: boolean }>();
   const outbox: OutboxMessage[] = [];
   const activity: StoredActivity[] = [];
   const takenSlugs = new Set<string>();
@@ -120,7 +124,14 @@ export function memoryRuntime() {
   // Team stores are attached below, once the helpers they share are defined.
   const base: Omit<
     CoreTx,
-    'roles' | 'members' | 'access' | 'memberInvites' | 'activity' | 'tasks'
+    | 'roles'
+    | 'members'
+    | 'access'
+    | 'memberInvites'
+    | 'activity'
+    | 'tasks'
+    | 'budgetCategories'
+    | 'expenses'
   > = {
     users: {
       updateProfile: (userId, changes) => {
@@ -385,6 +396,127 @@ export function memoryRuntime() {
       if (!task || task.version !== expected) return Promise.resolve(null);
       Object.assign(task, { assigneeIds: [...memberIds], version: task.version + 1 });
       return Promise.resolve(toTask(task));
+    },
+  };
+
+  const categoryNameTaken = (eventId: string, name: string, except?: string) =>
+    [...categories.values()].some(
+      (item) =>
+        item.eventId === eventId &&
+        !item.deleted &&
+        item.id !== except &&
+        item.name.toLowerCase() === name.toLowerCase(),
+    );
+  const refTaken = (eventId: string, ref: string | null | undefined, except?: string) =>
+    !!ref &&
+    [...expenses.values()].some(
+      (item) =>
+        item.eventId === eventId &&
+        !item.deleted &&
+        item.id !== except &&
+        item.transactionRef === ref,
+    );
+
+  tx.budgetCategories = {
+    insert: (eventId, list) => {
+      if (list.some((item) => categoryNameTaken(eventId, item.name))) {
+        return Promise.resolve('name_taken' as const);
+      }
+      return Promise.resolve(
+        list.map((input) => {
+          const category = {
+            id: nextId(),
+            eventId,
+            name: input.name,
+            plannedPaise: input.plannedPaise ?? 0,
+            position: input.position ?? categories.size,
+            version: 1,
+          };
+          categories.set(category.id, category);
+          return strip({ ...category });
+        }),
+      );
+    },
+    find: (eventId, id) => {
+      const category = liveIn(categories, eventId, id);
+      return Promise.resolve(category ? strip({ ...category }) : null);
+    },
+    update: (eventId, id, expected, changes) => {
+      const category = liveIn(categories, eventId, id);
+      if (!category || category.version !== expected) return Promise.resolve(null);
+      if (changes.name && categoryNameTaken(eventId, changes.name, id)) {
+        return Promise.resolve('name_taken' as const);
+      }
+      Object.assign(category, changes, { version: category.version + 1 });
+      return Promise.resolve(strip({ ...category }));
+    },
+    hasExpenses: (eventId, id) =>
+      Promise.resolve(
+        [...expenses.values()].some(
+          (item) => item.eventId === eventId && item.categoryId === id && !item.deleted,
+        ),
+      ),
+    softDelete: (eventId, id, expected) => {
+      const category = liveIn(categories, eventId, id);
+      if (!category || category.version !== expected) return Promise.resolve(false);
+      Object.assign(category, { deleted: true, version: category.version + 1 });
+      return Promise.resolve(true);
+    },
+    restore: (eventId, id) => {
+      const category = categories.get(id);
+      if (!category || category.eventId !== eventId || !category.deleted) {
+        return Promise.resolve(null);
+      }
+      if (categoryNameTaken(eventId, category.name, id)) {
+        return Promise.resolve('name_taken' as const);
+      }
+      Object.assign(category, { deleted: false, version: category.version + 1 });
+      return Promise.resolve(strip({ ...category }));
+    },
+  };
+
+  tx.expenses = {
+    insert: (eventId, input) => {
+      if (refTaken(eventId, input.transactionRef)) return Promise.resolve('duplicate_ref' as const);
+      const expense = {
+        ...input,
+        id: nextId(),
+        eventId,
+        version: 1,
+        createdAt: new Date().toISOString(),
+      };
+      expenses.set(expense.id, expense);
+      return Promise.resolve(strip({ ...expense }));
+    },
+    find: (eventId, id) => {
+      const expense = liveIn(expenses, eventId, id);
+      return Promise.resolve(expense ? strip({ ...expense }) : null);
+    },
+    update: (eventId, id, expected, changes) => {
+      const expense = liveIn(expenses, eventId, id);
+      if (!expense || expense.version !== expected) return Promise.resolve(null);
+      if (refTaken(eventId, changes.transactionRef, id)) {
+        return Promise.resolve('duplicate_ref' as const);
+      }
+      Object.assign(expense, changes, { version: expense.version + 1 });
+      return Promise.resolve(strip({ ...expense }));
+    },
+    softDelete: (eventId, id, expected) => {
+      const expense = liveIn(expenses, eventId, id);
+      if (!expense || expense.version !== expected) return Promise.resolve(false);
+      Object.assign(expense, { deleted: true, version: expense.version + 1 });
+      return Promise.resolve(true);
+    },
+    restore: (eventId, id) => {
+      const expense = expenses.get(id);
+      if (!expense || expense.eventId !== eventId || !expense.deleted) {
+        return Promise.resolve(null);
+      }
+      if (refTaken(eventId, expense.transactionRef, id)) {
+        return Promise.resolve('duplicate_ref' as const);
+      }
+      Object.assign(expense, { deleted: false, version: expense.version + 1 });
+      return Promise.resolve(strip({ ...expense }));
     },
   };
 
@@ -654,6 +786,8 @@ export function memoryRuntime() {
     venues,
     subEvents,
     tasks,
+    categories,
+    expenses,
     modules,
     outbox,
     activity,

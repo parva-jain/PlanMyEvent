@@ -1,8 +1,10 @@
 import type {
+  BudgetCategory,
   Channel,
   EffectivePermissions,
   Event,
   EventModule,
+  Expense,
   Grant,
   Member,
   MemberInvite,
@@ -273,6 +275,61 @@ export interface TaskStore {
   ): Promise<Task | null>;
 }
 
+export interface NewBudgetCategory {
+  name: string;
+  plannedPaise?: number;
+  /** Omitted: after the last one. */
+  position?: number;
+}
+
+export type BudgetCategoryChanges = Partial<NewBudgetCategory>;
+
+/** Budget categories skip soft-deleted rows; names are unique per event, ignoring case. */
+export interface BudgetCategoryStore {
+  insert(eventId: string, list: NewBudgetCategory[]): Promise<BudgetCategory[] | 'name_taken'>;
+  find(eventId: string, categoryId: string): Promise<BudgetCategory | null>;
+  update(
+    eventId: string,
+    categoryId: string,
+    expectedVersion: number,
+    changes: BudgetCategoryChanges,
+  ): Promise<BudgetCategory | null | 'name_taken'>;
+  /** Whether live expenses still use it (deleting is refused then). */
+  hasExpenses(eventId: string, categoryId: string): Promise<boolean>;
+  softDelete(eventId: string, categoryId: string, expectedVersion: number): Promise<boolean>;
+  /** Undoes a soft delete; 'name_taken' if another category took the name meanwhile. */
+  restore(eventId: string, categoryId: string): Promise<BudgetCategory | null | 'name_taken'>;
+}
+
+export interface NewExpense {
+  categoryId: string;
+  subEventId: string | null;
+  title: string;
+  vendorName: string | null;
+  amountPaise: number;
+  paidPaise: number;
+  paymentStatus: Expense['paymentStatus'];
+  dueOn: string | null;
+  paidOn: string | null;
+  paidByMemberId: string | null;
+  transactionRef: string | null;
+  notes: string | null;
+}
+
+/** Expenses skip soft-deleted rows; 'duplicate_ref' when another live expense has the reference. */
+export interface ExpenseStore {
+  insert(eventId: string, expense: NewExpense): Promise<Expense | 'duplicate_ref'>;
+  find(eventId: string, expenseId: string): Promise<Expense | null>;
+  update(
+    eventId: string,
+    expenseId: string,
+    expectedVersion: number,
+    changes: Partial<NewExpense>,
+  ): Promise<Expense | null | 'duplicate_ref'>;
+  softDelete(eventId: string, expenseId: string, expectedVersion: number): Promise<boolean>;
+  restore(eventId: string, expenseId: string): Promise<Expense | null | 'duplicate_ref'>;
+}
+
 /** An activity_log row as stored. */
 export interface StoredActivity {
   id: string;
@@ -315,4 +372,6 @@ export interface CoreTx {
   memberInvites: MemberInviteStore;
   activity: ActivityStore;
   tasks: TaskStore;
+  budgetCategories: BudgetCategoryStore;
+  expenses: ExpenseStore;
 }

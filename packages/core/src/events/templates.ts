@@ -5,7 +5,7 @@ import type { EventTemplate, TemplateKey } from '@pme/contracts';
 /**
  * Event templates (PRD "Event setup"): which modules start on, the default response mode,
  * starter sub-events and starter tasks. Times are local to the event's time zone; day
- * offsets past the event's last day are clamped to it. Budget categories join in step 6b.
+ * offsets past the event's last day are clamped to it.
  */
 export const EVENT_TEMPLATES: Record<TemplateKey, EventTemplate> = {
   wedding: {
@@ -59,6 +59,20 @@ export const EVENT_TEMPLATES: Record<TemplateKey, EventTemplate> = {
       },
       { key: 'return-gifts', title: 'Buy return gifts', category: 'Gifts', daysBefore: 21 },
     ],
+    budgetCategories: [
+      'Venue',
+      'Catering',
+      'Decor',
+      'Photography',
+      'Clothing',
+      'Jewellery',
+      'Mehendi',
+      'Entertainment',
+      'Rituals',
+      'Invitations',
+      'Gifts',
+      'Travel and stay',
+    ],
   },
   conference: {
     key: 'conference',
@@ -98,6 +112,16 @@ export const EVENT_TEMPLATES: Record<TemplateKey, EventTemplate> = {
       },
       { key: 'feedback', title: 'Send the feedback form', category: 'Program', daysBefore: 0 },
     ],
+    budgetCategories: [
+      'Venue',
+      'Catering',
+      'AV and streaming',
+      'Speakers',
+      'Marketing',
+      'Swag',
+      'Travel',
+      'Other',
+    ],
   },
   fair: {
     key: 'fair',
@@ -133,6 +157,15 @@ export const EVENT_TEMPLATES: Record<TemplateKey, EventTemplate> = {
       { key: 'security', title: 'Book security', category: 'Logistics', daysBefore: 14 },
       { key: 'volunteers', title: 'Brief the volunteers', category: 'Team', daysBefore: 7 },
     ],
+    budgetCategories: [
+      'Venue and permits',
+      'Stalls',
+      'Power and water',
+      'Security',
+      'Marketing',
+      'Staff',
+      'Other',
+    ],
   },
   celebration: {
     key: 'celebration',
@@ -156,6 +189,7 @@ export const EVENT_TEMPLATES: Record<TemplateKey, EventTemplate> = {
       },
       { key: 'return-gifts', title: 'Buy return gifts', category: 'Gifts', daysBefore: 7 },
     ],
+    budgetCategories: ['Venue', 'Food', 'Cake and decor', 'Gifts', 'Other'],
   },
   custom: {
     key: 'custom',
@@ -167,5 +201,6 @@ export const EVENT_TEMPLATES: Record<TemplateKey, EventTemplate> = {
     responseMode: 'invite_only',
     subEvents: [],
     tasks: [],
+    budgetCategories: [],
   },
 };
