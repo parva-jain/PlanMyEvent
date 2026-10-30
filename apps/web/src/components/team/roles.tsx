@@ -126,7 +126,10 @@ function RoleEditor({ role }: { role: Role | null }) {
   const router = useRouter();
   const save = useSaveRole(eventId);
   const remove = useDeleteRole(eventId);
-  const editable = can('roles.manage') && !role?.isOwner;
+  // The API refuses changes to a role holding permissions I lack, so show it read-only.
+  const outranksMe =
+    !!role && !role.isOwner && !role.permissions.every((permission) => can(permission));
+  const editable = can('roles.manage') && !role?.isOwner && !outranksMe;
 
   const [name, setName] = useState(role?.name ?? '');
   const [description, setDescription] = useState(role?.description ?? '');
@@ -201,6 +204,14 @@ function RoleEditor({ role }: { role: Role | null }) {
           <p className="flex items-center gap-2 rounded-control bg-accent-tint px-4 py-3 text-small text-accent-text">
             <Lock aria-hidden className="size-4 shrink-0" />
             {t('ownerLocked')}
+          </p>
+        </Reveal>
+      )}
+      {outranksMe && can('roles.manage') && (
+        <Reveal>
+          <p className="flex items-center gap-2 rounded-control bg-accent-tint px-4 py-3 text-small text-accent-text">
+            <Lock aria-hidden className="size-4 shrink-0" />
+            {t('outranksYou')}
           </p>
         </Reveal>
       )}

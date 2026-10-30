@@ -1,9 +1,10 @@
 import type { CreateRole, Role, UpdateRole } from '@pme/contracts';
 
 import type { ActionDefinition } from '../action.js';
+import type { ActionContext } from '../context.js';
 import { versionMismatch } from '../events/versioned.js';
 import { ActionError } from '../errors.js';
-import type { CoreTx } from '../ports.js';
+import type { CoreTx, MemberAccess } from '../ports.js';
 import { actorAccess, assertWithinOwn } from './access.js';
 
 const nameTaken = () =>
@@ -11,12 +12,21 @@ const nameTaken = () =>
     fields: [{ path: 'name', message: 'A role with this name already exists' }],
   });
 
-/** Owner is the one role nobody edits or deletes (PRD rule 2). */
-async function editableRole(tx: CoreTx, eventId: string, roleId: string): Promise<Role> {
-  const role = await tx.roles.find(eventId, roleId);
+/**
+ * Owner is the one role nobody edits or deletes (PRD rule 2). Changing any other role needs
+ * every permission it holds, so a narrow role with roles.manage can't strip an Admin.
+ */
+async function editableRole(
+  tx: CoreTx,
+  ctx: ActionContext,
+  roleId: string,
+): Promise<{ role: Role; actor: MemberAccess }> {
+  const role = await tx.roles.find(ctx.eventId!, roleId);
   if (!role) throw new ActionError('not_found', 'Role not found');
   if (role.isOwner) throw new ActionError('forbidden', 'The Owner role cannot be changed');
-  return role;
+  const actor = await actorAccess(tx, ctx);
+  assertWithinOwn(actor, role.permissions);
+  return { role, actor };
 }
 
 /** POST E/roles (roles.manage): a custom role within the creator's own permissions. */
@@ -57,8 +67,8 @@ export const updateRole: ActionDefinition<
   permission: 'roles.manage',
   async execute(tx, ctx, { roleId, expectedVersion, changes }) {
     const eventId = ctx.eventId!;
-    const before = await editableRole(tx, eventId, roleId);
-    if (changes.permissions) assertWithinOwn(await actorAccess(tx, ctx), changes.permissions);
+    const { role: before, actor } = await editableRole(tx, ctx, roleId);
+    if (changes.permissions) assertWithinOwn(actor, changes.permissions);
     const after = await tx.roles.update(eventId, roleId, expectedVersion, changes);
     if (after === 'name_taken') throw nameTaken();
     if (!after) versionMismatch(await tx.roles.find(eventId, roleId), expectedVersion);
@@ -80,7 +90,7 @@ export const deleteRole: ActionDefinition<
   permission: 'roles.manage',
   async execute(tx, ctx, { roleId, expectedVersion }) {
     const eventId = ctx.eventId!;
-    const before = await editableRole(tx, eventId, roleId);
+    const { role: before } = await editableRole(tx, ctx, roleId);
     if (before.memberCount > 0) {
       throw new ActionError('role_in_use', 'Remove this role from its members first', {
         memberCount: before.memberCount,

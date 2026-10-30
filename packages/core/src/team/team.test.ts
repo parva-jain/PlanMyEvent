@@ -214,6 +214,44 @@ describe('roles', () => {
       }),
     ).resolves.toMatchObject({ name: 'Planner', version: 2 });
   });
+
+  it("can't edit or delete a role holding permissions you don't have", async () => {
+    const { run, role, addMember, customRole } = await wedding();
+    const keeper = await customRole('Role keeper', ['event.view', 'members.view', 'roles.manage']);
+    await addMember('keeper', [{ roleId: keeper.id, subEventIds: [] }]);
+    const treasurer = await customRole('Treasurer', ['event.view', 'budget.edit']);
+    const greeter = await customRole('Greeter', ['event.view']);
+
+    // Shrinking Admin to event.view stays within the keeper's own, but Admin outranks them.
+    await expect(
+      run('keeper', updateRole, {
+        roleId: role('Admin').id,
+        expectedVersion: 1,
+        changes: { permissions: ['event.view'] },
+      }),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    await expect(
+      run('keeper', updateRole, {
+        roleId: treasurer.id,
+        expectedVersion: 1,
+        changes: { name: 'Money' },
+      }),
+    ).rejects.toMatchObject({ code: 'forbidden', details: { permissions: ['budget.edit'] } });
+    await expect(
+      run('keeper', deleteRole, { roleId: treasurer.id, expectedVersion: 1 }),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+
+    await expect(
+      run('keeper', updateRole, {
+        roleId: greeter.id,
+        expectedVersion: 1,
+        changes: { name: 'Welcome desk' },
+      }),
+    ).resolves.toMatchObject({ name: 'Welcome desk' });
+    await expect(
+      run('keeper', deleteRole, { roleId: greeter.id, expectedVersion: 2 }),
+    ).resolves.toBeUndefined();
+  });
 });
 
 describe('members', () => {

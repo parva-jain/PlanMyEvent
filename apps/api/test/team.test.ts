@@ -265,6 +265,32 @@ describe('members and roles', () => {
     expect((inUse.body as Problem).code).toBe('role_in_use');
   });
 
+  it("a role manager can't strip or delete a role that outranks them", async () => {
+    const { owner, E, role } = await wedding();
+    const keeper = (
+      await owner
+        .post(`${E}/roles`)
+        .send({ name: 'Role keeper', permissions: ['event.view', 'members.view', 'roles.manage'] })
+        .expect(201)
+    ).body as Role;
+    const treasurer = (
+      await owner
+        .post(`${E}/roles`)
+        .send({ name: 'Treasurer', permissions: ['event.view', 'budget.edit'] })
+        .expect(201)
+    ).body as Role;
+    const manager = await join(owner, E, [{ roleId: keeper.id }]);
+
+    await manager
+      .patch(`${E}/roles/${role('Admin').id}`)
+      .set('If-Match', '"1"')
+      .send({ permissions: ['event.view'] })
+      .expect(403);
+    await manager.delete(`${E}/roles/${treasurer.id}`).set('If-Match', '"1"').expect(403);
+    const admin = list<Role>(await owner.get(`${E}/roles`)).find((item) => item.name === 'Admin')!;
+    expect(admin.permissions).toContain('members.manage');
+  });
+
   it('leave and transfer ownership', async () => {
     const { owner, E, role } = await wedding();
     const editor = await join(owner, E, [{ roleId: role('Editor').id }]);
