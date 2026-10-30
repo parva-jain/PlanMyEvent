@@ -55,6 +55,20 @@ export async function actorAccess(tx: CoreTx, ctx: ActionContext): Promise<Membe
   return access;
 }
 
+/** The permission check runAction does, for a check that depends on what's loaded inside. */
+export async function requirePermission(
+  tx: CoreTx,
+  ctx: ActionContext,
+  permission: Permission,
+  subEventId: string | null = null,
+): Promise<MemberAccess> {
+  const access = await actorAccess(tx, ctx);
+  if (!can(access, permission, subEventId)) {
+    throw new ActionError('forbidden', `You need the ${permission} permission`, { permission });
+  }
+  return access;
+}
+
 const beyondOwn = (missing: Permission[]) =>
   new ActionError('forbidden', 'You can only grant permissions you have yourself', {
     permissions: missing,

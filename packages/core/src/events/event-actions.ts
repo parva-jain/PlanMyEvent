@@ -101,7 +101,14 @@ export const createEvent: ActionDefinition<CreateEvent, CreatedEvent, CoreTx> = 
     return {
       result: { ...event, counts: { subEvents: subEvents.length, venues: venue ? 1 : 0 } },
       activity: [
-        { action: 'create', entityType: 'event', entityId: event.id, before: null, after: event },
+        {
+          action: 'create',
+          entityType: 'event',
+          entityId: event.id,
+          eventId: event.id,
+          before: null,
+          after: event,
+        },
       ],
     };
   },

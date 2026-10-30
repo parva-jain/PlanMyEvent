@@ -12,8 +12,10 @@ export {
   type ActionOutcome,
   type ActionRuntime,
   type ActivityEntry,
+  changedOnly,
   type OutboxMessage,
 } from './action.js';
+export { isUndoable, undoActivity } from './activity/undo.js';
 export type { ActionContext, Actor } from './context.js';
 export { createEvent, replaceModules, updateEvent } from './events/event-actions.js';
 export {
@@ -21,6 +23,8 @@ export {
   createVenue,
   deleteSubEvent,
   deleteVenue,
+  restoreSubEvent,
+  restoreVenue,
   updateSubEvent,
   updateVenue,
 } from './events/program-actions.js';
@@ -51,6 +55,9 @@ export {
 export { createRole, deleteRole, updateRole } from './team/role-actions.js';
 export type {
   AccessStore,
+  ActivityStore,
+  NewActivity,
+  StoredActivity,
   CoreTx,
   EventStore,
   LockedMemberInvite,

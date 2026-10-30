@@ -3,13 +3,21 @@ import type { Permission } from '@pme/contracts';
 import type { ActionContext } from './context.js';
 import { ActionError } from './errors.js';
 
-/** activity_log row an action asks to write (shape firms up in milestone 5). */
+/**
+ * activity_log row an action asks to write. `action` is the verb (create, update, delete,
+ * join…); the log stores `<entityType>.<verb>`. For updates, runAction keeps only the fields
+ * that changed in before and after (DatabaseDesign "activity_log").
+ */
 export interface ActivityEntry {
   action: string;
   entityType: string;
   entityId: string;
   before: unknown;
   after: unknown;
+  /** For actions outside an event context (events.create, accepting an invite). */
+  eventId?: string;
+  /** Set by undo on the entries it writes: the entry being undone. */
+  undoOfId?: string;
 }
 
 /** outbox row an action asks to write; dedupeKey becomes the BullMQ job id (build it with `jobId()`). */
@@ -92,13 +100,34 @@ export async function runAction<TInput, TResult, TTx>(
       );
     }
     if (outcome.activity?.length) {
-      await runtime.recordActivity(tx, ctx, outcome.activity);
+      await runtime.recordActivity(tx, ctx, outcome.activity.map(changedOnly));
     }
     if (outcome.outbox?.length) {
       await runtime.writeOutbox(tx, ctx, outcome.outbox);
     }
     return outcome.result;
   });
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * An update keeps only the fields whose values differ. Creates and deletes (one side null)
+ * and list snapshots (arrays, like a module set) are stored whole.
+ */
+export function changedOnly(entry: ActivityEntry): ActivityEntry {
+  const { before, after } = entry;
+  if (!isRecord(before) || !isRecord(after)) return entry;
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+  const changed = [...keys].filter(
+    (key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]),
+  );
+  return {
+    ...entry,
+    before: Object.fromEntries(changed.map((key) => [key, before[key] ?? null])),
+    after: Object.fromEntries(changed.map((key) => [key, after[key] ?? null])),
+  };
 }
 
 /**
