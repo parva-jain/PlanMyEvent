@@ -16,7 +16,7 @@ import type {
 } from '@pme/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { apiFetch } from './api';
+import { apiFetch, ApiError } from './api';
 
 interface List<T> {
   data: T[];
@@ -97,6 +97,11 @@ export function useCreateEvent() {
         body,
         headers: { 'Idempotency-Key': idempotencyKey },
       }),
+    // 409 request_in_progress: the same key is still being handled (a retry raced the first
+    // try). The API sends Retry-After: 1; asking again returns the stored result.
+    retry: (count, error) =>
+      error instanceof ApiError && error.problem?.code === 'request_in_progress' && count < 5,
+    retryDelay: 1000,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: eventKeys.mine }),
   });
 }

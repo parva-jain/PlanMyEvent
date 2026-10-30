@@ -101,6 +101,8 @@ export function CreateEventWizard() {
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [created, setCreated] = useState<CreatedEvent | null>(null);
+  // isPending only disables Create after a re-render; a double click lands before that.
+  const submitting = useRef(false);
 
   const template = templates?.find((item) => item.key === templateKey) ?? null;
   const zones = useMemo(() => timeZoneOptions(details.timeZone), [details.timeZone]);
@@ -122,7 +124,8 @@ export function CreateEventWizard() {
   }
 
   function submit() {
-    if (!templateKey) return;
+    if (!templateKey || submitting.current) return;
+    submitting.current = true;
     create.mutate(
       {
         idempotencyKey,
@@ -148,6 +151,9 @@ export function CreateEventWizard() {
             );
             go(2);
           }
+        },
+        onSettled: () => {
+          submitting.current = false;
         },
       },
     );
