@@ -16,8 +16,8 @@ import { useCurrentEvent } from './current-event';
 import { eventHref } from './nav';
 
 /**
- * A new sub-event opens its form straight away; the others open their section until their
- * create forms exist (milestones 6–7).
+ * Sessions, tasks and expenses open their form straight away; guests open their section
+ * until its create form exists (milestone 7).
  */
 const ACTIONS = [
   {
@@ -27,11 +27,11 @@ const ACTIONS = [
     icon: CalendarPlus,
     permission: 'subevents.edit',
   },
-  { key: 'task', section: 'tasks', query: '', icon: ListPlus, permission: 'tasks.edit' },
+  { key: 'task', section: 'tasks', query: '?add=1', icon: ListPlus, permission: 'tasks.edit' },
   {
     key: 'expense',
     section: 'budget',
-    query: '',
+    query: '?add=1',
     icon: ReceiptIndianRupee,
     permission: 'budget.edit',
   },
