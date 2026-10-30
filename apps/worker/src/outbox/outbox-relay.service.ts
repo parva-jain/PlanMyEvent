@@ -7,23 +7,30 @@ import {
   type OnApplicationBootstrap,
 } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { isOutboxTopic, OUTBOX_ROUTES, type QueueName } from '@pme/contracts';
+import {
+  isOutboxTopic,
+  LIVE_TOPIC,
+  LiveSignalSchema,
+  OUTBOX_ROUTES,
+  type QueueName,
+} from '@pme/contracts';
 import { relayOutboxBatch, type Database, type OutboxRow } from '@pme/db';
 import type { Queue } from 'bullmq';
 
 import { WORKER_ENV } from '../config/config.module';
 import type { WorkerEnv } from '../config/env';
 import { DB } from '../database/database.module';
+import { LivePublisher } from '../live/live-publisher';
 import { outboxJob } from './outbox-job';
 
-const TOPICS = Object.keys(OUTBOX_ROUTES);
+const TOPICS = [...Object.keys(OUTBOX_ROUTES), LIVE_TOPIC];
 /** Relay retry delay when adding the job fails (Redis down): 1 s, doubling, capped at 1 min. */
 const retryDelayMs = (attempts: number) => Math.min(1_000 * 2 ** (attempts - 1), 60_000);
 
 /**
- * Moves outbox rows into BullMQ (SystemDesign 5.1). Polls every OUTBOX_POLL_MS and drains
- * full batches back to back. Several relays can run at once: rows are claimed with
- * SKIP LOCKED. Postgres LISTEN/NOTIFY can replace most polling later.
+ * Moves outbox rows into BullMQ, and live signals to the sockets (SystemDesign 5.1). Polls
+ * every OUTBOX_POLL_MS and drains full batches back to back. Several relays can run at once:
+ * rows are claimed with SKIP LOCKED. Postgres LISTEN/NOTIFY can replace most polling later.
  */
 @Injectable()
 export class OutboxRelayService implements OnApplicationBootstrap, BeforeApplicationShutdown {
@@ -37,6 +44,7 @@ export class OutboxRelayService implements OnApplicationBootstrap, BeforeApplica
     @Inject(DB) private readonly db: Database,
     @Inject(WORKER_ENV) private readonly env: WorkerEnv,
     private readonly moduleRef: ModuleRef,
+    private readonly live: LivePublisher,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -99,6 +107,11 @@ export class OutboxRelayService implements OnApplicationBootstrap, BeforeApplica
   }
 
   private async publish(row: OutboxRow): Promise<void> {
+    // Live signals go straight to the sockets; everything else becomes a job.
+    if (row.topic === LIVE_TOPIC) {
+      await this.live.publish(LiveSignalSchema.parse(row.payload));
+      return;
+    }
     const job = outboxJob(row);
     await this.queue(job.queue).add(job.name, job.data, job.options);
   }
