@@ -7,9 +7,11 @@ import { useTranslations } from 'next-intl';
 import { useRef, type ReactNode } from 'react';
 
 import { ListItem, ListPresence } from '@/components/motion/list-presence';
+import { useSnackbar } from '@/components/motion/undo-snackbar';
+import { useCurrentEvent } from '@/components/shell/current-event';
 import { LiveRow } from '@/components/shell/live-row';
 import { spring } from '@/lib/motion';
-import { TASK_STATUSES } from '@/lib/tasks';
+import { subtasksOf, TASK_STATUSES, useUpdateTask } from '@/lib/tasks';
 
 import {
   AssigneeStack,
@@ -84,43 +86,102 @@ function SwipeToComplete({
   );
 }
 
-/** DESIGN.md task row: checkbox, title, due date, sub-event chip, assignee avatars. */
+/**
+ * A subtask under its row: smaller and indented. Ticking saves at once and it stays in
+ * place (like the panel's checklist); tapping it opens the parent.
+ */
+function SubtaskItem({ subtask, onOpen }: { subtask: Task; onOpen: () => void }) {
+  const t = useTranslations('tasks');
+  const { eventId } = useCurrentEvent();
+  const { canMove } = useTaskAccess();
+  const update = useUpdateTask(eventId);
+  const show = useSnackbar();
+  const done = subtask.status === 'done';
+  return (
+    <LiveRow entityId={subtask.id} className="rounded-control">
+      <div className="flex min-h-9 items-center gap-2.5" data-testid="row-subtask">
+        <TaskCheckbox
+          small
+          title={subtask.title}
+          checked={done}
+          disabled={!canMove(subtask)}
+          onToggle={() =>
+            update.mutate(
+              { task: subtask, changes: { status: done ? 'todo' : 'done' } },
+              { onError: () => show({ message: t('saveFailed') }) },
+            )
+          }
+        />
+        <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 text-left">
+          <StruckTitle title={subtask.title} struck={done} className="text-small" />
+        </button>
+      </div>
+    </LiveRow>
+  );
+}
+
+/**
+ * DESIGN.md task row: checkbox, title, due date, sub-event chip, assignee avatars, and its
+ * subtasks indented underneath.
+ */
 export function TaskRow({
   task,
+  subtasks = [],
   subEvents,
   onOpen,
   swipeable,
 }: {
   task: Task;
+  subtasks?: readonly Task[];
   subEvents: readonly SubEvent[] | undefined;
   onOpen: (taskId: string) => void;
   swipeable: boolean;
 }) {
+  const t = useTranslations('tasks');
   const { canMove } = useTaskAccess();
   const movable = canMove(task);
   const { checked, toggle } = useToggleDone(task);
   const row = (
     <div
       data-testid="task-row"
-      className="flex items-start gap-3 rounded-card border border-border bg-surface px-4 py-3 shadow-card"
+      className="flex flex-col gap-2 rounded-card border border-border bg-surface px-4 py-3 shadow-card"
     >
-      <span className="pt-0.5">
-        <TaskCheckbox title={task.title} checked={checked} disabled={!movable} onToggle={toggle} />
-      </span>
-      <button
-        type="button"
-        onClick={() => onOpen(task.id)}
-        className="flex min-w-0 flex-1 flex-col gap-1.5 text-left"
-      >
-        <StruckTitle title={task.title} struck={checked} className="text-body" />
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <PriorityChip task={task} />
-          <DueChip task={task} />
-          <SubEventChip subEvents={subEvents} subEventId={task.subEventId} />
-          <SubtaskCount task={task} />
+      <div className="flex items-start gap-3">
+        <span className="pt-0.5">
+          <TaskCheckbox
+            title={task.title}
+            checked={checked}
+            disabled={!movable}
+            onToggle={toggle}
+          />
         </span>
-      </button>
-      <AssigneeStack assignees={task.assignees} />
+        <button
+          type="button"
+          onClick={() => onOpen(task.id)}
+          className="flex min-w-0 flex-1 flex-col gap-1.5 text-left"
+        >
+          <StruckTitle title={task.title} struck={checked} className="text-body" />
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <PriorityChip task={task} />
+            <DueChip task={task} />
+            <SubEventChip subEvents={subEvents} subEventId={task.subEventId} />
+            <SubtaskCount task={task} />
+          </span>
+        </button>
+        <AssigneeStack assignees={task.assignees} />
+      </div>
+      {subtasks.length > 0 && (
+        <ListPresence
+          aria-label={t('subtasksOf', { title: task.title })}
+          className="ml-2.5 flex flex-col border-l border-border pl-5"
+        >
+          {subtasks.map((subtask) => (
+            <ListItem key={subtask.id}>
+              <SubtaskItem subtask={subtask} onOpen={() => onOpen(task.id)} />
+            </ListItem>
+          ))}
+        </ListPresence>
+      )}
     </div>
   );
   return (
@@ -135,16 +196,20 @@ export function TaskRow({
 }
 
 /**
- * List view: top-level tasks grouped by status, in board order. Every group stays mounted
- * (headers hide when empty), so a completed task can slide into Done with ListPresence.
+ * List view: top-level tasks grouped by status, in board order, each with its subtasks.
+ * Every group stays mounted (headers hide when empty), so a completed task can slide into
+ * Done with ListPresence.
  */
 export function TaskList({
   tasks,
+  allTasks,
   subEvents,
   onOpen,
   swipeable,
 }: {
   tasks: readonly Task[];
+  /** Every task, subtasks included, to find each row's subtasks. */
+  allTasks: readonly Task[];
   subEvents: readonly SubEvent[] | undefined;
   onOpen: (taskId: string) => void;
   swipeable: boolean;
@@ -169,6 +234,7 @@ export function TaskList({
                 <ListItem key={task.id}>
                   <TaskRow
                     task={task}
+                    subtasks={subtasksOf(allTasks, task.id)}
                     subEvents={subEvents}
                     onOpen={onOpen}
                     swipeable={swipeable}
