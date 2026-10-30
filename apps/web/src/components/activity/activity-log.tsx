@@ -435,7 +435,10 @@ function useFormatField() {
       const { date, time } = utcToZonedParts(value, event.timeZone);
       return `${formatEventDate(date)}, ${time}`;
     }
-    if ((field === 'startsOn' || field === 'endsOn') && typeof value === 'string') {
+    if (
+      (field === 'startsOn' || field === 'endsOn' || field === 'dueOn') &&
+      typeof value === 'string'
+    ) {
       return formatEventDate(value);
     }
     if (field === 'status' && typeof value === 'string' && tStatus.has(value)) {

@@ -1104,7 +1104,8 @@
       "sub_event": "Sub-events",
       "role": "Roles",
       "member": "Team members",
-      "member_invite": "Invites"
+      "member_invite": "Invites",
+      "task": "Tasks"
     },
     "actions": {
       "event": {
@@ -1142,6 +1143,13 @@
         "create": "<b>{actor}</b> created a team invite",
         "revoke": "<b>{actor}</b> revoked a team invite"
       },
+      "task": {
+        "create": "<b>{actor}</b> added the task <b>{name}</b>",
+        "update": "<b>{actor}</b> updated the task <b>{name}</b>",
+        "assign": "<b>{actor}</b> changed who's on <b>{name}</b>",
+        "delete": "<b>{actor}</b> deleted the task <b>{name}</b>",
+        "restore": "<b>{actor}</b> restored the task <b>{name}</b>"
+      },
       "fallback": "<b>{actor}</b> changed <b>{name}</b>"
     },
     "something": "something",
@@ -1169,7 +1177,11 @@
       "visibility": "Visibility",
       "responseMode": "Responses",
       "groupLabel": "Group",
-      "notes": "Notes"
+      "notes": "Notes",
+      "title": "Title",
+      "priority": "Priority",
+      "category": "Category",
+      "dueOn": "Due"
     },
     "none": "none",
     "removedVenue": "a deleted venue",
