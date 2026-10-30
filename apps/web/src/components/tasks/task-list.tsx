@@ -105,12 +105,14 @@ function SubtaskItem({ subtask, onOpen }: { subtask: Task; onOpen: () => void })
           title={subtask.title}
           checked={done}
           disabled={!canMove(subtask)}
-          onToggle={() =>
+          onToggle={() => {
+            // One save at a time: a second tap would send the version the first one replaced.
+            if (update.isPending) return;
             update.mutate(
               { task: subtask, changes: { status: done ? 'todo' : 'done' } },
               { onError: () => show({ message: t('saveFailed') }) },
-            )
-          }
+            );
+          }}
         />
         <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 text-left">
           <StruckTitle title={subtask.title} struck={done} className="text-small" />
