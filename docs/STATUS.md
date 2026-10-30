@@ -13,7 +13,7 @@ Last updated: Oct 30, 2026 · Updated at the end of every working step.
 | 6c | Tasks web: list grouped by status and a kanban board (dnd-kit, keyboard dragging), filters (mine, sub-event, assignee, status), quick add, tick-to-complete with strike and slide, phone swipe to complete, edit panel with assignees and subtasks, delete with undo, "Deleted sub-event" chip, My tasks on the My events page, live updates (MOTION.md 6.6) | Done |
 | 6d | Budget web: overall budget and totals with count-ups, due soon, by category (bars with paid and committed segments, over-plan chip, expanding expense lists) and by sub-event, expense panel with status-driven fields and the duplicate-reference error, category panel, deletes with undo, "every payment is settled" celebration (MOTION.md 6.14) | Done |
 | 6d.1 | Feedback: subtasks show under their task in the list (smaller, indented, tick from the row); budget gets an "Add an expense" quick-add bar (title, amount, category, already paid), an All expenses tab, and a + on every category | Done |
-| 6e | Review the milestone, then open PR #7 for merge | Next |
+| 6e | Milestone review: moving a task to another sub-event now takes its subtasks along (they stayed behind, outside the new scope); a subtask ticked twice quickly from its row no longer sends a stale version; regression test for a Helper undoing their own tick-off. PR #7 ready to merge | Done |
 
 Receipt uploads wait for the media table (gallery, milestone 8).
 
@@ -293,7 +293,8 @@ None right now.
 - Tasks and expenses keep their `sub_event_id` when that sub-event is deleted; the web shows "Deleted sub-event" and the edit panel moves them. A server-side cleanup could move them to the whole event instead.
 - Tasks bulk-select bar (MOTION.md 6.6) isn't built.
 - Board drop settle uses dnd-kit's own 250 ms ease-out, not the `snappy` spring.
-- Playwright is flaky on an overloaded laptop (load average near 20 during the 6c/6d runs): requests took 5–9 s and a few desktop tests timed out; each passed when run alone.
+- Playwright and the db package's tests are flaky on an overloaded laptop (load average near 20 during the 6c/6d runs and the 6e review): requests took 5–9 s and a few desktop tests timed out; each passed when run alone.
+- The task panel's checklist shares one save for all its subtasks, so ticking two quickly can send a stale version on the second (409, rolled back). The row's subtasks wait for the save in flight.
 - Assignees who leave or are removed stay in `task_assignees` (hidden while inactive) and reappear if they rejoin.
 - The activity feed shows every task change to anyone with `activity.view`, even ones outside their sub-event scope; filter the feed by scope.
 - Task comments, due-date reminders and "task assigned" notifications (milestone 8).
