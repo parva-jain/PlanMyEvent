@@ -5,6 +5,7 @@ import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 
 import { ActivityModule } from './activity/activity.module';
 import { AuthModule } from './auth/auth.module';
+import { BudgetModule } from './budget/budget.module';
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
 import { ProblemFilter } from './errors/problem.filter';
@@ -35,6 +36,7 @@ import { TeamModule } from './team/team.module';
     TeamModule,
     ActivityModule,
     TasksModule,
+    BudgetModule,
     LiveModule,
   ],
   providers: [
