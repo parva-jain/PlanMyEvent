@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import {
   Inject,
   Injectable,
+  SetMetadata,
   type CallHandler,
   type ExecutionContext,
   type NestInterceptor,
@@ -23,6 +24,13 @@ import type { AuthedRequest } from '../auth/session';
 import { DB } from '../database/database.module';
 
 const KEY_PATTERN = /^[A-Za-z0-9_-]{8,128}$/;
+const REQUIRED = 'idempotencyKeyRequired';
+
+/**
+ * Makes Idempotency-Key mandatory on a POST (APIDesign: public POSTs, POST /expenses, bulk
+ * invitations): a retried payment must never be recorded twice. Missing: 400 bad_request.
+ */
+export const RequireIdempotencyKey = () => SetMetadata(REQUIRED, true);
 
 /**
  * Idempotency-Key on POST (APIDesign "Idempotency-Key", CLAUDE.md rule 7): the first request
@@ -42,6 +50,13 @@ export class IdempotencyInterceptor implements NestInterceptor {
     const req = context.switchToHttp().getRequest<AuthedRequest>();
     const res = context.switchToHttp().getResponse<Response>();
     const key = req.headers['idempotency-key'];
+    if (
+      req.method === 'POST' &&
+      key === undefined &&
+      this.reflector.get<boolean>(REQUIRED, context.getHandler())
+    ) {
+      throw new ActionError('bad_request', 'Send an Idempotency-Key with this request');
+    }
     if (req.method !== 'POST' || typeof key !== 'string' || !req.user) {
       return next.handle();
     }
