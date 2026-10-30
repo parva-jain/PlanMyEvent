@@ -37,6 +37,7 @@ The web app: foundation, motion, UI components and the home page.
 - [23 Sign-in screens](frontend/23-sign-in-screens.md)
 - [25 Events in the web app](frontend/25-events-web.md)
 - [27 The team in the web app](frontend/27-team-web.md)
+- [31 Live screens and undo in the web app](frontend/31-live-web.md)
 
 ## Infra
 

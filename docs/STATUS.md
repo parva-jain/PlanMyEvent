@@ -10,7 +10,7 @@ Last updated: Oct 30, 2026 · Updated at the end of every working step.
 | --- | --- | --- |
 | 5a | Backend: `activity_log` (migration 0004) written by every action in its transaction, changed fields only; `GET E/activity` with cursor pages, filters, entity names and undo state; `POST E/activity/{entryId}/undo` for event, module, venue and sub-event changes | Done |
 | 5b | Live updates: `/live` sockets sign in with the session cookie and join event rooms as members; every logged change writes `entity.changed` (plus `permissions.changed`, and `member.removed` with leaving the room) to the outbox in its transaction; the worker's relay publishes them through the Socket.io Redis adapter | Done |
-| 5c | Web: Activity page with undo, the undo bar after deletes, live refresh of what's on screen with `LiveHighlight`, the 30 s polling fallback | Next |
+| 5c | Web: Activity page (by day, filters, field changes, undo with the "changed since" dialog, new entries held while scrolled down); the undo bar after deleting a sub-event or venue; one socket per tab that re-fetches what's on screen with `LiveHighlight` and the name of who changed it; "You're no longer on this event's team" on removal; 30 s polling while the socket is down | Done |
 
 ### Review fixes (done)
 
@@ -192,7 +192,7 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Sign-in returns to where you came from via `?next=` (email code, Google callback, Welcome, session gate); only same-site paths | Join links must survive sign-in; no open redirect | `src/lib/return-to.ts` |
 | Join page lives in the `(auth)` layout and works signed out; email-invite mismatch offers "Use another account" | Stitch "Team invite sign-in" / "Accept team invite" | `app/(auth)/join/[token]/page.tsx`, `components/team/join.tsx` |
 | Invite panel offers one role (plus scope) per invite; the member panel edits several | Stitch shows one role per invite; the API takes up to 10 | `components/team/invite-panel.tsx` |
-| Revoke invite, remove member, transfer and leave use tap-twice confirmation instead of MOTION.md's UndoSnackbar | Undo arrives with the activity log (milestone 5) | `components/team/` |
+| Revoke invite, remove member, transfer and leave use tap-twice confirmation instead of MOTION.md's UndoSnackbar | Team changes aren't undoable (milestone 5 decision below) | `components/team/` |
 | Playwright: 2 workers, 10 s expect timeout | Each worker drives the real API, worker and database; more starved a busy laptop into timeouts | `apps/web/playwright.config.ts` |
 | Web session check runs in the browser (`SessionGate` on GET /v1/me), not in Next middleware | The session cookie belongs to the API host, which the web server never sees in production | `src/components/auth/session-gate.tsx` |
 | Sign-in uses Better Auth's client; everything else `apiFetch` with problem+json errors | Decision 010 | `src/lib/auth-client.ts`, `src/lib/api.ts` |
@@ -209,6 +209,10 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Live signals are outbox rows (`live.signal`) the relay publishes with `@socket.io/redis-emitter`; each publish is awaited, so a Redis failure retries the row | The emitter doesn't wait for its own publishes: a lost signal, or an unhandled rejection | `apps/worker/src/live/live-publisher.ts` |
 | Sockets authenticate with the session cookie and must come from `WEB_ORIGIN`; refusals are `connect_error` `unauthenticated` / `csrf_failed` / `too_many_sockets`. Bearer tokens wait for the mobile app (no Better Auth bearer plugin yet) | CORS doesn't protect WebSockets, so a cookie-carrying socket from another site must be refused | `apps/api/src/live/live.gateway.ts` |
 | `event:join` answers like REST: `not_found` for non-members, `forbidden` without `event.view` anywhere; at most 10 rooms per socket, 10 sockets per user per API instance | APIDesign "Real-time contract"; a cluster-wide socket count would need a Redis round trip on every connect | Same file |
+| The web app sends `X-Request-Id: web_<uuid>` on writes only and remembers the last 200; signals carrying one of them are skipped | APIDesign "Skip if requestId is its own"; a custom header on GETs would add a CORS preflight to every read | `apps/web/src/lib/api.ts` |
+| One socket per tab, opened by the event shell; each signal invalidates the queries its entity type touches plus the feed (unknown types: the whole event); signals older than a cached version are ignored; after a reconnect everything on screen re-fetches | Signals aren't stored, so a gap is covered by re-fetching, not replaying | `apps/web/src/lib/live.ts`, `lib/activity.ts` |
+| The undo bar finds a delete's entry by its request id (`GET E/activity?entityId=…`), then undoes it; offered only with `activity.view` (every role that can delete has it) | No API change: DELETE stays 204 with no body | `components/events/schedule.tsx`, `lib/activity.ts` |
+| The undo bar's countdown pauses on hover and focus; with reduced motion it fades only and hides the bar (the 5 s still run) | WCAG 2.2.1; MOTION.md section 5 | `components/motion/undo-snackbar.tsx` |
 | pnpm override `socket.io: 4.8.4` | `@nestjs/platform-socket.io` pins 4.8.3; two copies made the server's and our types differ | `pnpm-workspace.yaml` |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
 
@@ -229,7 +233,7 @@ None right now.
 - Footer privacy and terms links once those pages exist.
 - Rate limits on `GET /v1/member-invites/{token}` and accept (APIDesign lists none for member invites; tokens are 32 random bytes).
 - Undo of a sub-event deletion (milestone 5) won't bring back the scoped role assignments it removed.
-- Team list search, role filter chips, "online" dots and CSV export from Stitch "Team" (online needs sockets, milestone 5).
+- Team list search, role filter chips, "online" dots and CSV export from Stitch "Team" (online needs presence in the socket contract).
 - Nightly consistency check (owner has an Owner assignment, no scope-less assignments left by deletes) arrives with scheduled jobs.
 - `@sentry/nestjs` 11.8 pulls in `@sentry/bundler-plugins`, whose webpack peer brings webpack, SWC, esbuild and lightningcss (~60 MB) into the API image. Revisit with a Sentry update or a pnpm override.
 - From the milestone 1–4 reviews (minor):
@@ -255,6 +259,10 @@ None right now.
 - The activity feed's entity filter takes any string; restrict to `ACTIVITY_ENTITY_TYPES` once every module records its type.
 - `dashboard.changed` (throttled to once a second per event) arrives with the dashboard in milestone 8; `job.progress` and `notification.new` with jobs and notifications.
 - Presence ("Vikram is viewing") from MOTION.md 6.12 isn't in the socket contract yet.
+- Undo bar for team changes (revoke invite, remove member) once those are undoable; MOTION.md 6.10 asks for it.
+- The polling fallback has no Playwright test (it needs 30 s with the socket blocked); the reconnect re-fetch is untested end to end too.
+- MOTION.md 6.12's "Item deleted by someone else" (the open panel fades and offers Restore) and the conflict banner's "Use theirs / Keep mine" aren't built; an edit panel still shows the latest version with a note.
+- Activity entries show the actor's initials; their photo needs `avatarUrl` in the feed.
 - Published `live.signal` rows pile up in the outbox until the 7-day cleanup job exists (milestone 5 scheduled queue item above).
 - Socket bearer-token sign-in (`auth: { token }`) for the mobile app.
 - Logo SVG/PNG files and app icons still use the warm ink #1F1B16 and warm white #FAF8F5 (BRAND.md note); regenerate in a brand pass.
@@ -268,4 +276,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [30 Live updates](learning/backend/30-live-updates.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [31 Live screens and undo in the web app](learning/frontend/31-live-web.md).
