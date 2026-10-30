@@ -10,8 +10,9 @@ Last updated: Oct 30, 2026 · Updated at the end of every working step.
 | --- | --- | --- |
 | 6a | Tasks backend: `tasks` and `task_assignees` (migration 0005); create, update, assign, delete and restore actions with sub-event scope, `tasks.update_own` for assignees, one level of subtasks, fractional positions per status column; starter tasks from each template; `E/tasks`, `E/tasks/{id}/assignees` and `GET /v1/me/tasks`; activity and undo for tasks | Done |
 | 6b | Budget backend: categories with planned, committed and paid totals; expenses with amounts that match their payment status, duplicate transaction refs refused, Idempotency-Key required on `POST E/expenses`; starter categories; activity and undo | Done |
-| 6c | Tasks web: list and board, filters, My tasks, edit panel, subtasks, live updates (MOTION.md 6.6) | Next |
-| 6d | Budget web: summary, categories, expenses, undo bar (MOTION.md 6.14) | |
+| 6c | Tasks web: list grouped by status and a kanban board (dnd-kit, keyboard dragging), filters (mine, sub-event, assignee, status), quick add, tick-to-complete with strike and slide, phone swipe to complete, edit panel with assignees and subtasks, delete with undo, "Deleted sub-event" chip, My tasks on the My events page, live updates (MOTION.md 6.6) | Done |
+| 6d | Budget web: overall budget and totals with count-ups, due soon, by category (bars with paid and committed segments, over-plan chip, expanding expense lists) and by sub-event, expense panel with status-driven fields and the duplicate-reference error, category panel, deletes with undo, "every payment is settled" celebration (MOTION.md 6.14) | Done |
+| 6e | Review the milestone, then open PR #7 for merge | Next |
 
 Receipt uploads wait for the media table (gallery, milestone 8).
 
@@ -233,6 +234,12 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | `POST E/expenses` without an Idempotency-Key is 400 `bad_request` (`@RequireIdempotencyKey()`) | APIDesign makes the key required but names no code for a missing one | `apps/api/src/http/idempotency.interceptor.ts` |
 | Deleting a category with live expenses is 409 `conflict`, reason `category_in_use`; restoring one whose name was taken, or an expense whose category is gone, is 409 `conflict` with a reason | APIDesign "refused while expenses exist"; no new codes | `packages/core/src/budget/budget-actions.ts` |
 | Unique violations run in a savepoint and come back as answers (`name_taken`, `duplicate_ref`) | Otherwise the error aborts the whole action's transaction | `packages/db/src/stores/budget.ts` |
+| Task and expense lists load whole (pages of 500) into one cached array; screens filter, group and sort locally | Boards and grouped lists need every row; events stay far below 500 tasks | `apps/web/src/lib/tasks.ts`, `apps/web/src/lib/budget.ts` |
+| Ticking a task, dropping a card and toggling a subtask update the cache first and roll back if refused | A checkbox or a drop shouldn't wait for the network | `apps/web/src/lib/tasks.ts` |
+| The open task lives in the URL (`?task=…`); quick add opens new tasks and expenses with `?add=1` | My tasks links straight to a task; quick add reaches a form | `apps/web/src/components/tasks/tasks.tsx` |
+| Board collisions use overlap first, then nearest corners | Columns stretch, so corners alone kept keyboard moves in the same column | `apps/web/src/components/tasks/task-board.tsx` |
+| Edit panels send only changed fields; an expense sends status and paid-so-far together whenever any amount changed | An untouched deleted sub-event isn't sent back and refused; the server re-checks the payment rule | `apps/web/src/components/tasks/task-panel.tsx`, `apps/web/src/components/budget/expense-form.tsx` |
+| dnd-kit 6.3.1 / sortable 10.0.0 for the board | MOTION.md section 3: dnd-kit for logic, keyboard dragging included | `apps/web/package.json` |
 | pnpm override `socket.io: 4.8.4` | `@nestjs/platform-socket.io` pins 4.8.3; two copies made the server's and our types differ | `pnpm-workspace.yaml` |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
 
@@ -282,7 +289,10 @@ None right now.
 - Receipts on expenses (`receipt_media_id`, uploads) arrive with the media table in milestone 8.
 - Budget by sub-event has no endpoint; the web adds it up from the expense list (fine at MVP sizes).
 - Expenses, like tasks, keep their `sub_event_id` when that sub-event is deleted.
-- Tasks keep their `sub_event_id` when that sub-event is deleted; the web should show them as "deleted sub-event" (or move them to the whole event) in 6c.
+- Tasks and expenses keep their `sub_event_id` when that sub-event is deleted; the web shows "Deleted sub-event" and the edit panel moves them. A server-side cleanup could move them to the whole event instead.
+- Tasks bulk-select bar (MOTION.md 6.6) isn't built.
+- Board drop settle uses dnd-kit's own 250 ms ease-out, not the `snappy` spring.
+- Playwright is flaky on an overloaded laptop (load average near 20 during the 6c/6d runs): requests took 5–9 s and a few desktop tests timed out; each passed when run alone.
 - Assignees who leave or are removed stay in `task_assignees` (hidden while inactive) and reappear if they rejoin.
 - The activity feed shows every task change to anyone with `activity.view`, even ones outside their sub-event scope; filter the feed by scope.
 - Task comments, due-date reminders and "task assigned" notifications (milestone 8).
