@@ -15,6 +15,7 @@ export {
   type IdempotencyClaim,
 } from './idempotency.js';
 export { createActionRuntime, DbTx, type DrizzleTx } from './runtime.js';
+export { activityQueries, type ActivityQueries, type ActivityViewer } from './queries/activity.js';
 export { eventQueries, type EventQueries } from './queries/events.js';
 export { teamQueries, type TeamQueries } from './queries/team.js';
 export { toEvent, toSubEvent, toVenue } from './stores/events.js';

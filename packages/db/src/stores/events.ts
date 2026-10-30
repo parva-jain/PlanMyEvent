@@ -1,6 +1,6 @@
 import type { Event, EventModule, SubEvent, Venue } from '@pme/contracts';
 import type { EventStore, SubEventStore, VenueStore } from '@pme/core';
-import { and, asc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 
 import { eventModules, events, subEvents, venues } from '../schema/events.js';
 import type { Database } from '../client.js';
@@ -151,6 +151,16 @@ export function venueStore(db: Queryable): VenueStore {
         .where(and(eq(subEvents.eventId, eventId), eq(subEvents.venueId, venueId)));
       return true;
     },
+    async restore(eventId, venueId) {
+      const [row] = await db
+        .update(venues)
+        .set({ deletedAt: null })
+        .where(
+          and(eq(venues.eventId, eventId), eq(venues.id, venueId), isNotNull(venues.deletedAt)),
+        )
+        .returning();
+      return row ? toVenue(row) : null;
+    },
   };
 }
 
@@ -192,6 +202,20 @@ export function subEventStore(db: Queryable): SubEventStore {
         .where(and(liveSubEvent(eventId, subEventId), eq(subEvents.version, expectedVersion)))
         .returning({ id: subEvents.id });
       return rows.length > 0;
+    },
+    async restore(eventId, subEventId) {
+      const [row] = await db
+        .update(subEvents)
+        .set({ deletedAt: null, version: sql`${subEvents.version} + 1` })
+        .where(
+          and(
+            eq(subEvents.eventId, eventId),
+            eq(subEvents.id, subEventId),
+            isNotNull(subEvents.deletedAt),
+          ),
+        )
+        .returning();
+      return row ? toSubEvent(row) : null;
     },
   };
 }
