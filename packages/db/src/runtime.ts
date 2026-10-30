@@ -1,11 +1,13 @@
 import {
   ActionError,
   type AccessStore,
+  type BudgetCategoryStore,
   type ActionContext,
   type ActivityStore,
   type ActionRuntime,
   type CoreTx,
   type EventStore,
+  type ExpenseStore,
   type MemberInviteStore,
   type MemberStore,
   type RoleStore,
@@ -24,6 +26,7 @@ import { users } from './schema/auth.js';
 import { outbox } from './schema/outbox.js';
 import { workspaces } from './schema/workspaces.js';
 import { activityStore } from './stores/activity.js';
+import { budgetCategoryStore, expenseStore } from './stores/budget.js';
 import { eventStore, subEventStore, venueStore } from './stores/events.js';
 import { taskStore } from './stores/tasks.js';
 import { accessStore, memberInviteStore, memberStore, roleStore } from './stores/team.js';
@@ -89,6 +92,8 @@ export class DbTx implements CoreTx {
   readonly memberInvites: MemberInviteStore;
   readonly activity: ActivityStore;
   readonly tasks: TaskStore;
+  readonly budgetCategories: BudgetCategoryStore;
+  readonly expenses: ExpenseStore;
 
   constructor(readonly db: DrizzleTx) {
     this.users = userStore(db);
@@ -102,6 +107,8 @@ export class DbTx implements CoreTx {
     this.memberInvites = memberInviteStore(db);
     this.activity = activityStore(db);
     this.tasks = taskStore(db);
+    this.budgetCategories = budgetCategoryStore(db);
+    this.expenses = expenseStore(db);
   }
 }
 

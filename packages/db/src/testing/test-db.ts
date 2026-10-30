@@ -35,6 +35,8 @@ const EVENT_TABLES = [
   'activity_log',
   'task_assignees',
   'tasks',
+  'expenses',
+  'budget_categories',
   'role_assignment_scopes',
   'role_assignments',
   'member_invites',
