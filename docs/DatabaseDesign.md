@@ -487,7 +487,7 @@ Indexes: unique(event\_id, id); unique(storage\_key); index(event\_id, kind, cre
 
 Primary key (created\_at, id): including the timestamp lets the table become range-partitioned by month without changing the key. No updated\_at or version; rows are never edited except undone\_at.
 
-Indexes: index(event\_id, created\_at desc); index(entity\_type, entity\_id, created\_at desc) for an entity's history and undo checks.
+Indexes: unique(id), because undo and "undone by" look an entry up by id and the primary key starts with created\_at; index(event\_id, created\_at desc); index(entity\_type, entity\_id, created\_at desc) for an entity's history and undo checks.
 
 ### notifications
 
