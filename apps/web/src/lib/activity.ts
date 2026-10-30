@@ -13,6 +13,8 @@ import {
 import { apiFetch, ApiError } from './api';
 import { eventKeys } from './events';
 import { highlight } from './live-highlights';
+import { budgetKeys } from './budget';
+import { taskKeys } from './tasks';
 import { teamKeys } from './team';
 
 export interface ActivityFilters {
@@ -52,6 +54,16 @@ function affected(eventId: string, entityType: string): { queryKey: QueryKey; ex
     case 'member_invite':
       // Someone joining through an invite adds a member too.
       return [{ queryKey: teamKeys.invites(eventId) }, { queryKey: teamKeys.members(eventId) }];
+    case 'task':
+      return [{ queryKey: taskKeys.all(eventId) }, { queryKey: taskKeys.mine }];
+    case 'budget_category':
+      return [{ queryKey: budgetKeys.categories(eventId) }];
+    case 'expense':
+      // Category totals add up expenses.
+      return [
+        { queryKey: budgetKeys.expenses(eventId) },
+        { queryKey: budgetKeys.categories(eventId) },
+      ];
     default:
       return [{ queryKey: eventKeys.event(eventId) }];
   }

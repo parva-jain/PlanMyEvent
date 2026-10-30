@@ -10,6 +10,7 @@ import { LogoMark } from '@/components/motion/logo-mark';
 import { Reveal, RevealGroup } from '@/components/motion/reveal';
 import { Skeleton } from '@/components/motion/skeleton';
 import { ACCENT } from '@/components/shell/accents';
+import { MyTasks } from '@/components/tasks/my-tasks';
 import { eventHref, NEW_EVENT_HREF } from '@/components/shell/nav';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -127,6 +128,8 @@ export function MyEvents() {
             ))}
           </RevealGroup>
         )}
+
+        <MyTasks />
       </main>
     </div>
   );
