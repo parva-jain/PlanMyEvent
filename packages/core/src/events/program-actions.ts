@@ -9,6 +9,7 @@ import type {
 
 import type { ActionDefinition } from '../action.js';
 import { ActionError } from '../errors.js';
+import { permissionsChanged } from '../live.js';
 import type { CoreTx } from '../ports.js';
 import { versionMismatch } from './versioned.js';
 
@@ -157,11 +158,11 @@ export const deleteSubEvent: ActionDefinition<
       versionMismatch(await tx.subEvents.find(eventId, subEventId), expectedVersion);
     }
     // Scoped grants lose this sub-event; ones left with no scope go rather than widen.
-    if (await tx.access.removeSubEventScopes(eventId, subEventId)) {
-      await tx.access.bumpRolesVersion(eventId);
-    }
+    const scopesDropped = await tx.access.removeSubEventScopes(eventId, subEventId);
+    if (scopesDropped) await tx.access.bumpRolesVersion(eventId);
     return {
       result: undefined,
+      ...(scopesDropped ? { outbox: [permissionsChanged(eventId)] } : {}),
       activity: [
         { action: 'delete', entityType: 'sub_event', entityId: subEventId, before, after: null },
       ],

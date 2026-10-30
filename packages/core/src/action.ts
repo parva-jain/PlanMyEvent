@@ -2,6 +2,7 @@ import type { Permission } from '@pme/contracts';
 
 import type { ActionContext } from './context.js';
 import { ActionError } from './errors.js';
+import { liveSignals } from './live.js';
 
 /**
  * activity_log row an action asks to write. `action` is the verb (create, update, delete,
@@ -102,8 +103,10 @@ export async function runAction<TInput, TResult, TTx>(
     if (outcome.activity?.length) {
       await runtime.recordActivity(tx, ctx, outcome.activity.map(changedOnly));
     }
-    if (outcome.outbox?.length) {
-      await runtime.writeOutbox(tx, ctx, outcome.outbox);
+    // Every logged change also tells open screens (CLAUDE.md rule 11), from the full rows.
+    const outbox = [...(outcome.outbox ?? []), ...liveSignals(ctx, outcome.activity ?? [])];
+    if (outbox.length) {
+      await runtime.writeOutbox(tx, ctx, outbox);
     }
     return outcome.result;
   });

@@ -341,8 +341,9 @@ describe('member invites', () => {
       inviterName: 'Priya',
     })) as { id: string; token: string; email: string };
     expect(invite.email).toBe('rahul@example.com');
-    expect(outbox).toHaveLength(1);
-    expect(outbox[0]).toMatchObject({
+    const emails = outbox.filter((message) => message.topic === 'email.critical');
+    expect(emails).toHaveLength(1);
+    expect(emails[0]).toMatchObject({
       topic: 'email.critical',
       dedupeKey: `member-invite-${invite.id}`,
       payload: {

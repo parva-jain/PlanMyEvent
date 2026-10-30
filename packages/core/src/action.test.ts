@@ -77,7 +77,8 @@ describe('runAction', () => {
         'permission:tasks.edit',
         'update:t1',
         'activity:1',
-        'outbox:entity.changed',
+        // The action's own messages, then the live signal for its activity entry.
+        'outbox:entity.changed,live.signal',
         'commit',
       ],
     ]);
