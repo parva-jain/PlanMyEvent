@@ -50,6 +50,13 @@
       "when": 1793354164992,
       "tag": "0006_budget",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793370916409,
+      "tag": "0007_guests",
+      "breakpoints": true
     }
   ]
 }

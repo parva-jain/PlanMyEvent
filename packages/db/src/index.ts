@@ -18,6 +18,7 @@ export { createActionRuntime, DbTx, type DrizzleTx } from './runtime.js';
 export { activityQueries, type ActivityQueries, type ActivityViewer } from './queries/activity.js';
 export { budgetQueries, type BudgetQueries, type BudgetVisibility } from './queries/budget.js';
 export { eventQueries, type EventQueries } from './queries/events.js';
+export { guestQueries, type GuestQueries } from './queries/guests.js';
 export { taskQueries, type TaskQueries, type TaskVisibility } from './queries/tasks.js';
 export { teamQueries, type TeamQueries } from './queries/team.js';
 export { toEvent, toSubEvent, toVenue } from './stores/events.js';
