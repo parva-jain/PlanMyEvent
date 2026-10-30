@@ -60,6 +60,12 @@ export const OUTBOX_ROUTES = {
 
 export type OutboxTopic = keyof typeof OUTBOX_ROUTES;
 
+/**
+ * Live signals (payload `LiveSignal`) don't become jobs: the relay publishes them straight to
+ * the sockets through Redis. At least once, like everything in the outbox.
+ */
+export const LIVE_TOPIC = 'live.signal';
+
 export function isOutboxTopic(topic: string): topic is OutboxTopic {
   return Object.hasOwn(OUTBOX_ROUTES, topic);
 }
