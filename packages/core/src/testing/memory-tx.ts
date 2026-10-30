@@ -1,10 +1,12 @@
 import {
   can,
   type BudgetCategory,
+  type Contact,
   type Event,
   type Expense,
   type EventModule,
   type Grant,
+  type Household,
   type Member,
   type MemberInvite,
   type Role,
@@ -61,6 +63,8 @@ export function memoryRuntime() {
   let clock = 0;
   const categories = new Map<string, BudgetCategory & { eventId: string; deleted?: boolean }>();
   const expenses = new Map<string, Expense & { eventId: string; deleted?: boolean }>();
+  const households = new Map<string, Household & { eventId: string; deleted?: boolean }>();
+  const contacts = new Map<string, Contact & { eventId: string; deleted?: boolean }>();
   const outbox: OutboxMessage[] = [];
   const activity: StoredActivity[] = [];
   const takenSlugs = new Set<string>();
@@ -132,6 +136,8 @@ export function memoryRuntime() {
     | 'tasks'
     | 'budgetCategories'
     | 'expenses'
+    | 'households'
+    | 'contacts'
   > = {
     users: {
       updateProfile: (userId, changes) => {
@@ -528,6 +534,95 @@ export function memoryRuntime() {
     },
   };
 
+  tx.households = {
+    insert: (eventId, list) =>
+      Promise.resolve(
+        list.map((input) => {
+          const household = {
+            id: nextId(),
+            eventId,
+            name: input.name,
+            expectedCount: input.expectedCount ?? 1,
+            primaryContactId: null,
+            version: 1,
+            createdAt: new Date().toISOString(),
+          };
+          households.set(household.id, household);
+          return strip({ ...household });
+        }),
+      ),
+    find: (eventId, id) => {
+      const household = liveIn(households, eventId, id);
+      return Promise.resolve(household ? strip({ ...household }) : null);
+    },
+    update: (eventId, id, expected, changes) => {
+      const household = liveIn(households, eventId, id);
+      if (!household || household.version !== expected) return Promise.resolve(null);
+      Object.assign(household, changes, { version: household.version + 1 });
+      return Promise.resolve(strip({ ...household }));
+    },
+    softDelete: (eventId, id, expected) => {
+      const household = liveIn(households, eventId, id);
+      if (!household || household.version !== expected) return Promise.resolve(false);
+      Object.assign(household, { deleted: true, version: household.version + 1 });
+      return Promise.resolve(true);
+    },
+    restore: (eventId, id) => {
+      const household = households.get(id);
+      if (!household || household.eventId !== eventId || !household.deleted) {
+        return Promise.resolve(null);
+      }
+      Object.assign(household, { deleted: false, version: household.version + 1 });
+      return Promise.resolve(strip({ ...household }));
+    },
+  };
+
+  /** A deleted household reads as none (packages/db joins live households). */
+  const toContact = (row: Contact & { eventId: string; deleted?: boolean }): Contact => {
+    const contact = strip({ ...row, tags: [...row.tags] });
+    const household = row.householdId ? households.get(row.householdId) : undefined;
+    return { ...contact, householdId: household && !household.deleted ? household.id : null };
+  };
+  tx.contacts = {
+    insert: (eventId, list) =>
+      Promise.resolve(
+        list.map((input) => {
+          const contact = {
+            ...input,
+            tags: [...input.tags],
+            id: nextId(),
+            eventId,
+            version: 1,
+            createdAt: new Date().toISOString(),
+          };
+          contacts.set(contact.id, contact);
+          return toContact(contact);
+        }),
+      ),
+    find: (eventId, id) => {
+      const contact = liveIn(contacts, eventId, id);
+      return Promise.resolve(contact ? toContact(contact) : null);
+    },
+    update: (eventId, id, expected, changes) => {
+      const contact = liveIn(contacts, eventId, id);
+      if (!contact || contact.version !== expected) return Promise.resolve(null);
+      Object.assign(contact, changes, { version: contact.version + 1 });
+      return Promise.resolve(toContact(contact));
+    },
+    softDelete: (eventId, id, expected) => {
+      const contact = liveIn(contacts, eventId, id);
+      if (!contact || contact.version !== expected) return Promise.resolve(false);
+      Object.assign(contact, { deleted: true, version: contact.version + 1 });
+      return Promise.resolve(true);
+    },
+    restore: (eventId, id) => {
+      const contact = contacts.get(id);
+      if (!contact || contact.eventId !== eventId || !contact.deleted) return Promise.resolve(null);
+      Object.assign(contact, { deleted: false, version: contact.version + 1 });
+      return Promise.resolve(toContact(contact));
+    },
+  };
+
   tx.activity = {
     insert: (rows) => {
       const stored = rows.map((row) => ({
@@ -796,6 +891,8 @@ export function memoryRuntime() {
     tasks,
     categories,
     expenses,
+    households,
+    contacts,
     modules,
     outbox,
     activity,

@@ -40,6 +40,16 @@ export {
   updateVenue,
 } from './events/program-actions.js';
 export { eventSlug, SLUG_PATTERN } from './events/slug.js';
+export {
+  createContact,
+  createHousehold,
+  deleteContact,
+  deleteHousehold,
+  restoreContact,
+  restoreHousehold,
+  updateContact,
+  updateHousehold,
+} from './guests/guest-actions.js';
 export { EVENT_TEMPLATES } from './events/templates.js';
 export { ActionError } from './errors.js';
 export {
@@ -94,7 +104,12 @@ export type {
   NewTask,
   BudgetCategoryChanges,
   BudgetCategoryStore,
+  ContactStore,
   ExpenseStore,
+  HouseholdChanges,
+  HouseholdStore,
+  NewContact,
+  NewHousehold,
   NewBudgetCategory,
   NewExpense,
   TaskChanges,

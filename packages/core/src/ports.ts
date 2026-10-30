@@ -1,11 +1,13 @@
 import type {
   BudgetCategory,
   Channel,
+  Contact,
   EffectivePermissions,
   Event,
   EventModule,
   Expense,
   Grant,
+  Household,
   Member,
   MemberInvite,
   Permission,
@@ -332,6 +334,54 @@ export interface ExpenseStore {
   restore(eventId: string, expenseId: string): Promise<Expense | null | 'duplicate_ref'>;
 }
 
+export interface NewHousehold {
+  name: string;
+  expectedCount?: number;
+}
+
+export type HouseholdChanges = Partial<NewHousehold> & { primaryContactId?: string | null };
+
+/** Households skip soft-deleted rows. */
+export interface HouseholdStore {
+  insert(eventId: string, list: NewHousehold[]): Promise<Household[]>;
+  find(eventId: string, householdId: string): Promise<Household | null>;
+  update(
+    eventId: string,
+    householdId: string,
+    expectedVersion: number,
+    changes: HouseholdChanges,
+  ): Promise<Household | null>;
+  softDelete(eventId: string, householdId: string, expectedVersion: number): Promise<boolean>;
+  restore(eventId: string, householdId: string): Promise<Household | null>;
+}
+
+export interface NewContact {
+  householdId: string | null;
+  name: string;
+  /** E.164. */
+  phone: string | null;
+  email: string | null;
+  tags: string[];
+  notes: string | null;
+}
+
+/**
+ * Contacts skip soft-deleted rows. A contact whose household was deleted reads with
+ * householdId null; restoring the household links it again.
+ */
+export interface ContactStore {
+  insert(eventId: string, list: NewContact[]): Promise<Contact[]>;
+  find(eventId: string, contactId: string): Promise<Contact | null>;
+  update(
+    eventId: string,
+    contactId: string,
+    expectedVersion: number,
+    changes: Partial<NewContact>,
+  ): Promise<Contact | null>;
+  softDelete(eventId: string, contactId: string, expectedVersion: number): Promise<boolean>;
+  restore(eventId: string, contactId: string): Promise<Contact | null>;
+}
+
 /** An activity_log row as stored. */
 export interface StoredActivity {
   id: string;
@@ -376,4 +426,6 @@ export interface CoreTx {
   tasks: TaskStore;
   budgetCategories: BudgetCategoryStore;
   expenses: ExpenseStore;
+  households: HouseholdStore;
+  contacts: ContactStore;
 }
