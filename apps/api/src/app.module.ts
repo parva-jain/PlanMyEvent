@@ -3,6 +3,7 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 
+import { ActivityModule } from './activity/activity.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
@@ -31,6 +32,7 @@ import { TeamModule } from './team/team.module';
     MeModule,
     EventsModule,
     TeamModule,
+    ActivityModule,
     LiveModule,
   ],
   providers: [
