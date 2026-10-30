@@ -52,6 +52,19 @@ export const EventTemplateSchema = z.object({
       end: z.string(),
     }),
   ),
+  /**
+   * Starter tasks: due `daysBefore` the start date (none if that's already past), linked to
+   * the starter sub-event named `subEvent` when given.
+   */
+  tasks: z.array(
+    z.object({
+      key: z.string(),
+      title: z.string(),
+      category: z.string(),
+      daysBefore: z.number().int().nonnegative().nullable(),
+      subEvent: z.string().optional(),
+    }),
+  ),
 });
 export type EventTemplate = z.infer<typeof EventTemplateSchema>;
 
@@ -77,7 +90,11 @@ export type Event = z.infer<typeof EventSchema>;
 
 /** POST /v1/events response: the event plus what the template created. */
 export const CreatedEventSchema = EventSchema.extend({
-  counts: z.object({ subEvents: z.number().int(), venues: z.number().int() }),
+  counts: z.object({
+    subEvents: z.number().int(),
+    venues: z.number().int(),
+    tasks: z.number().int(),
+  }),
 });
 export type CreatedEvent = z.infer<typeof CreatedEventSchema>;
 
