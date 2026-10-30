@@ -1,6 +1,8 @@
 import type {
   EventModule,
   UpdateBudgetCategory,
+  UpdateContact,
+  UpdateHousehold,
   UpdateExpense,
   UpdateEvent,
   UpdateSubEvent,
@@ -20,6 +22,14 @@ import {
 import type { ActionContext } from '../context.js';
 import { ActionError } from '../errors.js';
 import { replaceModules, updateEvent } from '../events/event-actions.js';
+import {
+  deleteContact,
+  deleteHousehold,
+  restoreContact,
+  restoreHousehold,
+  updateContact,
+  updateHousehold,
+} from '../guests/guest-actions.js';
 import {
   deleteSubEvent,
   deleteVenue,
@@ -93,6 +103,19 @@ const EXPENSE_FIELDS = [
   'transactionRef',
   'notes',
 ] as const satisfies readonly (keyof UpdateExpense)[];
+const HOUSEHOLD_FIELDS = [
+  'name',
+  'expectedCount',
+  'primaryContactId',
+] as const satisfies readonly (keyof UpdateHousehold)[];
+const CONTACT_FIELDS = [
+  'householdId',
+  'name',
+  'phone',
+  'email',
+  'tags',
+  'notes',
+] as const satisfies readonly (keyof UpdateContact)[];
 
 type Fields = Record<string, unknown>;
 const fields = (value: unknown): Fields => (value ?? {}) as Fields;
@@ -235,6 +258,28 @@ const PLANNERS: Record<string, Planner> = {
       expenseId: entry.entityId,
       subEventId: (fields(entry.before).subEventId as string | null | undefined) ?? null,
     }),
+  'household.create': (_tx, _ctx, entry) =>
+    inverse(deleteHousehold, {
+      householdId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+    }),
+  'household.update': (_tx, _ctx, entry) =>
+    inverse(updateHousehold, {
+      householdId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      changes: pick<UpdateHousehold>(entry.before, HOUSEHOLD_FIELDS),
+    }),
+  'household.delete': (_tx, _ctx, entry) =>
+    inverse(restoreHousehold, { householdId: entry.entityId }),
+  'contact.create': (_tx, _ctx, entry) =>
+    inverse(deleteContact, { contactId: entry.entityId, expectedVersion: versionOf(entry.after) }),
+  'contact.update': (_tx, _ctx, entry) =>
+    inverse(updateContact, {
+      contactId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      changes: pick<UpdateContact>(entry.before, CONTACT_FIELDS),
+    }),
+  'contact.delete': (_tx, _ctx, entry) => inverse(restoreContact, { contactId: entry.entityId }),
 };
 
 /** Whether the log can reverse this kind of entry at all (the feed's canUndo uses it). */
