@@ -15,7 +15,7 @@ import { ActionError } from '../errors.js';
 import type { CoreTx, LockedMemberInvite, PersonalWorkspace, StoredActivity } from '../ports.js';
 import { resolvePermissions } from '../team/access.js';
 
-interface MemoryMember {
+export interface MemoryMember {
   id: string;
   eventId: string;
   userId: string;

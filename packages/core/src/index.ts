@@ -18,6 +18,7 @@ export {
 export { isUndoable, undoActivity } from './activity/undo.js';
 export type { ActionContext, Actor } from './context.js';
 export { createEvent, replaceModules, updateEvent } from './events/event-actions.js';
+export { liveSignals, permissionsChanged } from './live.js';
 export {
   createSubEvent,
   createVenue,
