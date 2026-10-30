@@ -89,6 +89,8 @@ export function testUsers(app: () => NestExpressApplication, codes: Map<string, 
       const eventIds = eventRows.map((row) => row.id);
       for (const table of [
         'activity_log',
+        'task_assignees',
+        'tasks',
         'role_assignment_scopes',
         'role_assignments',
         'member_invites',
