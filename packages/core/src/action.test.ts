@@ -102,4 +102,50 @@ describe('runAction', () => {
       ActionError,
     );
   });
+
+  it('refuses an event action run without an event, before touching anything', async () => {
+    const { runtime, committed } = fakeRuntime();
+
+    await expect(
+      runAction(runtime, { ...ctx, eventId: null }, completeTask, { taskId: 't1' }),
+    ).rejects.toThrow(/tasks\.complete needs an event/);
+    expect(committed).toEqual([]);
+  });
+
+  it('rolls back an action that forgets its activity entry', async () => {
+    const { runtime, committed } = fakeRuntime();
+    const forgetful: ActionDefinition<{ taskId: string }, null, FakeTx> = {
+      name: 'tasks.forget',
+      permission: 'tasks.edit',
+      execute: (tx) => {
+        tx.log.push('update');
+        return Promise.resolve({ result: null });
+      },
+    };
+
+    await expect(runAction(runtime, ctx, forgetful, { taskId: 't1' })).rejects.toThrow(
+      /tasks\.forget returned no activity/,
+    );
+    expect(committed).toEqual([]);
+  });
+
+  it('accepts an explicit empty activity list (nothing changed) and declared opt-outs', async () => {
+    const { runtime, committed } = fakeRuntime();
+    const noop: ActionDefinition<null, null, FakeTx> = {
+      name: 'tasks.noop',
+      permission: 'tasks.edit',
+      execute: () => Promise.resolve({ result: null, activity: [] }),
+    };
+    const account: ActionDefinition<null, null, FakeTx> = {
+      name: 'accounts.touch',
+      permission: null,
+      outsideEvent: true,
+      noActivity: 'Account data; activity_log is per event',
+      execute: () => Promise.resolve({ result: null }),
+    };
+
+    await runAction(runtime, ctx, noop, null);
+    await runAction(runtime, { ...ctx, eventId: null }, account, null);
+    expect(committed).toHaveLength(2);
+  });
 });

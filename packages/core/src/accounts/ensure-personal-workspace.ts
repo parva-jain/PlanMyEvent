@@ -24,6 +24,8 @@ export const ensurePersonalWorkspace: ActionDefinition<
 > = {
   name: 'accounts.ensurePersonalWorkspace',
   permission: null,
+  outsideEvent: true,
+  noActivity: 'Account data; activity_log is per event',
   async execute(tx, _ctx, input) {
     const existing = await tx.workspaces.findPersonal(input.userId);
     if (existing) {
