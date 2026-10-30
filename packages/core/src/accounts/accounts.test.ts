@@ -94,4 +94,13 @@ describe('updateProfile', () => {
       code: 'not_found',
     });
   });
+
+  it('refuses a change with nothing in it', async () => {
+    const { runtime, profiles } = memoryRuntime();
+    profiles.set('u1', { name: 'Neha' });
+    await expect(runAction(runtime, userCtx, updateProfile, {})).rejects.toMatchObject({
+      code: 'validation_failed',
+    });
+    expect(profiles.get('u1')).toEqual({ name: 'Neha' });
+  });
 });

@@ -15,6 +15,10 @@ export const updateProfile: ActionDefinition<UpdateMe, void, CoreTx> = {
     if (ctx.actor.kind !== 'user') {
       throw new ActionError('forbidden', 'Only a signed-in user can change their profile');
     }
+    // Unknown fields are stripped by the schema, so `{}` and `{ nickname }` both land here.
+    if (Object.keys(input).length === 0) {
+      throw new ActionError('validation_failed', 'Nothing to change');
+    }
     const found = await tx.users.updateProfile(ctx.actor.userId, input);
     if (!found) {
       throw new ActionError('not_found', 'User not found');

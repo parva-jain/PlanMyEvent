@@ -180,6 +180,14 @@ describe('PATCH /v1/me', () => {
     expect(problem.code).toBe('validation_failed');
     expect(problem.fields.map((field) => field.path).sort()).toEqual(['name', 'phone']);
   });
+
+  it('rejects a body with nothing to change instead of failing', async () => {
+    const { cookie } = await signedIn();
+    for (const body of [{}, { nickname: 'Vikku' }]) {
+      const res = await patch(cookie, body).expect(422);
+      expect((res.body as Problem).code).toBe('validation_failed');
+    }
+  });
 });
 
 describe('CORS', () => {
