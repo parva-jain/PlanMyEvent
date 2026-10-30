@@ -49,6 +49,8 @@ describe('writeOutbox', () => {
         {
           name: 'test.writeOutbox',
           permission: null,
+          outsideEvent: true,
+          noActivity: 'Test of the outbox write alone',
           execute: () => {
             if (fail) return Promise.reject(new Error('rolled back'));
             return Promise.resolve({

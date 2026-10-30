@@ -35,6 +35,7 @@ function userId(actor: { kind: string; userId?: string }): string {
 export const createEvent: ActionDefinition<CreateEvent, CreatedEvent, CoreTx> = {
   name: 'events.create',
   permission: null,
+  outsideEvent: true,
   async execute(tx, ctx, input) {
     const ownerUserId = userId(ctx.actor);
     const workspace = await tx.workspaces.findPersonal(ownerUserId);

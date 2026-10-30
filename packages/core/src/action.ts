@@ -35,6 +35,17 @@ export interface ActionDefinition<TInput, TResult, TTx> {
    * "Authorization"). Omitted, or returning null: only a whole-event grant does.
    */
   subEventOf?(tx: TTx, ctx: ActionContext, input: TInput): Promise<string | null> | string | null;
+  /**
+   * Set for the few actions that run before there is an event in context: account actions,
+   * events.create (which makes the event) and accepting an invite (the token names it).
+   * Every other action is refused when ctx.eventId is null, so tenancy can't be skipped.
+   */
+  outsideEvent?: true;
+  /**
+   * Why this action writes no activity_log row. Without it, execute must return `activity`:
+   * leaving it out is a bug and rolls back; `activity: []` says nothing changed.
+   */
+  noActivity?: string;
   execute(tx: TTx, ctx: ActionContext, input: TInput): Promise<ActionOutcome<TResult>>;
 }
 
@@ -66,12 +77,20 @@ export async function runAction<TInput, TResult, TTx>(
   action: ActionDefinition<TInput, TResult, TTx>,
   input: TInput,
 ): Promise<TResult> {
+  if (!action.outsideEvent && ctx.eventId === null) {
+    throw new Error(`${action.name} needs an event in its context`);
+  }
   return runtime.transaction(async (tx) => {
     if (action.permission !== null) {
       const subEventId = (await action.subEventOf?.(tx, ctx, input)) ?? null;
       await runtime.checkPermission(tx, ctx, action.permission, subEventId);
     }
     const outcome = await action.execute(tx, ctx, input);
+    if (outcome.activity === undefined && action.noActivity === undefined) {
+      throw new Error(
+        `${action.name} returned no activity entry and declares no noActivity reason`,
+      );
+    }
     if (outcome.activity?.length) {
       await runtime.recordActivity(tx, ctx, outcome.activity);
     }

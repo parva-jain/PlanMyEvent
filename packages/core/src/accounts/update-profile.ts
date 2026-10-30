@@ -11,6 +11,8 @@ import type { CoreTx } from '../ports.js';
 export const updateProfile: ActionDefinition<UpdateMe, void, CoreTx> = {
   name: 'accounts.updateProfile',
   permission: null,
+  outsideEvent: true,
+  noActivity: 'Account data; activity_log is per event',
   async execute(tx, ctx, input) {
     if (ctx.actor.kind !== 'user') {
       throw new ActionError('forbidden', 'Only a signed-in user can change their profile');

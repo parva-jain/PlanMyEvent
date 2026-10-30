@@ -19,6 +19,8 @@ export interface QueueSignInCodeInput {
 export const queueSignInCode: ActionDefinition<QueueSignInCodeInput, void, CoreTx> = {
   name: 'accounts.queueSignInCode',
   permission: null,
+  outsideEvent: true,
+  noActivity: 'Sign-in, before any event; activity_log is per event',
   execute(_tx, _ctx, input) {
     const email = input.email.toLowerCase();
     const digest = createHash('sha256').update(`${email}\n${input.code}`).digest('hex');

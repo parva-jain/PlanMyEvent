@@ -156,6 +156,7 @@ export const acceptMemberInvite: ActionDefinition<
 > = {
   name: 'memberInvites.accept',
   permission: null,
+  outsideEvent: true,
   async execute(tx, ctx, { token, userEmail }) {
     const userId = userIdOf(ctx);
     const invite = await tx.memberInvites.lockByTokenHash(hashInviteToken(token));
@@ -170,7 +171,7 @@ export const acceptMemberInvite: ActionDefinition<
     }
 
     const existing = await tx.members.findByUser(eventId, userId);
-    if (existing?.status === 'active') return { result: { eventId, joined: false } };
+    if (existing?.status === 'active') return { result: { eventId, joined: false }, activity: [] };
 
     const grants = await currentGrants(tx, invite!);
     const member = await tx.members.join(eventId, userId, invite!.createdByUserId);
