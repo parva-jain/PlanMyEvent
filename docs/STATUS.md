@@ -9,8 +9,8 @@ Last updated: Oct 30, 2026 · Updated at the end of every working step.
 | Step | What | Status |
 | --- | --- | --- |
 | 6a | Tasks backend: `tasks` and `task_assignees` (migration 0005); create, update, assign, delete and restore actions with sub-event scope, `tasks.update_own` for assignees, one level of subtasks, fractional positions per status column; starter tasks from each template; `E/tasks`, `E/tasks/{id}/assignees` and `GET /v1/me/tasks`; activity and undo for tasks | Done |
-| 6b | Budget backend: categories with planned, committed and paid totals; expenses with amounts that match their payment status, duplicate transaction refs refused, Idempotency-Key required on `POST E/expenses`; starter categories; activity and undo | Next |
-| 6c | Tasks web: list and board, filters, My tasks, edit panel, subtasks, live updates (MOTION.md 6.6) | |
+| 6b | Budget backend: categories with planned, committed and paid totals; expenses with amounts that match their payment status, duplicate transaction refs refused, Idempotency-Key required on `POST E/expenses`; starter categories; activity and undo | Done |
+| 6c | Tasks web: list and board, filters, My tasks, edit panel, subtasks, live updates (MOTION.md 6.6) | Next |
 | 6d | Budget web: summary, categories, expenses, undo bar (MOTION.md 6.14) | |
 
 Receipt uploads wait for the media table (gallery, milestone 8).
@@ -227,6 +227,12 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Deleting a task deletes its subtasks with the same `deleted_at`; restore brings back exactly those; a subtask whose parent is deleted can't be restored alone | Undo of a delete puts the whole card back, not subtasks deleted earlier | `packages/db/src/stores/tasks.ts` |
 | Starter tasks: due `daysBefore` the start date, left without a date when that's already past; linked to a starter sub-event by name | An event planned at short notice shouldn't start with everything overdue | `packages/core/src/events/templates.ts` |
 | Task lists are cursor-paginated by id (UUIDv7), 200 per page by default (500 max); the client orders by column and position | One stable cursor key; a board needs most tasks at once | `packages/db/src/queries/tasks.ts` |
+| Budget tables: `budget_categories` and `expenses` (migration 0006) with the status–amount rule as a check constraint, unique live category names (ignoring case) and unique live transaction refs per event; `receipt_media_id` waits for the media table | DatabaseDesign "Planning"; the database backs up the action | `packages/db/src/schema/budget.ts` |
+| Committed = the sum of all expense amounts (planned lines included), paid = the sum paid so far; category totals count only the expenses the caller can see | DatabaseDesign "Budget vs. actual"; a scoped Editor's totals shouldn't reveal other sub-events' spending | `packages/db/src/queries/budget.ts` |
+| An expense takes a status, an amount paid, or both; the missing one is filled in (`settlePayment` in contracts). On edit, "paid" follows a changed amount, and advance or partly paid is kept while it still fits | Clients send what the person chose; the server owns the rule | `packages/contracts/src/budget.ts`, `packages/core/src/budget/budget-actions.ts` |
+| `POST E/expenses` without an Idempotency-Key is 400 `bad_request` (`@RequireIdempotencyKey()`) | APIDesign makes the key required but names no code for a missing one | `apps/api/src/http/idempotency.interceptor.ts` |
+| Deleting a category with live expenses is 409 `conflict`, reason `category_in_use`; restoring one whose name was taken, or an expense whose category is gone, is 409 `conflict` with a reason | APIDesign "refused while expenses exist"; no new codes | `packages/core/src/budget/budget-actions.ts` |
+| Unique violations run in a savepoint and come back as answers (`name_taken`, `duplicate_ref`) | Otherwise the error aborts the whole action's transaction | `packages/db/src/stores/budget.ts` |
 | pnpm override `socket.io: 4.8.4` | `@nestjs/platform-socket.io` pins 4.8.3; two copies made the server's and our types differ | `pnpm-workspace.yaml` |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
 
@@ -273,6 +279,9 @@ None right now.
 - The activity feed's entity filter takes any string; restrict to `ACTIVITY_ENTITY_TYPES` once every module records its type.
 - `dashboard.changed` (throttled to once a second per event) arrives with the dashboard in milestone 8; `job.progress` and `notification.new` with jobs and notifications.
 - Presence ("Vikram is viewing") from MOTION.md 6.12 isn't in the socket contract yet.
+- Receipts on expenses (`receipt_media_id`, uploads) arrive with the media table in milestone 8.
+- Budget by sub-event has no endpoint; the web adds it up from the expense list (fine at MVP sizes).
+- Expenses, like tasks, keep their `sub_event_id` when that sub-event is deleted.
 - Tasks keep their `sub_event_id` when that sub-event is deleted; the web should show them as "deleted sub-event" (or move them to the whole event) in 6c.
 - Assignees who leave or are removed stay in `task_assignees` (hidden while inactive) and reappear if they rejoin.
 - The activity feed shows every task change to anyone with `activity.view`, even ones outside their sub-event scope; filter the feed by scope.
@@ -294,4 +303,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [32 Tasks on the server](learning/backend/32-tasks-backend.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [33 Budget on the server](learning/backend/33-budget-backend.md).
