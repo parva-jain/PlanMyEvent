@@ -20,3 +20,12 @@ export const ACCENT: Record<Event['type'], { bg: string; tint: string; text: str
   },
   custom: { bg: 'bg-event-custom', tint: 'bg-event-custom-tint', text: 'text-event-custom-text' },
 };
+
+/** Accent hex per type, for confetti (DESIGN.md "Event accents"). */
+export const ACCENT_HEX: Record<Event['type'], string> = {
+  wedding: '#E11D74',
+  conference: '#2563EB',
+  fair: '#0D9488',
+  celebration: '#EA580C',
+  custom: '#7C3AED',
+};

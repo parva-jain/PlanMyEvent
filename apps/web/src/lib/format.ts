@@ -50,3 +50,26 @@ export function timeZoneOptions(current: string): string[] {
   }
   return zones.includes(current) ? zones : [current, ...zones];
 }
+
+/** "12 Dec": a short date for chips, with the year only when it isn't this year's. */
+export function formatShortDate(isoDate: string, today = new Date()): string {
+  const full = formatEventDate(isoDate);
+  return isoDate.startsWith(String(today.getFullYear())) ? full.replace(/ \d{4}$/, '') : full;
+}
+
+/** Today as `YYYY-MM-DD` in the browser's zone, to compare with due dates. */
+export function todayIso(today = new Date()): string {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+}
+
+/** Whole rupees in Indian grouping: 1234500 paise → "₹12,345" (DESIGN.md: money in INR). */
+export const INR_FORMAT = {
+  style: 'currency',
+  currency: 'INR',
+  maximumFractionDigits: 0,
+} as const satisfies Intl.NumberFormatOptions;
+
+const inr = new Intl.NumberFormat('en-IN', INR_FORMAT);
+
+export const formatInr = (paise: number) => inr.format(Math.round(paise / 100));

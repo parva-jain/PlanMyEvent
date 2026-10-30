@@ -3,7 +3,6 @@
 import {
   starterSubEvents,
   type CreatedEvent,
-  type Event,
   type EventTemplate,
   type TemplateKey,
 } from '@pme/contracts';
@@ -31,7 +30,7 @@ import { CountUp } from '@/components/motion/count-up';
 import { LogoMark } from '@/components/motion/logo-mark';
 import { useShouldReduceMotion } from '@/components/motion/motion-provider';
 import { Skeleton } from '@/components/motion/skeleton';
-import { ACCENT } from '@/components/shell/accents';
+import { ACCENT, ACCENT_HEX } from '@/components/shell/accents';
 import { eventHref, MY_EVENTS_HREF } from '@/components/shell/nav';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -48,15 +47,6 @@ const ICONS: Record<TemplateKey, LucideIcon> = {
   fair: Store,
   celebration: PartyPopper,
   custom: Plus,
-};
-
-/** Accent hex per type, for the success confetti (DESIGN.md "Event accents"). */
-const ACCENT_HEX: Record<Event['type'], string> = {
-  wedding: '#E11D74',
-  conference: '#2563EB',
-  fair: '#0D9488',
-  celebration: '#EA580C',
-  custom: '#7C3AED',
 };
 
 const DEFAULT_TIME_ZONE = 'Asia/Kolkata';

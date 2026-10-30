@@ -82,6 +82,20 @@ export function useSubEvents(eventId: string) {
   });
 }
 
+/**
+ * A sub-event's name, or "Deleted sub-event" for rows whose sub-event is gone (tasks and
+ * expenses keep its id; their edit panels can move them to the whole event).
+ */
+export function subEventName(
+  subEvents: readonly SubEvent[] | undefined,
+  id: string | null,
+): { name: string; deleted: false } | { name: null; deleted: boolean } {
+  if (!id) return { name: null, deleted: false };
+  const found = subEvents?.find((item) => item.id === id);
+  // Until sub-events load, show nothing rather than "deleted".
+  return found ? { name: found.name, deleted: false } : { name: null, deleted: !!subEvents };
+}
+
 // ---- Writes ------------------------------------------------------------------------------
 
 /**

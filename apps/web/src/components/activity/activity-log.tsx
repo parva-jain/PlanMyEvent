@@ -26,17 +26,11 @@ import { Card } from '@/components/ui/card';
 import { useActivity, useUndo, type ActivityFilters } from '@/lib/activity';
 import { ApiError } from '@/lib/api';
 import { useVenues } from '@/lib/events';
-import { formatEventDate } from '@/lib/format';
+import { formatEventDate, formatInr } from '@/lib/format';
 import { distance, duration, ease, maxStaggeredRows, stagger } from '@/lib/motion';
 
 /** Scrolled less than this counts as "at the top": new entries slide in there. */
 const TOP_PX = 80;
-
-const inr = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  maximumFractionDigits: 0,
-});
 
 /**
  * Activity (MOTION.md 6.11): every change, newest first, by day in the event's time zone,
@@ -430,7 +424,7 @@ function useFormatField() {
     if (field === 'venueId') {
       return venues.find((venue) => venue.id === value)?.name ?? t('removedVenue');
     }
-    if (field.endsWith('Paise')) return inr.format(Number(value) / 100);
+    if (field.endsWith('Paise')) return formatInr(Number(value));
     if ((field === 'startsAt' || field === 'endsAt') && typeof value === 'string') {
       const { date, time } = utcToZonedParts(value, event.timeZone);
       return `${formatEventDate(date)}, ${time}`;
