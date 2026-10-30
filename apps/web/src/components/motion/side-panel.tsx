@@ -10,6 +10,7 @@ import { useMediaQuery } from '@/lib/use-media-query';
 import { distance, duration, ease, spring } from '@/lib/motion';
 
 import { useShouldReduceMotion } from './motion-provider';
+import { useReturnFocus } from './use-return-focus';
 import { Sheet } from './sheet';
 
 interface PanelProps {
@@ -27,6 +28,7 @@ interface PanelProps {
 export function SidePanel({ open, onOpenChange, title, children }: PanelProps) {
   const t = useTranslations('app');
   const reduced = useShouldReduceMotion();
+  const returnFocus = useReturnFocus(open);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <AnimatePresence>
@@ -41,7 +43,12 @@ export function SidePanel({ open, onOpenChange, title, children }: PanelProps) {
                 transition={{ duration: reduced ? duration.fast : duration.base, ease: ease.out }}
               />
             </Dialog.Overlay>
-            <Dialog.Content asChild forceMount aria-describedby={undefined}>
+            <Dialog.Content
+              asChild
+              forceMount
+              onCloseAutoFocus={returnFocus}
+              aria-describedby={undefined}
+            >
               <m.div
                 data-slot="side-panel"
                 className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[420px] flex-col border-l border-border bg-surface text-fg shadow-raised outline-none"
