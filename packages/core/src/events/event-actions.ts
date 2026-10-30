@@ -1,4 +1,5 @@
 import {
+  positionBetween,
   STANDARD_ROLES,
   starterSubEvents,
   zonedTimeToUtc,
@@ -12,10 +13,40 @@ import {
 
 import type { ActionDefinition } from '../action.js';
 import { ActionError } from '../errors.js';
-import type { CoreTx } from '../ports.js';
+import type { CoreTx, NewTask } from '../ports.js';
 import { eventSlug } from './slug.js';
 import { EVENT_TEMPLATES } from './templates.js';
 import { versionMismatch } from './versioned.js';
+
+/** `YYYY-MM-DD` minus whole days, in UTC so no time zone shifts it. */
+function daysBefore(date: string, days: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
+}
+
+/**
+ * The template's starter tasks, in order in the To do column. A due date already past
+ * (an event planned at short notice) is left empty rather than starting overdue.
+ */
+function starterTasks(
+  template: (typeof EVENT_TEMPLATES)[keyof typeof EVENT_TEMPLATES],
+  startsOn: string,
+  today: string,
+  subEvents: { id: string; name: string }[],
+): NewTask[] {
+  let position: string | null = null;
+  return template.tasks.map((task) => {
+    position = positionBetween(position, null);
+    const dueOn = task.daysBefore === null ? null : daysBefore(startsOn, task.daysBefore);
+    return {
+      title: task.title,
+      category: task.category,
+      dueOn: dueOn && dueOn >= today ? dueOn : null,
+      subEventId: subEvents.find((item) => item.name === task.subEvent)?.id ?? null,
+      position,
+      templateKey: task.key,
+    };
+  });
+}
 
 /** Slug collisions are rare (4 random characters per name); retry a few times. */
 const SLUG_ATTEMPTS = 5;
@@ -29,7 +60,8 @@ function userId(actor: { kind: string; userId?: string }): string {
 
 /**
  * POST /v1/events: an event from a template in the user's personal workspace, with the
- * template's modules and starter sub-events, an optional first venue, and the standard roles.
+ * template's modules, starter sub-events and tasks, an optional first venue, and the standard
+ * roles.
  * The creator joins as the first member holding Owner. Any signed-in user may create one.
  */
 export const createEvent: ActionDefinition<CreateEvent, CreatedEvent, CoreTx> = {
@@ -78,6 +110,10 @@ export const createEvent: ActionDefinition<CreateEvent, CreatedEvent, CoreTx> = 
         position,
       })),
     );
+    const tasks = await tx.tasks.insert(
+      event.id,
+      starterTasks(template, input.startsOn, ctx.now.toISOString().slice(0, 10), subEvents),
+    );
 
     const roles = await tx.roles.insert(
       event.id,
@@ -99,7 +135,10 @@ export const createEvent: ActionDefinition<CreateEvent, CreatedEvent, CoreTx> = 
     );
 
     return {
-      result: { ...event, counts: { subEvents: subEvents.length, venues: venue ? 1 : 0 } },
+      result: {
+        ...event,
+        counts: { subEvents: subEvents.length, venues: venue ? 1 : 0, tasks: tasks.length },
+      },
       activity: [
         {
           action: 'create',

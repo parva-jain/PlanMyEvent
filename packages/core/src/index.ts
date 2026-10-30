@@ -54,6 +54,13 @@ export {
   transferOwnership,
 } from './team/member-actions.js';
 export { createRole, deleteRole, updateRole } from './team/role-actions.js';
+export {
+  createTask,
+  deleteTask,
+  replaceTaskAssignees,
+  restoreTask,
+  updateTask,
+} from './tasks/task-actions.js';
 export type {
   AccessStore,
   ActivityStore,
@@ -74,6 +81,9 @@ export type {
   NewVenue,
   PersonalWorkspace,
   SubEventStore,
+  NewTask,
+  TaskChanges,
+  TaskStore,
   UserStore,
   VenueStore,
   WorkspaceStore,

@@ -9,6 +9,7 @@ import type {
   Permission,
   Role,
   SubEvent,
+  Task,
   UpdateEvent,
   UpdateSubEvent,
   UpdateVenue,
@@ -211,7 +212,67 @@ export interface MemberInviteStore {
   revoke(eventId: string, inviteId: string): Promise<boolean>;
 }
 
-/** The transaction handle every action receives. */
+export interface NewTask {
+  title: string;
+  description?: string | null;
+  status?: Task['status'];
+  priority?: Task['priority'];
+  category?: string | null;
+  dueOn?: string | null;
+  subEventId?: string | null;
+  parentTaskId?: string | null;
+  position: string;
+  completedAt?: Date | null;
+  completedByUserId?: string | null;
+  /** Which starter task created it (analytics). */
+  templateKey?: string | null;
+  assigneeIds?: string[];
+}
+
+export interface TaskChanges {
+  title?: string;
+  description?: string | null;
+  status?: Task['status'];
+  priority?: Task['priority'];
+  category?: string | null;
+  dueOn?: string | null;
+  subEventId?: string | null;
+  position?: string;
+  completedAt?: Date | null;
+  completedByUserId?: string | null;
+}
+
+/**
+ * Tasks with their assignees (active members only) and subtask counts. `find` and `update`
+ * skip soft-deleted rows.
+ */
+export interface TaskStore {
+  insert(eventId: string, tasks: NewTask[]): Promise<Task[]>;
+  find(eventId: string, taskId: string): Promise<Task | null>;
+  /** The last position in a column: top-level tasks with this status, or a task's subtasks. */
+  lastPosition(
+    eventId: string,
+    column: { status: Task['status'] } | { parentTaskId: string },
+  ): Promise<string | null>;
+  update(
+    eventId: string,
+    taskId: string,
+    expectedVersion: number,
+    changes: TaskChanges,
+  ): Promise<Task | null>;
+  /** Soft-deletes the task and its live subtasks (same deleted_at); false on a mismatch. */
+  softDelete(eventId: string, taskId: string, expectedVersion: number): Promise<boolean>;
+  /** Undoes a soft delete, with the subtasks deleted alongside; null when not deleted. */
+  restore(eventId: string, taskId: string): Promise<Task | null>;
+  /** Replaces the assignees and bumps the version, only if it still matches. */
+  replaceAssignees(
+    eventId: string,
+    taskId: string,
+    expectedVersion: number,
+    memberIds: string[],
+  ): Promise<Task | null>;
+}
+
 /** An activity_log row as stored. */
 export interface StoredActivity {
   id: string;
@@ -241,6 +302,7 @@ export interface ActivityStore {
   markUndone(eventId: string, entryId: string): Promise<boolean>;
 }
 
+/** The transaction handle every action receives. */
 export interface CoreTx {
   users: UserStore;
   workspaces: WorkspaceStore;
@@ -252,4 +314,5 @@ export interface CoreTx {
   access: AccessStore;
   memberInvites: MemberInviteStore;
   activity: ActivityStore;
+  tasks: TaskStore;
 }
