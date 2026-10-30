@@ -209,3 +209,23 @@
   animation: none;
   opacity: 0.8;
 }
+
+/*
+ * UndoSnackbar countdown: the bar shrinks over the undo window (5 s, UNDO_WINDOW_MS) and
+ * pauses with the timer on hover and focus. Hidden when motion is reduced; the timer still runs.
+ */
+.snackbar-countdown {
+  transform-origin: left;
+  animation: snackbar-countdown 5s linear forwards;
+  opacity: var(--motion);
+}
+
+.snackbar-countdown[data-paused] {
+  animation-play-state: paused;
+}
+
+@keyframes snackbar-countdown {
+  to {
+    transform: scaleX(0);
+  }
+}

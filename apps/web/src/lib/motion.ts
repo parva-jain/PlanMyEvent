@@ -28,8 +28,8 @@ export const spring = {
   drag: { type: 'spring', stiffness: 600, damping: 40 },
 } as const;
 
-/** Pixels. */
-export const distance = { rise: 12, riseLarge: 24, lift: -4 } as const;
+/** Pixels; `toast` is the snackbar's slide (MOTION.md section 4). */
+export const distance = { rise: 12, riseLarge: 24, lift: -4, toast: 16 } as const;
 
 /** Seconds between staggered children. */
 export const stagger = { list: 0.04, section: 0.08 } as const;

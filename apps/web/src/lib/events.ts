@@ -16,7 +16,7 @@ import type {
 } from '@pme/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { apiFetch, ApiError } from './api';
+import { apiFetch, ApiError, newRequestId } from './api';
 
 interface List<T> {
   data: T[];
@@ -147,8 +147,12 @@ export function useCreateVenue(eventId: string) {
 export function useDeleteVenue(eventId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (venueId: string) =>
-      apiFetch<null>(`${E(eventId)}/venues/${venueId}`, { method: 'DELETE' }),
+    /** Resolves with the request id, to undo it from the undo bar. */
+    mutationFn: async (venueId: string) => {
+      const requestId = newRequestId();
+      await apiFetch<null>(`${E(eventId)}/venues/${venueId}`, { method: 'DELETE', requestId });
+      return requestId;
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: eventKeys.venues(eventId) });
       // Its sub-events lost their venue (and moved to a new version).
@@ -177,11 +181,16 @@ export function useSaveSubEvent(eventId: string) {
 export function useDeleteSubEvent(eventId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, version }: { id: string; version: number }) =>
-      apiFetch<null>(`${E(eventId)}/sub-events/${id}`, {
+    /** Resolves with the request id, to undo it from the undo bar. */
+    mutationFn: async ({ id, version }: { id: string; version: number }) => {
+      const requestId = newRequestId();
+      await apiFetch<null>(`${E(eventId)}/sub-events/${id}`, {
         method: 'DELETE',
         headers: ifMatch(version),
-      }),
+        requestId,
+      });
+      return requestId;
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: eventKeys.subEvents(eventId) }),
   });
 }
