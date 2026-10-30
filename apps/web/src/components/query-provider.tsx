@@ -5,8 +5,8 @@ import { useState, type ReactNode } from 'react';
 
 /**
  * One QueryClient per browser tab (useState keeps it across re-renders, never shared
- * between server requests). Sockets will invalidate queries in milestone 5
- * (SystemDesign: clients re-fetch through the API on entity.changed).
+ * between server requests). Live signals invalidate queries (src/lib/live.ts), so clients
+ * re-fetch through the API on entity.changed.
  */
 export function QueryProvider({ children }: { children: ReactNode }) {
   const [client] = useState(
