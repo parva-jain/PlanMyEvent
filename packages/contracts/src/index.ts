@@ -1,5 +1,6 @@
 export * from './account.js';
 export * from './activity.js';
+export * from './budget.js';
 export * from './enums.js';
 export * from './events.js';
 export * from './health.js';

@@ -65,6 +65,8 @@ export const EventTemplateSchema = z.object({
       subEvent: z.string().optional(),
     }),
   ),
+  /** Starter budget categories, in order, with nothing planned yet. */
+  budgetCategories: z.array(z.string()),
 });
 export type EventTemplate = z.infer<typeof EventTemplateSchema>;
 
@@ -94,6 +96,7 @@ export const CreatedEventSchema = EventSchema.extend({
     subEvents: z.number().int(),
     venues: z.number().int(),
     tasks: z.number().int(),
+    budgetCategories: z.number().int(),
   }),
 });
 export type CreatedEvent = z.infer<typeof CreatedEventSchema>;
