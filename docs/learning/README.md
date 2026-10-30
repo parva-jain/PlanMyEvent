@@ -22,6 +22,8 @@ API, worker, database and the shared packages behind them.
 - [30 Live updates](backend/30-live-updates.md)
 - [32 Tasks on the server](backend/32-tasks-backend.md)
 - [33 Budget on the server](backend/33-budget-backend.md)
+- [37 Reviewing milestone 6](backend/37-milestone-6-review.md)
+- [38 Contacts and households on the server](backend/38-contacts-households.md)
 
 ## Frontend
 
@@ -40,6 +42,9 @@ The web app: foundation, motion, UI components and the home page.
 - [25 Events in the web app](frontend/25-events-web.md)
 - [27 The team in the web app](frontend/27-team-web.md)
 - [31 Live screens and undo in the web app](frontend/31-live-web.md)
+- [34 Tasks in the web app](frontend/34-tasks-web.md)
+- [35 Budget in the web app](frontend/35-budget-web.md)
+- [36 Subtasks in the list and adding expenses quickly](frontend/36-subtasks-inline-and-quick-expense.md)
 
 ## Infra
 
