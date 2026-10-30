@@ -123,6 +123,18 @@ export function taskStore(db: Queryable): TaskStore {
         .returning();
       return row ? ((await withDetails(db, [row]))[0] ?? null) : null;
     },
+    async moveSubtasks(eventId, parentTaskId, subEventId) {
+      await db
+        .update(tasks)
+        .set({ subEventId, version: sql`${tasks.version} + 1` })
+        .where(
+          and(
+            eq(tasks.eventId, eventId),
+            eq(tasks.parentTaskId, parentTaskId),
+            isNull(tasks.deletedAt),
+          ),
+        );
+    },
     async softDelete(eventId, taskId, expectedVersion) {
       const rows = await db
         .update(tasks)

@@ -142,4 +142,26 @@ describe('tasks API', () => {
     const { cookie } = await users.signIn();
     await as(cookie).get(`${E}/tasks`).expect(404);
   });
+
+  it('moving a task to a sub-event takes its subtasks along', async () => {
+    const { owner, E, subEvents, join } = await wedding();
+    const haldi = subEvents.find((item) => item.name === 'Haldi')!;
+    const task = (await owner.post(`${E}/tasks`).send({ title: 'Book a band' }).expect(201))
+      .body as Task;
+    await owner
+      .post(`${E}/tasks`)
+      .send({ title: 'Shortlist three', parentTaskId: task.id })
+      .expect(201);
+    await owner
+      .patch(`${E}/tasks/${task.id}`)
+      .set('If-Match', '"1"')
+      .send({ subEventId: haldi.id })
+      .expect(200);
+    // Someone scoped to Haldi now sees the task and its subtask together.
+    const editor = await join('Editor', [haldi.id]);
+    const visible = list<Task>(await editor.client.get(`${E}/tasks`).expect(200));
+    expect(
+      visible.filter((item) => item.subEventId === haldi.id).map((item) => item.title),
+    ).toEqual(expect.arrayContaining(['Book a band', 'Shortlist three']));
+  });
 });

@@ -370,6 +370,14 @@ export function memoryRuntime() {
       if (completedAt !== undefined) task.completedAt = completedAt?.toISOString() ?? null;
       return Promise.resolve(toTask(task));
     },
+    moveSubtasks: (eventId, parentTaskId, subEventId) => {
+      for (const item of tasks.values()) {
+        if (item.eventId === eventId && item.parentTaskId === parentTaskId && !item.deletedAt) {
+          Object.assign(item, { subEventId, version: item.version + 1 });
+        }
+      }
+      return Promise.resolve();
+    },
     softDelete: (eventId, id, expected) => {
       const task = liveTask(eventId, id);
       if (!task || task.version !== expected) return Promise.resolve(false);

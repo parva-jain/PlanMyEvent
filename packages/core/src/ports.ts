@@ -262,6 +262,8 @@ export interface TaskStore {
     expectedVersion: number,
     changes: TaskChanges,
   ): Promise<Task | null>;
+  /** Moves a task's live subtasks to its new sub-event (a subtask follows its parent). */
+  moveSubtasks(eventId: string, parentTaskId: string, subEventId: string | null): Promise<void>;
   /** Soft-deletes the task and its live subtasks (same deleted_at); false on a mismatch. */
   softDelete(eventId: string, taskId: string, expectedVersion: number): Promise<boolean>;
   /** Undoes a soft delete, with the subtasks deleted alongside; null when not deleted. */
