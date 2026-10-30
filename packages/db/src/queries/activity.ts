@@ -6,6 +6,7 @@ import type { Database } from '../client.js';
 import { users } from '../schema/auth.js';
 import { activityLog } from '../schema/activity.js';
 import { events, subEvents, venues } from '../schema/events.js';
+import { tasks } from '../schema/tasks.js';
 import { memberInvites, members, roles } from '../schema/team.js';
 import { toStoredActivity } from '../stores/activity.js';
 
@@ -34,9 +35,10 @@ export interface ActivityViewer {
   canUndoOthers: boolean;
 }
 
+/** The display name a snapshot carries: `name`, or a task's `title`. */
 const nameOf = (value: unknown) => {
-  const name = (value as { name?: unknown } | null)?.name;
-  return typeof name === 'string' ? name : null;
+  const { name, title } = (value ?? {}) as { name?: unknown; title?: unknown };
+  return typeof name === 'string' ? name : typeof title === 'string' ? title : null;
 };
 
 /** Activity reads for the API. Callers check activity.view first. */
@@ -88,6 +90,15 @@ export function activityQueries(db: Database) {
           .from(members)
           .innerJoin(users, eq(users.id, members.userId))
           .where(and(eq(members.eventId, eventId), inArray(members.id, memberIds))),
+      );
+    }
+    const taskIds = ids('task');
+    if (taskIds.length) {
+      add(
+        await db
+          .select({ id: tasks.id, label: tasks.title })
+          .from(tasks)
+          .where(and(eq(tasks.eventId, eventId), inArray(tasks.id, taskIds))),
       );
     }
     const inviteIds = ids('member_invite');

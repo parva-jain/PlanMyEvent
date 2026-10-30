@@ -11,6 +11,7 @@ import {
   type RoleStore,
   type PersonalWorkspace,
   type SubEventStore,
+  type TaskStore,
   type UserStore,
   type VenueStore,
   type WorkspaceStore,
@@ -24,6 +25,7 @@ import { outbox } from './schema/outbox.js';
 import { workspaces } from './schema/workspaces.js';
 import { activityStore } from './stores/activity.js';
 import { eventStore, subEventStore, venueStore } from './stores/events.js';
+import { taskStore } from './stores/tasks.js';
 import { accessStore, memberInviteStore, memberStore, roleStore } from './stores/team.js';
 
 /** The Drizzle transaction handle `db.transaction` passes to its callback. */
@@ -86,6 +88,7 @@ export class DbTx implements CoreTx {
   readonly access: AccessStore;
   readonly memberInvites: MemberInviteStore;
   readonly activity: ActivityStore;
+  readonly tasks: TaskStore;
 
   constructor(readonly db: DrizzleTx) {
     this.users = userStore(db);
@@ -98,6 +101,7 @@ export class DbTx implements CoreTx {
     this.access = accessStore(db);
     this.memberInvites = memberInviteStore(db);
     this.activity = activityStore(db);
+    this.tasks = taskStore(db);
   }
 }
 
