@@ -30,7 +30,7 @@ export function configureApp(app: NestExpressApplication): ApiEnv {
   // Better Auth reads its own request bodies, so it goes before the JSON parser.
   app.use('/v1/auth', toNodeHandler(app.get<Auth>(AUTH)));
   app.useBodyParser('json', { limit: '1mb' });
-  app.useWebSocketAdapter(new LiveIoAdapter(app, env.WEB_ORIGIN));
+  app.useWebSocketAdapter(new LiveIoAdapter(app, env));
   app.set('trust proxy', 1);
   // ETag is the resource version (APIDesign), never Express's body hash.
   app.set('etag', false);
