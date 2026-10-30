@@ -26,9 +26,16 @@ import { useOfferUndo } from '@/components/shell/use-offer-undo';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field, Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApiError } from '@/lib/api';
-import { useBudgetCategories, useDeleteCategory, useExpenses, useSaveCategory } from '@/lib/budget';
+import {
+  useBudgetCategories,
+  useDeleteCategory,
+  useExpenses,
+  useSaveCategory,
+  useSaveExpense,
+} from '@/lib/budget';
 import { subEventName, useSubEvents, useUpdateEvent } from '@/lib/events';
 import { formatInr, INR_FORMAT, todayIso } from '@/lib/format';
 import { highlight } from '@/lib/live-highlights';
@@ -164,10 +171,13 @@ export function Budget() {
             </Card>
           )}
 
+          {can('budget.edit') && categories.length > 0 && <QuickExpense categories={categories} />}
+
           <Tabs defaultValue="category" className="gap-4">
             <TabsList aria-label={t('groupBy')}>
               <TabsTrigger value="category">{t('byCategory')}</TabsTrigger>
               <TabsTrigger value="session">{t('bySession')}</TabsTrigger>
+              <TabsTrigger value="all">{t('allExpenses')}</TabsTrigger>
             </TabsList>
             <TabsContent value="category" className="flex flex-col gap-3">
               {categories.map((category) => (
@@ -195,6 +205,9 @@ export function Budget() {
             </TabsContent>
             <TabsContent value="session">
               <BySession expenses={expenses ?? []} onOpen={openExpense} />
+            </TabsContent>
+            <TabsContent value="all">
+              <AllExpenses expenses={expenses ?? []} categories={categories} onOpen={openExpense} />
             </TabsContent>
           </Tabs>
         </>
@@ -432,6 +445,16 @@ function CategoryRow({
           {can('budget.edit') && (
             <button
               type="button"
+              aria-label={t('addTo', { name: category.name })}
+              onClick={onAdd}
+              className="flex size-10 items-center justify-center rounded-control text-fg-muted hover:bg-surface-muted"
+            >
+              <Plus aria-hidden className="size-4" />
+            </button>
+          )}
+          {can('budget.edit') && (
+            <button
+              type="button"
               aria-label={t('editNamed', { name: category.name })}
               onClick={onEdit}
               className="flex size-10 items-center justify-center rounded-control text-fg-muted hover:bg-surface-muted"
@@ -485,6 +508,149 @@ function CategoryRow({
         </Expand>
       </section>
     </LiveRow>
+  );
+}
+
+/**
+ * "Add an expense" in one line: what it's for, how much, which category, and whether it's
+ * already paid. Payment details, vendor and due date are in the full form. Whole-event
+ * expenses only; someone limited to sub-events uses the full form, which picks theirs.
+ */
+function QuickExpense({ categories }: { categories: BudgetCategoryTotals[] }) {
+  const t = useTranslations('budget.quick');
+  const { eventId } = useCurrentEvent();
+  const save = useSaveExpense(eventId);
+  const show = useSnackbar();
+  const [title, setTitle] = useState('');
+  const [amount, setAmount] = useState<number | null>(null);
+  const [categoryId, setCategoryId] = useState('');
+  const [paid, setPaid] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // One key per expense: a retried save can't record it twice; a new one gets a new key.
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+
+  function onSubmit(formEvent: FormEvent) {
+    formEvent.preventDefault();
+    if (!title.trim()) return setError(t('titleRequired'));
+    if (!amount) return setError(t('amountRequired'));
+    if (!categoryId) return setError(t('categoryRequired'));
+    setError(null);
+    const category = categories.find((item) => item.id === categoryId);
+    save.mutate(
+      {
+        create: {
+          title: title.trim(),
+          amountPaise: amount,
+          categoryId,
+          paymentStatus: paid ? 'paid' : 'planned',
+          ...(paid && { paidOn: todayIso() }),
+        },
+        idempotencyKey,
+      },
+      {
+        onSuccess: (saved) => {
+          setTitle('');
+          setAmount(null);
+          setPaid(false);
+          setIdempotencyKey(crypto.randomUUID());
+          highlight(saved.id, { source: 'own', op: 'created', actorUserId: null });
+          highlight(categoryId, { source: 'own', op: 'updated', actorUserId: null });
+          show({ message: t('added', { title: saved.title, category: category?.name ?? '' }) });
+        },
+        onError: () => setError(t('saveFailed')),
+      },
+    );
+  }
+
+  return (
+    <Card className="gap-3" data-testid="quick-expense">
+      <h2 className="text-label">{t('heading')}</h2>
+      <form
+        onSubmit={onSubmit}
+        className="grid grid-cols-2 gap-2 lg:grid-cols-[minmax(0,1fr)_11rem_12rem_auto_auto] lg:items-center"
+      >
+        <Input
+          aria-label={t('title')}
+          placeholder={t('title')}
+          value={title}
+          maxLength={200}
+          onChange={(e) => setTitle(e.target.value)}
+          className="col-span-2 lg:col-span-1"
+        />
+        <MoneyInput aria-label={t('amount')} placeholder="0" value={amount} onChange={setAmount} />
+        <Select
+          aria-label={t('category')}
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+        >
+          <option value="" disabled>
+            {t('category')}
+          </option>
+          {categories.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+        </Select>
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-body">
+          <input
+            type="checkbox"
+            className="size-5 accent-primary"
+            checked={paid}
+            onChange={(e) => setPaid(e.target.checked)}
+          />
+          {t('alreadyPaid')}
+        </label>
+        <Button
+          type="submit"
+          icon={<Plus aria-hidden />}
+          loading={save.isPending}
+          className="justify-self-end"
+        >
+          {t('add')}
+        </Button>
+      </form>
+      {error && (
+        <p role="alert" className="text-small text-danger-text">
+          {error}
+        </p>
+      )}
+    </Card>
+  );
+}
+
+/** Every expense, newest first, with its category. */
+function AllExpenses({
+  expenses,
+  categories,
+  onOpen,
+}: {
+  expenses: Expense[];
+  categories: BudgetCategoryTotals[];
+  onOpen: (expenseId: string) => void;
+}) {
+  const t = useTranslations('budget');
+  if (!expenses.length) {
+    return <p className="text-body text-fg-secondary">{t('noExpensesAll')}</p>;
+  }
+  const sorted = [...expenses].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  const nameOf = (categoryId: string) =>
+    categories.find((item) => item.id === categoryId)?.name ?? '';
+  return (
+    <Card className="gap-0 px-2 py-2 sm:px-3">
+      <ListPresence className="flex flex-col" data-testid="all-expenses">
+        {sorted.map((expense) => (
+          <ListItem key={expense.id}>
+            <ExpenseRow
+              expense={expense}
+              onOpen={onOpen}
+              showDue
+              category={nameOf(expense.categoryId)}
+            />
+          </ListItem>
+        ))}
+      </ListPresence>
+    </Card>
   );
 }
 

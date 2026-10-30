@@ -168,10 +168,13 @@ export function ExpenseRow({
   expense,
   onOpen,
   showDue = false,
+  category,
 }: {
   expense: Expense;
   onOpen: (expenseId: string) => void;
   showDue?: boolean;
+  /** The category's name, where the list mixes categories. */
+  category?: string;
 }) {
   const t = useTranslations('budget');
   const percent = (expense.paidPaise / expense.amountPaise) * 100;
@@ -186,9 +189,10 @@ export function ExpenseRow({
         <span className="flex items-start gap-3">
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="text-body">{expense.title}</span>
-            {(expense.vendorName || (showDue && expense.dueOn)) && (
+            {(category || expense.vendorName || (showDue && expense.dueOn)) && (
               <span className="text-small text-fg-secondary">
                 {[
+                  category,
                   expense.vendorName,
                   showDue && expense.dueOn && t('dueOn', { date: formatShortDate(expense.dueOn) }),
                 ]

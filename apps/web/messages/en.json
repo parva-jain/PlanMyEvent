@@ -1286,6 +1286,7 @@
     "emptyColumn": "Nothing here",
     "deleted": "{title} deleted",
     "subtasks": "Subtasks",
+    "subtasksOf": "Subtasks of {title}",
     "removeSubtask": "Remove {title}",
     "newSubtask": "Add a subtask",
     "addSubtask": "Add",
@@ -1358,6 +1359,7 @@
     "groupBy": "Group by",
     "byCategory": "By category",
     "bySession": "By sub-event",
+    "allExpenses": "All expenses",
     "addCategory": "Add category",
     "newCategory": "New category",
     "editCategory": "Edit category",
@@ -1373,7 +1375,9 @@
     "overBy": "Over by {amount}",
     "noExpenses": "No expenses here yet.",
     "noExpensesYet": "No expenses yet. Add one to see spending by sub-event.",
+    "noExpensesAll": "No expenses yet. Add the first one above.",
     "addHere": "Add an expense here",
+    "addTo": "Add an expense to {name}",
     "wholeEvent": "Whole event",
     "deletedSubEvent": "Deleted sub-event",
     "committedPaid": "{committed} committed · {paid} paid",
@@ -1431,6 +1435,19 @@
       "conflict": "Someone changed this a moment ago. Close it and try again.",
       "saveFailed": "Couldn't save. Try again in a moment.",
       "deleteFailed": "Couldn't delete. Try again in a moment."
+    },
+    "quick": {
+      "heading": "Add an expense",
+      "title": "What's it for?",
+      "amount": "Amount",
+      "category": "Category",
+      "alreadyPaid": "Already paid",
+      "add": "Add",
+      "added": "{title} added to {category}",
+      "titleRequired": "Enter what this is for",
+      "amountRequired": "Enter an amount",
+      "categoryRequired": "Choose a category",
+      "saveFailed": "Couldn't save. Try again in a moment."
     }
   }
 }
