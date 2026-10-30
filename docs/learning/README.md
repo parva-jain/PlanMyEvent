@@ -19,6 +19,7 @@ API, worker, database and the shared packages behind them.
 - [26 Members, roles and permissions](backend/26-members-roles-permissions.md)
 - [28 Fixing what the reviews found](backend/28-review-fixes.md)
 - [29 The activity log and undo](backend/29-activity-log-undo.md)
+- [30 Live updates](backend/30-live-updates.md)
 
 ## Frontend
 

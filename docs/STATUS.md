@@ -9,8 +9,8 @@ Last updated: Oct 30, 2026 · Updated at the end of every working step.
 | Step | What | Status |
 | --- | --- | --- |
 | 5a | Backend: `activity_log` (migration 0004) written by every action in its transaction, changed fields only; `GET E/activity` with cursor pages, filters, entity names and undo state; `POST E/activity/{entryId}/undo` for event, module, venue and sub-event changes | Done |
-| 5b | Live updates: socket sign-in and rooms (`event:join`, user room), the Redis adapter, `entity.changed`, `permissions.changed` and `member.removed` written to the outbox and sent by the worker | Next |
-| 5c | Web: Activity page with undo, the undo bar after deletes, live refresh of what's on screen with `LiveHighlight`, the 30 s polling fallback | Planned |
+| 5b | Live updates: `/live` sockets sign in with the session cookie and join event rooms as members; every logged change writes `entity.changed` (plus `permissions.changed`, and `member.removed` with leaving the room) to the outbox in its transaction; the worker's relay publishes them through the Socket.io Redis adapter | Done |
+| 5c | Web: Activity page with undo, the undo bar after deletes, live refresh of what's on screen with `LiveHighlight`, the 30 s polling fallback | Next |
 
 ### Review fixes (done)
 
@@ -205,6 +205,11 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Undoable now: event details, modules, venues, sub-events. Not undoable: event create, team changes (roles, members, invites), and undo entries themselves | Reversing team changes touches other people's access; redo isn't designed | Same file |
 | Undo errors use existing codes: changed since → 409 `version_conflict` with `current`; already undone or not undoable → 409 `conflict` with `reason` | No new codes in APIDesign's list | Same file |
 | Feed cursors name the last entry; the next page compares `(created_at, id)` in SQL | A JS Date would round Postgres's microseconds and skip or repeat rows | `packages/db/src/queries/activity.ts` |
+| runAction derives the live signals from the activity entries (one `entity.changed` each; `permissions.changed` for role and member changes; leave room + `member.removed` when a member goes) | No action can log a change and forget the signal; CLAUDE.md rule 11 | `packages/core/src/live.ts` |
+| Live signals are outbox rows (`live.signal`) the relay publishes with `@socket.io/redis-emitter`; each publish is awaited, so a Redis failure retries the row | The emitter doesn't wait for its own publishes: a lost signal, or an unhandled rejection | `apps/worker/src/live/live-publisher.ts` |
+| Sockets authenticate with the session cookie and must come from `WEB_ORIGIN`; refusals are `connect_error` `unauthenticated` / `csrf_failed` / `too_many_sockets`. Bearer tokens wait for the mobile app (no Better Auth bearer plugin yet) | CORS doesn't protect WebSockets, so a cookie-carrying socket from another site must be refused | `apps/api/src/live/live.gateway.ts` |
+| `event:join` answers like REST: `not_found` for non-members, `forbidden` without `event.view` anywhere; at most 10 rooms per socket, 10 sockets per user per API instance | APIDesign "Real-time contract"; a cluster-wide socket count would need a Redis round trip on every connect | Same file |
+| pnpm override `socket.io: 4.8.4` | `@nestjs/platform-socket.io` pins 4.8.3; two copies made the server's and our types differ | `pnpm-workspace.yaml` |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
 
 ## Open questions
@@ -248,6 +253,10 @@ None right now.
 - Undo of a venue delete brings the venue back but doesn't re-attach the sub-events it was cleared from (that clearing writes no entries of its own).
 - Undo for team changes (role edits, removing a member, revoking an invite) and redo of an undo.
 - The activity feed's entity filter takes any string; restrict to `ACTIVITY_ENTITY_TYPES` once every module records its type.
+- `dashboard.changed` (throttled to once a second per event) arrives with the dashboard in milestone 8; `job.progress` and `notification.new` with jobs and notifications.
+- Presence ("Vikram is viewing") from MOTION.md 6.12 isn't in the socket contract yet.
+- Published `live.signal` rows pile up in the outbox until the 7-day cleanup job exists (milestone 5 scheduled queue item above).
+- Socket bearer-token sign-in (`auth: { token }`) for the mobile app.
 - Logo SVG/PNG files and app icons still use the warm ink #1F1B16 and warm white #FAF8F5 (BRAND.md note); regenerate in a brand pass.
 
 ## Known warnings (harmless)
@@ -259,4 +268,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [29 The activity log and undo](learning/backend/29-activity-log-undo.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [30 Live updates](learning/backend/30-live-updates.md).
