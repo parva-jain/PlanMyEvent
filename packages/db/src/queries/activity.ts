@@ -1,32 +1,16 @@
 import type { ActivityItem, ActivityPage, ActivityQuery } from '@pme/contracts';
-import { ActionError, isUndoable, type StoredActivity } from '@pme/core';
+import { isUndoable, type StoredActivity } from '@pme/core';
 import { and, desc, eq, gte, inArray, sql, type SQL } from 'drizzle-orm';
 
 import type { Database } from '../client.js';
 import { users } from '../schema/auth.js';
 import { activityLog } from '../schema/activity.js';
+import { budgetCategories, expenses } from '../schema/budget.js';
 import { events, subEvents, venues } from '../schema/events.js';
 import { tasks } from '../schema/tasks.js';
 import { memberInvites, members, roles } from '../schema/team.js';
 import { toStoredActivity } from '../stores/activity.js';
-
-/**
- * Cursors name the last entry seen. Comparing (created_at, id) against that row in SQL keeps
- * Postgres's microseconds, which a JS Date would round away.
- */
-const encodeCursor = (id: string) => Buffer.from(JSON.stringify({ i: id })).toString('base64url');
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function decodeCursor(value: string): string {
-  try {
-    const { i } = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as { i?: unknown };
-    if (typeof i === 'string' && UUID.test(i)) return i;
-  } catch {
-    // Falls through to the error below.
-  }
-  throw new ActionError('bad_request', 'Invalid cursor');
-}
+import { decodeCursor, encodeCursor } from './cursor.js';
 
 /** Who is reading: canUndo depends on it. */
 export interface ActivityViewer {
@@ -90,6 +74,26 @@ export function activityQueries(db: Database) {
           .from(members)
           .innerJoin(users, eq(users.id, members.userId))
           .where(and(eq(members.eventId, eventId), inArray(members.id, memberIds))),
+      );
+    }
+    const categoryIds = ids('budget_category');
+    if (categoryIds.length) {
+      add(
+        await db
+          .select({ id: budgetCategories.id, label: budgetCategories.name })
+          .from(budgetCategories)
+          .where(
+            and(eq(budgetCategories.eventId, eventId), inArray(budgetCategories.id, categoryIds)),
+          ),
+      );
+    }
+    const expenseIds = ids('expense');
+    if (expenseIds.length) {
+      add(
+        await db
+          .select({ id: expenses.id, label: expenses.title })
+          .from(expenses)
+          .where(and(eq(expenses.eventId, eventId), inArray(expenses.id, expenseIds))),
       );
     }
     const taskIds = ids('task');
@@ -187,6 +191,8 @@ export function activityQueries(db: Database) {
       if (query.entityId) filters.push(eq(activityLog.entityId, query.entityId));
       if (query.actor) filters.push(eq(activityLog.actorUserId, query.actor));
       if (query.cursor) {
+        // Compared against that row in SQL, keeping Postgres's microseconds (a JS Date
+        // would round them and skip or repeat rows).
         const after = decodeCursor(query.cursor);
         filters.push(
           sql`(${activityLog.createdAt}, ${activityLog.id}) < (select created_at, id from activity_log where id = ${after})`,
