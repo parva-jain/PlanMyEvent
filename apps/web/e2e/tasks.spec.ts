@@ -59,9 +59,13 @@ test.describe('tasks', () => {
     const caterer = rows.filter({ hasText: 'Book the caterer for 300' });
     await expect(caterer).toContainText(text('tasks.priority.urgent'));
     await expect(caterer).toContainText('0/1');
+    // The subtask shows under its row and ticks off from there.
+    await expect(caterer.getByTestId('row-subtask')).toContainText('Taste the menu');
+    await caterer.getByRole('checkbox', { name: 'Done: Taste the menu' }).click();
+    await expect(caterer).toContainText('1/1');
 
     // Delete, then undo from the bar.
-    await caterer.getByRole('button').click();
+    await caterer.getByRole('button', { name: /^Book the caterer for 300/ }).click();
     await form.getByRole('button', { name: text('tasks.form.delete') }).click();
     await form.getByRole('button', { name: text('tasks.form.confirmDelete') }).click();
     const snackbar = page.getByTestId('snackbar');

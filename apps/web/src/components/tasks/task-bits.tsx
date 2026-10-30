@@ -122,11 +122,14 @@ export function TaskCheckbox({
   checked,
   disabled,
   onToggle,
+  small = false,
 }: {
   title: string;
   checked: boolean;
   disabled?: boolean;
   onToggle: () => void;
+  /** A 16 px box for subtasks under a row; the tap target stays 44 px. */
+  small?: boolean;
 }) {
   const t = useTranslations('tasks');
   return (
@@ -137,9 +140,12 @@ export function TaskCheckbox({
       aria-label={t('complete', { title })}
       disabled={disabled}
       onClick={onToggle}
-      className="-m-3 flex size-11 shrink-0 items-center justify-center rounded-control disabled:opacity-50"
+      className={cn(
+        'flex size-11 shrink-0 items-center justify-center rounded-control disabled:opacity-50',
+        small ? '-m-3.5' : '-m-3',
+      )}
     >
-      <CheckDraw checked={checked} />
+      <CheckDraw checked={checked} size={small ? 16 : 20} />
     </button>
   );
 }

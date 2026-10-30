@@ -231,6 +231,7 @@ export function Tasks() {
                   ) : (
                     <TaskList
                       tasks={shownFor(false)}
+                      allTasks={tasks}
                       subEvents={subEvents}
                       onOpen={openTask}
                       swipeable={!desktop}
