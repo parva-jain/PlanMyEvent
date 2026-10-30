@@ -12,6 +12,7 @@ Last updated: Oct 30, 2026 · Updated at the end of every working step.
 | 6b | Budget backend: categories with planned, committed and paid totals; expenses with amounts that match their payment status, duplicate transaction refs refused, Idempotency-Key required on `POST E/expenses`; starter categories; activity and undo | Done |
 | 6c | Tasks web: list grouped by status and a kanban board (dnd-kit, keyboard dragging), filters (mine, sub-event, assignee, status), quick add, tick-to-complete with strike and slide, phone swipe to complete, edit panel with assignees and subtasks, delete with undo, "Deleted sub-event" chip, My tasks on the My events page, live updates (MOTION.md 6.6) | Done |
 | 6d | Budget web: overall budget and totals with count-ups, due soon, by category (bars with paid and committed segments, over-plan chip, expanding expense lists) and by sub-event, expense panel with status-driven fields and the duplicate-reference error, category panel, deletes with undo, "every payment is settled" celebration (MOTION.md 6.14) | Done |
+| 6d.1 | Feedback: subtasks show under their task in the list (smaller, indented, tick from the row); budget gets an "Add an expense" quick-add bar (title, amount, category, already paid), an All expenses tab, and a + on every category | Done |
 | 6e | Review the milestone, then open PR #7 for merge | Next |
 
 Receipt uploads wait for the media table (gallery, milestone 8).
