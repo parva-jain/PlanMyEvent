@@ -14,7 +14,7 @@ import type {
   TransferOwnership,
   UpdateRole,
 } from '@pme/contracts';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiFetch, ApiError } from './api';
 import { eventKeys } from './events';
@@ -44,11 +44,14 @@ export function useMyMembership(eventId: string) {
   });
 }
 
-export function useMembers(eventId: string) {
-  return useQuery({
+export const membersQuery = (eventId: string) =>
+  queryOptions({
     queryKey: teamKeys.members(eventId),
     queryFn: async () => (await apiFetch<List<Member>>(`${E(eventId)}/members`)).data,
   });
+
+export function useMembers(eventId: string) {
+  return useQuery(membersQuery(eventId));
 }
 
 export function useRoles(eventId: string) {

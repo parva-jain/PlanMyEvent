@@ -10,6 +10,7 @@ import { FullPageLoading } from '@/components/auth/full-page-loading';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
 import { useEvent } from '@/lib/events';
+import { useLiveEvent } from '@/lib/live';
 import { useMyMembership } from '@/lib/team';
 
 import { MY_EVENTS_HREF } from './nav';
@@ -28,8 +29,9 @@ interface CurrentEventContext {
 const Context = createContext<CurrentEventContext | null>(null);
 
 /**
- * Loads the event in the URL, and my membership in it, for the whole shell. A 404 (missing,
- * deleted, or not a member, which the API answers the same way) shows a way back to My events.
+ * Loads the event in the URL, and my membership in it, for the whole shell, and keeps them
+ * live. A 404 (missing, deleted, or not a member, which the API answers the same way) or
+ * being removed from the team shows a way back to My events.
  */
 export function CurrentEventProvider({
   eventId,
@@ -46,15 +48,19 @@ export function CurrentEventProvider({
   const error = eventQuery.error ?? membershipQuery.error;
   const isFetching = eventQuery.isFetching || membershipQuery.isFetching;
   const refetch = () => Promise.all([eventQuery.refetch(), membershipQuery.refetch()]);
+  // Live updates for every screen of this event, while the shell is open.
+  const removed = useLiveEvent(eventId, membership?.member.id);
 
-  if (error) {
-    const missing = error instanceof ApiError && error.status === 404;
+  if (removed || error) {
+    const missing = removed || (error instanceof ApiError && error.status === 404);
     return (
       <div
         role="alert"
         className="flex min-h-dvh flex-col items-center justify-center gap-4 px-4 text-center"
       >
-        <p className="text-h3">{missing ? t('notFound') : t('loadFailed')}</p>
+        <p className="text-h3">
+          {removed ? t('removed') : missing ? t('notFound') : t('loadFailed')}
+        </p>
         {missing ? (
           <Button asChild variant="secondary" icon={<ArrowLeft aria-hidden />}>
             <Link href={MY_EVENTS_HREF}>{t('backToEvents')}</Link>

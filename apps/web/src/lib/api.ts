@@ -19,20 +19,41 @@ export class ApiError extends Error {
   }
 }
 
+/** Request ids this tab sent lately, newest last: live signals for them are our own. */
+const ownRequests = new Set<string>();
+const MAX_OWN_REQUESTS = 200;
+
+/** A fresh X-Request-Id, remembered so the socket can skip the signals it causes. */
+export function newRequestId(): string {
+  const id = `web_${crypto.randomUUID()}`;
+  ownRequests.add(id);
+  // Sets iterate in insertion order: drop the oldest.
+  if (ownRequests.size > MAX_OWN_REQUESTS) ownRequests.delete(ownRequests.values().next().value!);
+  return id;
+}
+
+/** Whether a live signal came from a request this tab made (APIDesign "Real-time contract"). */
+export const isOwnRequest = (requestId: string | null) =>
+  requestId !== null && ownRequests.has(requestId);
+
 /**
  * JSON request to the API with the session cookie. The cookie belongs to the API's host,
  * so every call is cross-origin with `credentials: 'include'` (CORS allows the web origin).
+ * Writes carry an X-Request-Id (reads cause no signals, and skip the CORS preflight a custom
+ * header would add); pass `requestId` to know which activity entries a write made.
  */
 export async function apiFetch<T>(
   path: `/${string}`,
-  init: Omit<RequestInit, 'body'> & { body?: unknown } = {},
+  init: Omit<RequestInit, 'body'> & { body?: unknown; requestId?: string } = {},
 ): Promise<T> {
-  const { body, headers, ...rest } = init;
+  const { body, headers, requestId, ...rest } = init;
+  const write = rest.method !== undefined && !['GET', 'HEAD'].includes(rest.method);
   const res = await fetch(apiUrl(path), {
     ...rest,
     credentials: 'include',
     headers: {
       Accept: 'application/json',
+      ...(write ? { 'X-Request-Id': requestId ?? newRequestId() } : {}),
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
       ...headers,
     },
