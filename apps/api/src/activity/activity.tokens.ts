@@ -1,0 +1,1 @@
+export const ACTIVITY_QUERIES = Symbol('ACTIVITY_QUERIES');

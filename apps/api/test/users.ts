@@ -88,6 +88,7 @@ export function testUsers(app: () => NestExpressApplication, codes: Map<string, 
       const { rows: eventRows } = await pool.query<{ id: string }>(created, [userIds]);
       const eventIds = eventRows.map((row) => row.id);
       for (const table of [
+        'activity_log',
         'role_assignment_scopes',
         'role_assignments',
         'member_invites',
@@ -101,7 +102,8 @@ export function testUsers(app: () => NestExpressApplication, codes: Map<string, 
       }
       await pool.query('delete from outbox where event_id = any($1)', [eventIds]);
       await pool.query('delete from events where id = any($1)', [eventIds]);
-      // Memberships and invites in other users' events.
+      // Memberships, invites and their log entries in other users' events.
+      await pool.query('delete from activity_log where actor_user_id = any($1)', [userIds]);
       await pool.query(
         'delete from role_assignments where member_id in (select id from members where user_id = any($1))',
         [userIds],
