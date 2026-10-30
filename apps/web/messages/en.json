@@ -574,7 +574,8 @@
       "notFound": "We couldn't find that event",
       "loadFailed": "Couldn't load this event",
       "backToEvents": "Back to my events",
-      "retry": "Try again"
+      "retry": "Try again",
+      "removed": "You're no longer on this event's team"
     },
     "myEvents": {
       "title": "Your events",
@@ -592,6 +593,15 @@
     "noAccess": {
       "title": "You don't have access to this",
       "body": "Your roles in this event don't include “{permission}”. Ask the event's owner or an admin if you need it."
+    },
+    "live": {
+      "updated": "{name} just updated this",
+      "added": "{name} just added this"
+    },
+    "snackbar": {
+      "undo": "Undo",
+      "dismiss": "Dismiss",
+      "undoFailed": "Couldn't undo. It may have changed since; check Activity."
     }
   },
   "auth": {
@@ -770,7 +780,8 @@
       "newVenue": "New venue name",
       "add": "Add",
       "remove": "Remove {name}"
-    }
+    },
+    "deleted": "{name} deleted"
   },
   "settings": {
     "title": "Settings",
@@ -1077,5 +1088,115 @@
         "body": "The person who sent it cancelled it. Ask them for a new link if you still need one."
       }
     }
+  },
+  "activity": {
+    "title": "Activity",
+    "subtitle": "Every change to this event, newest first.",
+    "filters": {
+      "label": "Show",
+      "all": "All changes",
+      "mine": "Only my changes"
+    },
+    "types": {
+      "event": "Event details",
+      "event_modules": "Modules",
+      "venue": "Venues",
+      "sub_event": "Sub-events",
+      "role": "Roles",
+      "member": "Team members",
+      "member_invite": "Invites"
+    },
+    "actions": {
+      "event": {
+        "create": "<b>{actor}</b> created the event",
+        "update": "<b>{actor}</b> updated the event details"
+      },
+      "event_modules": {
+        "update": "<b>{actor}</b> changed the modules"
+      },
+      "venue": {
+        "create": "<b>{actor}</b> added the venue <b>{name}</b>",
+        "update": "<b>{actor}</b> updated the venue <b>{name}</b>",
+        "delete": "<b>{actor}</b> deleted the venue <b>{name}</b>",
+        "restore": "<b>{actor}</b> restored the venue <b>{name}</b>"
+      },
+      "sub_event": {
+        "create": "<b>{actor}</b> added <b>{name}</b>",
+        "update": "<b>{actor}</b> updated <b>{name}</b>",
+        "delete": "<b>{actor}</b> deleted <b>{name}</b>",
+        "restore": "<b>{actor}</b> restored <b>{name}</b>"
+      },
+      "role": {
+        "create": "<b>{actor}</b> created the role <b>{name}</b>",
+        "update": "<b>{actor}</b> edited the role <b>{name}</b>",
+        "delete": "<b>{actor}</b> deleted the role <b>{name}</b>"
+      },
+      "member": {
+        "join": "<b>{actor}</b> joined the team",
+        "update": "<b>{actor}</b> changed <b>{name}</b>'s roles",
+        "leave": "<b>{actor}</b> left the team",
+        "remove": "<b>{actor}</b> removed <b>{name}</b> from the team",
+        "transfer_ownership": "<b>{actor}</b> made <b>{name}</b> the owner"
+      },
+      "member_invite": {
+        "create": "<b>{actor}</b> created a team invite",
+        "revoke": "<b>{actor}</b> revoked a team invite"
+      },
+      "fallback": "<b>{actor}</b> changed <b>{name}</b>"
+    },
+    "something": "something",
+    "undoBadge": "Undo",
+    "channels": {
+      "public_link": "via public link",
+      "system": "automatic",
+      "ai": "via quick update",
+      "whatsapp": "via WhatsApp"
+    },
+    "fields": {
+      "name": "Name",
+      "description": "Description",
+      "startsOn": "Start date",
+      "endsOn": "End date",
+      "timeZone": "Time zone",
+      "status": "Status",
+      "budgetPaise": "Budget",
+      "address": "Address",
+      "mapUrl": "Map link",
+      "startsAt": "Starts",
+      "endsAt": "Ends",
+      "venueId": "Venue",
+      "capacity": "Capacity",
+      "visibility": "Visibility",
+      "responseMode": "Responses",
+      "groupLabel": "Group",
+      "notes": "Notes"
+    },
+    "none": "none",
+    "removedVenue": "a deleted venue",
+    "on": "On",
+    "off": "Off",
+    "change": "{field}: {before} → {after}",
+    "undo": "Undo",
+    "undoneBy": "Undone by {name} · {time}",
+    "alreadyUndone": "This was already undone.",
+    "notUndoable": "This change can't be undone.",
+    "undoFailed": "Couldn't undo. Try again in a moment.",
+    "blocked": {
+      "title": "This changed since",
+      "body": "Someone edited it after this change, so undo would overwrite their work. Here's what undo would put back, and what it is now.",
+      "field": "Field",
+      "wouldRestore": "Undo would set",
+      "now": "Now",
+      "close": "Close"
+    },
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "newChanges": "{count, plural, one {# new change} other {# new changes}}",
+    "loadMore": "Show older changes",
+    "loadFailed": "Couldn't load the activity.",
+    "retry": "Try again",
+    "emptyTitle": "Nothing has happened yet",
+    "emptyBody": "Every change your team makes will appear here, with undo for mistakes.",
+    "emptyFiltered": "No changes match these filters."
   }
 }
