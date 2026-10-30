@@ -176,6 +176,19 @@ describe('updating tasks', () => {
       }),
     ).rejects.toMatchObject({ code: 'forbidden' });
   });
+
+  it('moving a task takes its subtasks along to the new sub-event', async () => {
+    const { run, task: find, subEvent, tasks } = await wedding();
+    const venue = find('Book the venue');
+    const sub = await run('editor', createTask, { title: 'Visit lawns', parentTaskId: venue.id });
+    const haldi = subEvent('Haldi').id;
+    await run('editor', updateTask, {
+      taskId: venue.id,
+      expectedVersion: 1,
+      changes: { subEventId: haldi },
+    });
+    expect(tasks.get(sub.id)?.subEventId).toBe(haldi);
+  });
 });
 
 describe('undo', () => {
@@ -204,5 +217,22 @@ describe('undo', () => {
     await undo('editor');
     expect(tasks.get(venue.id)?.deletedAt).toBeUndefined();
     expect(tasks.get(sub.id)?.deletedAt).toBeUndefined();
+  });
+
+  it('a Helper can undo ticking off their own task', async () => {
+    const { run, undo, task: find, helper } = await wedding();
+    const venue = find('Book the venue');
+    await run('owner', replaceTaskAssignees, {
+      taskId: venue.id,
+      expectedVersion: 1,
+      memberIds: [helper.id],
+    });
+    await run('helper', updateTask, {
+      taskId: venue.id,
+      expectedVersion: 2,
+      changes: { status: 'done' },
+    });
+    await undo('helper');
+    expect(find('Book the venue').status).toBe('todo');
   });
 });

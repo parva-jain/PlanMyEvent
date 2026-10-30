@@ -185,6 +185,9 @@ export const updateTask: ActionDefinition<
       ...extra,
     });
     if (!after) versionMismatch(await tx.tasks.find(eventId, taskId), expectedVersion);
+    if (after.subEventId !== before.subEventId) {
+      await tx.tasks.moveSubtasks(eventId, taskId, after.subEventId);
+    }
     return {
       result: after,
       activity: [{ action: 'update', entityType: 'task', entityId: taskId, before, after }],
