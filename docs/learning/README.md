@@ -21,6 +21,7 @@ API, worker, database and the shared packages behind them.
 - [29 The activity log and undo](backend/29-activity-log-undo.md)
 - [30 Live updates](backend/30-live-updates.md)
 - [32 Tasks on the server](backend/32-tasks-backend.md)
+- [33 Budget on the server](backend/33-budget-backend.md)
 
 ## Frontend
 
