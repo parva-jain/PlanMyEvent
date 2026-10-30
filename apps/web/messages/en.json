@@ -1031,6 +1031,7 @@
       "enabledCount": "{on} of {total} on",
       "notYours": "You can't give a permission you don't have",
       "ownerLocked": "The Owner role always has every permission. It can't be edited, and it only changes hands when the owner transfers ownership.",
+      "outranksYou": "This role has permissions you don't have, so you can't edit or delete it.",
       "summaryTitle": "People with this role can",
       "summaryEmpty": "Nothing yet. Turn on the permissions this role needs.",
       "delete": "Delete role",
