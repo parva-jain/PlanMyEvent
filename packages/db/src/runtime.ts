@@ -1,7 +1,8 @@
 import {
   ActionError,
-  placeholderHooks,
   type AccessStore,
+  type ActionContext,
+  type ActivityStore,
   type ActionRuntime,
   type CoreTx,
   type EventStore,
@@ -21,6 +22,7 @@ import type { Database } from './client.js';
 import { users } from './schema/auth.js';
 import { outbox } from './schema/outbox.js';
 import { workspaces } from './schema/workspaces.js';
+import { activityStore } from './stores/activity.js';
 import { eventStore, subEventStore, venueStore } from './stores/events.js';
 import { accessStore, memberInviteStore, memberStore, roleStore } from './stores/team.js';
 
@@ -83,6 +85,7 @@ export class DbTx implements CoreTx {
   readonly members: MemberStore;
   readonly access: AccessStore;
   readonly memberInvites: MemberInviteStore;
+  readonly activity: ActivityStore;
 
   constructor(readonly db: DrizzleTx) {
     this.users = userStore(db);
@@ -94,7 +97,22 @@ export class DbTx implements CoreTx {
     this.members = memberStore(db);
     this.access = accessStore(db);
     this.memberInvites = memberInviteStore(db);
+    this.activity = activityStore(db);
   }
+}
+
+/**
+ * "Priya Sharma", or the email's local part before Welcome; guests and the system get a fixed
+ * label. The label is stored, so the log still reads right after someone renames themselves.
+ */
+async function actorLabelOf(tx: DbTx, ctx: ActionContext): Promise<string> {
+  if (ctx.actor.kind === 'guest') return 'Guest';
+  if (ctx.actor.kind === 'system') return 'System';
+  const [user] = await tx.db
+    .select({ name: users.name, email: users.email })
+    .from(users)
+    .where(eq(users.id, ctx.actor.userId));
+  return user?.name.trim() || user?.email.split('@')[0] || 'Someone';
 }
 
 /** Waits at most this long for a row lock before failing, instead of queueing forever. */
@@ -103,7 +121,7 @@ const LOCK_TIMEOUT = '2s';
 /**
  * The ActionRuntime that core's `runAction` uses in the API and worker. Permissions are read
  * inside the action's transaction (never from cache), so a role change committed a moment
- * ago already counts. The activity log (milestone 5) is still a placeholder.
+ * ago already counts.
  */
 export function createActionRuntime(db: Database): ActionRuntime<DbTx> {
   return {
@@ -125,7 +143,28 @@ export function createActionRuntime(db: Database): ActionRuntime<DbTx> {
         });
       }
     },
-    recordActivity: placeholderHooks.recordActivity,
+    async recordActivity(tx, ctx, entries) {
+      const actorLabel = await actorLabelOf(tx, ctx);
+      await tx.activity.insert(
+        entries.map((entry) => {
+          const eventId = entry.eventId ?? ctx.eventId;
+          if (!eventId) throw new Error(`Activity for ${entry.entityType} has no event`);
+          return {
+            eventId,
+            actorUserId: ctx.actor.kind === 'user' ? ctx.actor.userId : null,
+            actorLabel,
+            channel: ctx.channel,
+            action: `${entry.entityType}.${entry.action}`,
+            entityType: entry.entityType,
+            entityId: entry.entityId,
+            before: entry.before ?? null,
+            after: entry.after ?? null,
+            requestId: ctx.requestId,
+            undoOfId: entry.undoOfId ?? null,
+          };
+        }),
+      );
+    },
     async writeOutbox(tx, ctx, messages) {
       await tx.db.insert(outbox).values(
         messages.map((message) => ({
