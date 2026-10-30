@@ -72,6 +72,32 @@ test.describe('budget', () => {
     ]);
   });
 
+  test('quick add logs a paid expense in one line and it shows under All expenses', async ({
+    page,
+  }) => {
+    const owner = await signUp(page);
+    const event = await weddingVia(owner);
+    await page.goto(`/events/${event.id}/budget`);
+
+    const quick = page.getByTestId('quick-expense');
+    await quick.getByLabel(text('budget.quick.title')).fill('Mehendi cones');
+    await quick.getByLabel(text('budget.quick.amount')).fill('3500');
+    await quick.getByRole('button', { name: text('budget.quick.add') }).click();
+    await expect(quick.getByText(text('budget.quick.categoryRequired'))).toBeVisible();
+    await quick.getByLabel(text('budget.quick.category')).selectOption({ label: 'Decor' });
+    await quick.getByLabel(text('budget.quick.alreadyPaid')).check();
+    await quick.getByRole('button', { name: text('budget.quick.add') }).click();
+
+    await expect(page.getByTestId('snackbar')).toContainText('Mehendi cones added to Decor');
+    await expect(quick.getByLabel(text('budget.quick.title'))).toHaveValue('');
+    await expect(page.getByTestId('total-paid')).toContainText('₹3,500');
+    await page.getByRole('tab', { name: text('budget.allExpenses') }).click();
+    const row = page.getByTestId('all-expenses').getByTestId('expense-row');
+    await expect(row).toContainText('Mehendi cones');
+    await expect(row).toContainText('Decor');
+    await expect(row.getByTestId('payment-status')).toContainText(text('budget.status.paid'));
+  });
+
   test('over its plan, a category says by how much; deleting an expense can be undone', async ({
     page,
   }) => {
