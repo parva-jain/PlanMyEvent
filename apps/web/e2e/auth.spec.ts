@@ -70,6 +70,23 @@ test.describe('sign-in', () => {
     await expect(button).not.toHaveAttribute('aria-busy');
   });
 
+  test('pressing Enter twice sends one code, not two', async ({ page }) => {
+    let sent = 0;
+    // A slow API leaves time for the second Enter to land while the first is in flight.
+    await page.route('**/v1/auth/email-otp/send-verification-otp', async (route) => {
+      sent++;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      await route.continue();
+    });
+    await page.goto('/sign-in');
+    const input = page.getByLabel(auth.signIn.emailLabel!);
+    await input.fill(newEmail());
+    await input.press('Enter');
+    await input.press('Enter');
+    await expect(page.getByRole('heading', { name: auth.signIn.codeTitle })).toBeVisible();
+    expect(sent).toBe(1);
+  });
+
   test('a new account signs in with an emailed code, sets a name and reaches the app', async ({
     page,
   }) => {
