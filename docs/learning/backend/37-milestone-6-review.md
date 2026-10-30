@@ -1,4 +1,6 @@
-# 37. Reviewing milestone 6
+# 37 — Reviewing milestone 6
+
+Milestone 6, step 6e · Oct 30, 2026
 
 Before merging tasks and budget, I re-read the core actions, the stores, the queries, the undo planners and the migrations. Two bugs turned up. Each got a test that failed first.
 

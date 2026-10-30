@@ -4,18 +4,23 @@ Last updated: Oct 30, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Milestone 6 — tasks, budget categories and expenses**, branch `feat/m6-tasks-budget`. Milestones 1–5 and the review fixes are merged to `main` (PRs #1 and #2 squashed, #3–#6 rebase-merged).
+**Milestone 7 — contacts, households, CSV import; invitations, magic links, RSVP**, branch `feat/m7-guests`. Milestones 1–6 and the review fixes are merged to `main` (PRs #1 and #2 squashed, #3–#7 rebase-merged).
 
 | Step | What | Status |
 | --- | --- | --- |
-| 6a | Tasks backend: `tasks` and `task_assignees` (migration 0005); create, update, assign, delete and restore actions with sub-event scope, `tasks.update_own` for assignees, one level of subtasks, fractional positions per status column; starter tasks from each template; `E/tasks`, `E/tasks/{id}/assignees` and `GET /v1/me/tasks`; activity and undo for tasks | Done |
-| 6b | Budget backend: categories with planned, committed and paid totals; expenses with amounts that match their payment status, duplicate transaction refs refused, Idempotency-Key required on `POST E/expenses`; starter categories; activity and undo | Done |
-| 6c | Tasks web: list grouped by status and a kanban board (dnd-kit, keyboard dragging), filters (mine, sub-event, assignee, status), quick add, tick-to-complete with strike and slide, phone swipe to complete, edit panel with assignees and subtasks, delete with undo, "Deleted sub-event" chip, My tasks on the My events page, live updates (MOTION.md 6.6) | Done |
-| 6d | Budget web: overall budget and totals with count-ups, due soon, by category (bars with paid and committed segments, over-plan chip, expanding expense lists) and by sub-event, expense panel with status-driven fields and the duplicate-reference error, category panel, deletes with undo, "every payment is settled" celebration (MOTION.md 6.14) | Done |
-| 6d.1 | Feedback: subtasks show under their task in the list (smaller, indented, tick from the row); budget gets an "Add an expense" quick-add bar (title, amount, category, already paid), an All expenses tab, and a + on every category | Done |
-| 6e | Milestone review: moving a task to another sub-event now takes its subtasks along (they stayed behind, outside the new scope); a subtask ticked twice quickly from its row no longer sends a stale version; regression test for a Helper undoing their own tick-off. PR #7 ready to merge | Done |
+| 7a | Contacts and households backend: `households` and `contacts` (migration 0007, trigram and tag indexes), phones normalized to E.164 (+91 for Indian numbers), create, update, delete and restore actions with undo, primary contact from the household's own, `E/households` and `E/contacts` with search (name, email, phone), tag and household filters; guest entries hidden from activity feeds of members without `guests.view` | Done |
+| 7b | CSV import: `POST E/contacts/import` (202 + job), column mapping, duplicate matching by phone or email, households from a column, job status and per-row errors | Next |
+| 7c | Invitations and attendance backend: invitations with HMAC-derived links, delivery status and distributor, sub-events when guests are per sub-event, share text and wa.me link, regenerate and withdraw, bulk create and bulk delivery updates; attendance rows and headcounts | |
+| 7d | Public invite and RSVP: `GET /v1/public/invites/{token}` (cached by content version, rate limited) and `POST …/rsvp` (Idempotency-Key, upsert per household and scope), activity as "Sharma family (link)" | |
+| 7e | People web: contacts and households, search and tags, CSV import with mapping and progress, invitations with delivery tracking, distributor view, share | |
+| 7f | Invite page web: the guest's invitation and RSVP on a phone, with MOTION.md's guest-page motion | |
+| 7g | Review the milestone, then open the PR for merge | |
 
-Receipt uploads wait for the media table (gallery, milestone 8).
+Contacts and households need whole-event `guests.view` and `guests.edit`; members scoped to sub-events see guests through invitations once 7c lands.
+
+### Milestone 6 (done)
+
+Tasks with a list and keyboard-draggable board, budget categories and expenses with payments, quick add, subtasks inline, and the review fixes. Merged as rebase of PR #7 (`7eb24fd`).
 
 ### Milestone 5 (done)
 
@@ -243,6 +248,11 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | dnd-kit 6.3.1 / sortable 10.0.0 for the board | MOTION.md section 3: dnd-kit for logic, keyboard dragging included | `apps/web/package.json` |
 | pnpm override `socket.io: 4.8.4` | `@nestjs/platform-socket.io` pins 4.8.3; two copies made the server's and our types differ | `pnpm-workspace.yaml` |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
+| Contacts and households are whole-event: their actions and reads need `guests.*` without a sub-event scope | They have no sub_event_id; per-sub-event visibility comes from invitations (7c) | `packages/core/src/guests/guest-actions.ts` |
+| A deleted household leaves its contacts in place, read as not in a household; restoring it links them again | Undo needs no bookkeeping, and nobody's details are lost by deleting a group | `packages/db/src/stores/guests.ts` |
+| A contact moving out of its household, or deleted, stops being its primary contact, logged as a household update | The primary contact must be one of the household's own | `packages/core/src/guests/guest-actions.ts` |
+| Phones are stored in E.164; a bare 10-digit number is Indian | India first, international guests type their + prefix | `packages/contracts/src/guests.ts` |
+| The activity feed leaves out household and contact entries for members without whole-event `guests.view` | Those entries carry phones and emails | `apps/api/src/activity/activity.controller.ts` |
 
 ## Open questions
 
@@ -315,4 +325,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [33 Budget on the server](learning/backend/33-budget-backend.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [38 Contacts and households on the server](learning/backend/38-contacts-households.md).

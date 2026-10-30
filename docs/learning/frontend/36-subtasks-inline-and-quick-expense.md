@@ -1,4 +1,6 @@
-# 36. Subtasks in the list and adding expenses quickly
+# 36 — Subtasks in the list and adding expenses quickly
+
+Milestone 6, step 6d.1 · Oct 30, 2026
 
 Two changes after using the Tasks and Budget screens.
 
