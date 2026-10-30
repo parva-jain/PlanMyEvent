@@ -10,6 +10,7 @@ import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
 import { ProblemFilter } from './errors/problem.filter';
 import { EventsModule } from './events/events.module';
+import { GuestsModule } from './guests/guests.module';
 import { HealthModule } from './health/health.module';
 import { ETagInterceptor } from './http/etag.interceptor';
 import { IdempotencyInterceptor } from './http/idempotency.interceptor';
@@ -37,6 +38,7 @@ import { TeamModule } from './team/team.module';
     ActivityModule,
     TasksModule,
     BudgetModule,
+    GuestsModule,
     LiveModule,
   ],
   providers: [
