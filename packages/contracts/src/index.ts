@@ -3,6 +3,7 @@ export * from './activity.js';
 export * from './budget.js';
 export * from './enums.js';
 export * from './events.js';
+export * from './guests.js';
 export * from './health.js';
 export * from './jobs.js';
 export * from './live.js';
