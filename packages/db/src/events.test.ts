@@ -64,7 +64,7 @@ afterAll(async () => {
 describe('createEvent against Postgres', () => {
   it('writes the event, modules, venue and starter sub-events in one transaction', async () => {
     const event = await newEvent();
-    expect(event.counts).toEqual({ subEvents: 5, venues: 1, tasks: 12 });
+    expect(event.counts).toEqual({ subEvents: 5, venues: 1, tasks: 12, budgetCategories: 12 });
     expect(
       await db.select().from(eventModules).where(eq(eventModules.eventId, event.id)),
     ).toHaveLength(3);
