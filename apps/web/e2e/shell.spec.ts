@@ -188,8 +188,9 @@ test.describe('app shell', () => {
       await page.getByRole('button', { name: app.quickAdd.add!, exact: true }).click();
     }
     await page.getByRole('link', { name: app.quickAdd.expense! }).click();
-    await expect(page).toHaveURL(new RegExp(`${HOME}/budget$`));
-    await expect(page.getByRole('dialog')).toHaveCount(0);
+    // The expense form opens straight away.
+    await expect(page).toHaveURL(new RegExp(`${HOME}/budget\\?add=1$`));
+    await expect(page.getByTestId('expense-form')).toBeVisible();
   });
 
   test('unknown sections show not found', async ({ page }) => {
