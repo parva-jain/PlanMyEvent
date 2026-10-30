@@ -4,13 +4,20 @@ Last updated: Oct 30, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Milestone 5 — activity log, undo and live updates**, branch `feat/m5-activity-live`. Milestones 1–4 and the review fixes are merged to `main` (PRs #1 and #2 squashed, #3–#5 rebase-merged).
+**Milestone 6 — tasks, budget categories and expenses**, branch `feat/m6-tasks-budget`. Milestones 1–5 and the review fixes are merged to `main` (PRs #1 and #2 squashed, #3–#6 rebase-merged).
 
 | Step | What | Status |
 | --- | --- | --- |
-| 5a | Backend: `activity_log` (migration 0004) written by every action in its transaction, changed fields only; `GET E/activity` with cursor pages, filters, entity names and undo state; `POST E/activity/{entryId}/undo` for event, module, venue and sub-event changes | Done |
-| 5b | Live updates: `/live` sockets sign in with the session cookie and join event rooms as members; every logged change writes `entity.changed` (plus `permissions.changed`, and `member.removed` with leaving the room) to the outbox in its transaction; the worker's relay publishes them through the Socket.io Redis adapter | Done |
-| 5c | Web: Activity page (by day, filters, field changes, undo with the "changed since" dialog, new entries held while scrolled down); the undo bar after deleting a sub-event or venue; one socket per tab that re-fetches what's on screen with `LiveHighlight` and the name of who changed it; "You're no longer on this event's team" on removal; 30 s polling while the socket is down | Done |
+| 6a | Tasks backend: `tasks` and `task_assignees` (migration 0005); create, update, assign, delete and restore actions with sub-event scope, `tasks.update_own` for assignees, one level of subtasks, fractional positions per status column; starter tasks from each template; `E/tasks`, `E/tasks/{id}/assignees` and `GET /v1/me/tasks`; activity and undo for tasks | Done |
+| 6b | Budget backend: categories with planned, committed and paid totals; expenses with amounts that match their payment status, duplicate transaction refs refused, Idempotency-Key required on `POST E/expenses`; starter categories; activity and undo | Next |
+| 6c | Tasks web: list and board, filters, My tasks, edit panel, subtasks, live updates (MOTION.md 6.6) | |
+| 6d | Budget web: summary, categories, expenses, undo bar (MOTION.md 6.14) | |
+
+Receipt uploads wait for the media table (gallery, milestone 8).
+
+### Milestone 5 (done)
+
+Activity log with undo, live updates through the outbox and Socket.io, the Activity page and the undo bar. Merged as rebase of PR #6 (`311e4e8`).
 
 ### Review fixes (done)
 
@@ -213,6 +220,13 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | One socket per tab, opened by the event shell; each signal invalidates the queries its entity type touches plus the feed (unknown types: the whole event); signals older than a cached version are ignored; after a reconnect everything on screen re-fetches | Signals aren't stored, so a gap is covered by re-fetching, not replaying | `apps/web/src/lib/live.ts`, `lib/activity.ts` |
 | The undo bar finds a delete's entry by its request id (`GET E/activity?entityId=…`), then undoes it; offered only with `activity.view` (every role that can delete has it) | No API change: DELETE stays 204 with no body | `components/events/schedule.tsx`, `lib/activity.ts` |
 | The undo bar's countdown pauses on hover and focus; with reduced motion it fades only and hides the bar (the 5 s still run) | WCAG 2.2.1; MOTION.md section 5 | `components/motion/undo-snackbar.tsx` |
+| Task order uses fractional indexes (`fractional-indexing` 4.0.0, `positionBetween` in contracts); queries sort with `collate "C"`; a status change without a position goes last in the new column | Moving a card writes one row; locale collations would sort `a0V` wrongly | `packages/contracts/src/tasks.ts`, `packages/db/src/stores/tasks.ts` |
+| `tasks.update_own` lets an assignee change `status` and `position` (APIDesign says status or checklist items); position so a Helper can drag their card across the board | Checklist items are subtasks, which are tasks with their own assignees | `OWN_TASK_FIELDS` in contracts |
+| PATCH E/tasks/{id} has no guard permission (any member); the action decides between `tasks.edit` and `tasks.update_own` from the task and the body. Other task routes check the permission anywhere ('list') and the action checks the task's own sub-event | The right permission depends on the row and the body | `apps/api/src/tasks/tasks.controller.ts` |
+| Assignees must be active members who can see the task (`tasks.view` in its sub-event); `GET /v1/me/tasks` also drops tasks my current roles no longer cover | A scoped helper would otherwise be given tasks they can't open | `packages/core/src/tasks/task-actions.ts` |
+| Deleting a task deletes its subtasks with the same `deleted_at`; restore brings back exactly those; a subtask whose parent is deleted can't be restored alone | Undo of a delete puts the whole card back, not subtasks deleted earlier | `packages/db/src/stores/tasks.ts` |
+| Starter tasks: due `daysBefore` the start date, left without a date when that's already past; linked to a starter sub-event by name | An event planned at short notice shouldn't start with everything overdue | `packages/core/src/events/templates.ts` |
+| Task lists are cursor-paginated by id (UUIDv7), 200 per page by default (500 max); the client orders by column and position | One stable cursor key; a board needs most tasks at once | `packages/db/src/queries/tasks.ts` |
 | pnpm override `socket.io: 4.8.4` | `@nestjs/platform-socket.io` pins 4.8.3; two copies made the server's and our types differ | `pnpm-workspace.yaml` |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
 
@@ -259,6 +273,10 @@ None right now.
 - The activity feed's entity filter takes any string; restrict to `ACTIVITY_ENTITY_TYPES` once every module records its type.
 - `dashboard.changed` (throttled to once a second per event) arrives with the dashboard in milestone 8; `job.progress` and `notification.new` with jobs and notifications.
 - Presence ("Vikram is viewing") from MOTION.md 6.12 isn't in the socket contract yet.
+- Tasks keep their `sub_event_id` when that sub-event is deleted; the web should show them as "deleted sub-event" (or move them to the whole event) in 6c.
+- Assignees who leave or are removed stay in `task_assignees` (hidden while inactive) and reappear if they rejoin.
+- The activity feed shows every task change to anyone with `activity.view`, even ones outside their sub-event scope; filter the feed by scope.
+- Task comments, due-date reminders and "task assigned" notifications (milestone 8).
 - Undo bar for team changes (revoke invite, remove member) once those are undoable; MOTION.md 6.10 asks for it.
 - The polling fallback has no Playwright test (it needs 30 s with the socket blocked); the reconnect re-fetch is untested end to end too.
 - MOTION.md 6.12's "Item deleted by someone else" (the open panel fades and offers Restore) and the conflict banner's "Use theirs / Keep mine" aren't built; an edit panel still shows the latest version with a note.
@@ -276,4 +294,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [31 Live screens and undo in the web app](learning/frontend/31-live-web.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [32 Tasks on the server](learning/backend/32-tasks-backend.md).
