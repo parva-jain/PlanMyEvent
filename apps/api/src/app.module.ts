@@ -17,6 +17,7 @@ import { LiveModule } from './live/live.module';
 import { LoggingModule } from './logging/logging.module';
 import { MeModule } from './me/me.module';
 import { RedisModule } from './redis/redis.module';
+import { TasksModule } from './tasks/tasks.module';
 import { TeamModule } from './team/team.module';
 
 @Module({
@@ -33,6 +34,7 @@ import { TeamModule } from './team/team.module';
     EventsModule,
     TeamModule,
     ActivityModule,
+    TasksModule,
     LiveModule,
   ],
   providers: [

@@ -47,7 +47,7 @@ describe('POST /v1/events', () => {
       type: 'wedding',
       status: 'planning',
       version: 1,
-      counts: { subEvents: 5, venues: 1 },
+      counts: { subEvents: 5, venues: 1, tasks: 12 },
     });
     expect(event.slug).toMatch(/^sharma-wedding-[a-z2-9]{4}$/);
 
