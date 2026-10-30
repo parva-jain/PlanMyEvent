@@ -60,8 +60,8 @@ function userId(actor: { kind: string; userId?: string }): string {
 
 /**
  * POST /v1/events: an event from a template in the user's personal workspace, with the
- * template's modules, starter sub-events and tasks, an optional first venue, and the standard
- * roles.
+ * template's modules, starter sub-events, tasks and budget categories, an optional first venue,
+ * and the standard roles.
  * The creator joins as the first member holding Owner. Any signed-in user may create one.
  */
 export const createEvent: ActionDefinition<CreateEvent, CreatedEvent, CoreTx> = {
@@ -110,6 +110,11 @@ export const createEvent: ActionDefinition<CreateEvent, CreatedEvent, CoreTx> = 
         position,
       })),
     );
+    const categories = await tx.budgetCategories.insert(
+      event.id,
+      template.budgetCategories.map((name, position) => ({ name, position })),
+    );
+    if (categories === 'name_taken') throw new Error('Starter category names must be unique');
     const tasks = await tx.tasks.insert(
       event.id,
       starterTasks(template, input.startsOn, ctx.now.toISOString().slice(0, 10), subEvents),
@@ -137,7 +142,12 @@ export const createEvent: ActionDefinition<CreateEvent, CreatedEvent, CoreTx> = 
     return {
       result: {
         ...event,
-        counts: { subEvents: subEvents.length, venues: venue ? 1 : 0, tasks: tasks.length },
+        counts: {
+          subEvents: subEvents.length,
+          venues: venue ? 1 : 0,
+          tasks: tasks.length,
+          budgetCategories: categories.length,
+        },
       },
       activity: [
         {

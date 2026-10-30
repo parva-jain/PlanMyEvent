@@ -1,5 +1,7 @@
 import type {
   EventModule,
+  UpdateBudgetCategory,
+  UpdateExpense,
   UpdateEvent,
   UpdateSubEvent,
   UpdateTask,
@@ -7,6 +9,14 @@ import type {
 } from '@pme/contracts';
 
 import type { ActionDefinition, ActionOutcome, ActivityEntry } from '../action.js';
+import {
+  deleteBudgetCategory,
+  deleteExpense,
+  restoreBudgetCategory,
+  restoreExpense,
+  updateBudgetCategory,
+  updateExpense,
+} from '../budget/budget-actions.js';
 import type { ActionContext } from '../context.js';
 import { ActionError } from '../errors.js';
 import { replaceModules, updateEvent } from '../events/event-actions.js';
@@ -64,6 +74,25 @@ const TASK_FIELDS = [
   'subEventId',
   'position',
 ] as const satisfies readonly (keyof UpdateTask)[];
+const CATEGORY_FIELDS = [
+  'name',
+  'plannedPaise',
+  'position',
+] as const satisfies readonly (keyof UpdateBudgetCategory)[];
+const EXPENSE_FIELDS = [
+  'categoryId',
+  'subEventId',
+  'title',
+  'vendorName',
+  'amountPaise',
+  'paidPaise',
+  'paymentStatus',
+  'dueOn',
+  'paidOn',
+  'paidByMemberId',
+  'transactionRef',
+  'notes',
+] as const satisfies readonly (keyof UpdateExpense)[];
 
 type Fields = Record<string, unknown>;
 const fields = (value: unknown): Fields => (value ?? {}) as Fields;
@@ -178,6 +207,32 @@ const PLANNERS: Record<string, Planner> = {
   'task.delete': (_tx, _ctx, entry) =>
     inverse(restoreTask, {
       taskId: entry.entityId,
+      subEventId: (fields(entry.before).subEventId as string | null | undefined) ?? null,
+    }),
+  'budget_category.create': (_tx, _ctx, entry) =>
+    inverse(deleteBudgetCategory, {
+      categoryId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+    }),
+  'budget_category.update': (_tx, _ctx, entry) =>
+    inverse(updateBudgetCategory, {
+      categoryId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      changes: pick<UpdateBudgetCategory>(entry.before, CATEGORY_FIELDS),
+    }),
+  'budget_category.delete': (_tx, _ctx, entry) =>
+    inverse(restoreBudgetCategory, { categoryId: entry.entityId }),
+  'expense.create': (_tx, _ctx, entry) =>
+    inverse(deleteExpense, { expenseId: entry.entityId, expectedVersion: versionOf(entry.after) }),
+  'expense.update': (_tx, _ctx, entry) =>
+    inverse(updateExpense, {
+      expenseId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      changes: pick<UpdateExpense>(entry.before, EXPENSE_FIELDS),
+    }),
+  'expense.delete': (_tx, _ctx, entry) =>
+    inverse(restoreExpense, {
+      expenseId: entry.entityId,
       subEventId: (fields(entry.before).subEventId as string | null | undefined) ?? null,
     }),
 };
