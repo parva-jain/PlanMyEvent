@@ -18,6 +18,7 @@ API, worker, database and the shared packages behind them.
 - [24 Events, versions and retries](backend/24-events-versions-retries.md)
 - [26 Members, roles and permissions](backend/26-members-roles-permissions.md)
 - [28 Fixing what the reviews found](backend/28-review-fixes.md)
+- [29 The activity log and undo](backend/29-activity-log-undo.md)
 
 ## Frontend
 
