@@ -8,6 +8,7 @@ export * from './live.js';
 export * from './outbox.js';
 export * from './permissions.js';
 export * from './problem.js';
+export * from './tasks.js';
 export * from './team.js';
 export * from './templates.js';
 export * from './time.js';

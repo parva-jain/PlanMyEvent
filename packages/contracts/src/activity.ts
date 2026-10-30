@@ -14,6 +14,7 @@ export const ACTIVITY_ENTITY_TYPES = [
   'role',
   'member',
   'member_invite',
+  'task',
 ] as const;
 export const ActivityEntityTypeSchema = z.enum(ACTIVITY_ENTITY_TYPES);
 export type ActivityEntityType = z.infer<typeof ActivityEntityTypeSchema>;
