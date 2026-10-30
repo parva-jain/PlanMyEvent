@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Mail } from 'lucide-react';
 import { AnimatePresence, m } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { CheckDraw } from '@/components/motion/check-draw';
 import { useShouldReduceMotion } from '@/components/motion/motion-provider';
@@ -55,6 +55,9 @@ export function SignInFlow() {
   const [busy, setBusy] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
   const [resendIn, setResendIn] = useState(0);
+  // `busy` only disables the button after a re-render; a second Enter can land before that,
+  // and a second code would replace the first. The ref blocks it at once.
+  const sending = useRef(false);
 
   useRedirectSignedIn(!succeeded);
 
@@ -65,11 +68,14 @@ export function SignInFlow() {
   }, [resendIn]);
 
   async function sendCode() {
+    if (sending.current) return false;
+    sending.current = true;
     setBusy(true);
     setError(null);
     const { error: sendError } = await callAuth(() =>
       authClient.emailOtp.sendVerificationOtp({ email, type: 'sign-in' }),
     );
+    sending.current = false;
     setBusy(false);
     if (sendError) {
       setError(authErrorKey(sendError));
