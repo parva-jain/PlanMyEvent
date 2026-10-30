@@ -4,21 +4,17 @@ Last updated: Oct 30, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Fixes from the milestone 1–4 reviews**, branch `fix/m1-m4-review`, before milestone 5. Milestones 1–4 are merged to `main` (PRs #1 and #2 squashed, #3 and #4 rebase-merged).
+**Milestone 5 — activity log, undo and live updates**, branch `feat/m5-activity-live`. Milestones 1–4 and the review fixes are merged to `main` (PRs #1 and #2 squashed, #3–#5 rebase-merged).
 
-The automated reviews in `~/Desktop/PlanMyEvent-reviews/` had no blockers and 7 major findings, all still real on `main`. Each fix has a test that failed first:
+| Step | What | Status |
+| --- | --- | --- |
+| 5a | Backend: `activity_log` (migration 0004) written by every action in its transaction, changed fields only; `GET E/activity` with cursor pages, filters, entity names and undo state; `POST E/activity/{entryId}/undo` for event, module, venue and sub-event changes | Done |
+| 5b | Live updates: socket sign-in and rooms (`event:join`, user room), the Redis adapter, `entity.changed`, `permissions.changed` and `member.removed` written to the outbox and sent by the worker | Next |
+| 5c | Web: Activity page with undo, the undo bar after deletes, live refresh of what's on screen with `LiveHighlight`, the 30 s polling fallback | Planned |
 
-| Review | Fix |
-| --- | --- |
-| M4 #1 | Editing or deleting a role needs every permission it holds (a `roles.manage`-only role could strip Admin). The role editor shows such roles read-only |
-| M1 #2 | Sentry events and transactions go through `redactUrl`; cookie and authorization headers are dropped |
-| M2 #1 | `PATCH /v1/me` with nothing to change is a 422, not a 500 |
-| M2 #2 | A second Enter on the email step no longer sends a second code |
-| M3 #1 | A double click on Create makes one event; 409 `request_in_progress` is retried |
-| M1 #3 | Closing a sheet or side panel returns focus to the button that opened it |
-| M1 #1 | `runAction` refuses event actions without `ctx.eventId` and changes without an activity entry (`outsideEvent`, `noActivity` opt-outs). Not done: a version step in the runner; stores already check versions in the update itself |
+### Review fixes (done)
 
-The milestone 4 QA spec is in `apps/web/e2e/qa-m4.spec.ts` (11 tests, desktop and phone). Minor findings are below under Follow-ups. Already fixed or not real: If-Match and ETag (M1 #7, built in milestone 3), Welcome being skipped (M2 #3, the session gate sends a nameless account to Welcome), `updated_at` never refreshing (M3 #4, `timestamps()` has `$onUpdate`).
+The 7 major findings from the milestone 1–4 reviews, each with a test that failed first; the milestone 4 QA spec in `apps/web/e2e/qa-m4.spec.ts`. Merged as rebase of PR #5 (`9545c75`). Minor findings are under Follow-ups.
 
 ### Milestone 4 (done)
 
@@ -203,11 +199,17 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Google button shows only with `NEXT_PUBLIC_GOOGLE_SIGN_IN=true` | The API enables Google only when its credentials are set | `apps/web/.env.example` |
 | Code entry is one real input under six boxes (`autocomplete="one-time-code"`), no on-screen keypad; no "end-to-end encrypted" badges | Paste and SMS autofill work; the phone keyboard is better than a keypad; the badge claim isn't true | `src/components/auth/code-input.tsx` |
 | Playwright starts the API (port 4100) and worker from their builds; CI's e2e job gets Postgres, Redis and Mailpit services | Sign-in can only be tested end to end with the real stack | `apps/web/playwright.config.ts`, `.github/workflows/ci.yml` |
+| Activity entries store `<entityType>.<verb>` (`sub_event.update`); updates keep only changed fields, creates and deletes the whole row, list snapshots (modules) whole | DatabaseDesign "Changed fields only"; one naming rule for every module | `packages/core/src/action.ts` (`changedOnly`) |
+| The actor's name is stored as `actor_label` when the entry is written; entity names in the feed come from the snapshot, else the row (deleted rows keep their names) | No schema column for the entity name; the log reads right after renames and deletes | `packages/db/src/queries/activity.ts` |
+| Undo runs the reversing action (update with the old values, delete, or a new restore) with its own permission check, sub-event scope included, and version check; the author or `event.settings` may undo | SystemDesign 5.8 "undo is a normal action"; a scoped Editor can't undo outside their scope | `packages/core/src/activity/undo.ts` |
+| Undoable now: event details, modules, venues, sub-events. Not undoable: event create, team changes (roles, members, invites), and undo entries themselves | Reversing team changes touches other people's access; redo isn't designed | Same file |
+| Undo errors use existing codes: changed since → 409 `version_conflict` with `current`; already undone or not undoable → 409 `conflict` with `reason` | No new codes in APIDesign's list | Same file |
+| Feed cursors name the last entry; the next page compares `(created_at, id)` in SQL | A JS Date would round Postgres's microseconds and skip or repeat rows | `packages/db/src/queries/activity.ts` |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
 
 ## Open questions
 
-None right now.
+- `activity_log` has a unique index on `id` that DatabaseDesign doesn't list: undo and "undone by" look an entry up by id, and the primary key starts with `created_at`. Add it to DatabaseDesign's index line?
 
 ## Follow-ups
 
@@ -243,6 +245,9 @@ None right now.
   - `safeReturnTo` accepts `/` followed by a tab, CR or LF, which browsers may turn into `//host`; parse with `new URL(value, origin)` and require the same origin (M4 #4).
   - Opening a used-up email invite again as the member who used it shows "expired" instead of "you're already in" (M4 #5).
   - A double tap on Leave can write two `leave` activity rows if both pass the member check; stop when `members.remove` returns false (M4 #6).
+- Undo of a venue delete brings the venue back but doesn't re-attach the sub-events it was cleared from (that clearing writes no entries of its own).
+- Undo for team changes (role edits, removing a member, revoking an invite) and redo of an undo.
+- The activity feed's entity filter takes any string; restrict to `ACTIVITY_ENTITY_TYPES` once every module records its type.
 - Logo SVG/PNG files and app icons still use the warm ink #1F1B16 and warm white #FAF8F5 (BRAND.md note); regenerate in a brand pass.
 
 ## Known warnings (harmless)
@@ -254,4 +259,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [28 Fixing what the reviews found](learning/backend/28-review-fixes.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [29 The activity log and undo](learning/backend/29-activity-log-undo.md).
