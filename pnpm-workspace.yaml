@@ -14,3 +14,7 @@ allowBuilds:
   # Optional native msgpack accelerator for BullMQ; the pure-JS fallback is fine.
   msgpackr-extract: false
   unrs-resolver: false # same: prebuilt napi binaries, fallback build script
+
+overrides:
+  # @nestjs/platform-socket.io pins 4.8.3; one copy keeps the server and our types the same.
+  socket.io: 4.8.4
