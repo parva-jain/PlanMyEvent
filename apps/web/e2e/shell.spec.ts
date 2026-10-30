@@ -10,6 +10,7 @@ const app = (
       nav: Record<string, string>;
       status: Record<string, string>;
       quickAdd: Record<string, string>;
+      switcher: Record<string, string>;
       sections: Record<string, { headline: string }>;
     };
   }
@@ -225,6 +226,34 @@ async function sheetTransformAtStart(page: Page) {
     return getComputedStyle(document.querySelector('[data-slot="sheet"]')!).transform;
   }, app.quickAdd.title!);
 }
+
+test.describe('sheet focus', () => {
+  test.beforeEach(async ({ page }) => {
+    test.skip(!isPhone(), 'Sheets are the phone and tablet pattern');
+    await mockReadiness(page, 'ok');
+    await page.goto(HOME);
+  });
+
+  test('Escape closes the event switcher and focus returns to its button', async ({ page }) => {
+    const trigger = visible(page, 'event-switcher');
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog', { name: app.switcher.title! })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+
+  test('Escape closes quick add and focus returns to its button', async ({ page }) => {
+    const trigger = page.getByRole('button', { name: app.quickAdd.title! });
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog', { name: app.quickAdd.title! })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+});
 
 test.describe('sheet motion', () => {
   test.beforeEach(async ({ page }) => {

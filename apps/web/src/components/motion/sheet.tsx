@@ -8,6 +8,7 @@ import { duration, ease, spring } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 import { useShouldReduceMotion } from './motion-provider';
+import { useReturnFocus } from './use-return-focus';
 
 /** Dismiss when dragged down past this share of the sheet's height… */
 const DISMISS_DISTANCE = 0.3;
@@ -30,6 +31,7 @@ interface SheetProps {
  */
 export function Sheet({ open, onOpenChange, title, children, className }: SheetProps) {
   const reduced = useShouldReduceMotion();
+  const returnFocus = useReturnFocus(open);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
@@ -56,7 +58,12 @@ export function Sheet({ open, onOpenChange, title, children, className }: SheetP
                 transition={{ duration: reduced ? duration.fast : duration.base, ease: ease.out }}
               />
             </Dialog.Overlay>
-            <Dialog.Content asChild forceMount aria-describedby={undefined}>
+            <Dialog.Content
+              asChild
+              forceMount
+              onCloseAutoFocus={returnFocus}
+              aria-describedby={undefined}
+            >
               <m.div
                 ref={sheetRef}
                 data-slot="sheet"

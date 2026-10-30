@@ -121,6 +121,19 @@ test.describe('schedule', () => {
     await expect(rows).toHaveCount(5);
   });
 
+  test('Escape closes the add panel and focus returns to Add', async ({ page }) => {
+    const api = await signUp(page);
+    const event = await weddingVia(api);
+    await page.goto(`/events/${event.id}/schedule`);
+    const add = page.getByRole('button', { name: text('schedule.add') });
+    await add.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog', { name: text('schedule.newTitle') })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(add).toBeFocused();
+  });
+
   test('quick add opens a new sub-event', async ({ page }) => {
     const api = await signUp(page);
     const event = await weddingVia(api);
