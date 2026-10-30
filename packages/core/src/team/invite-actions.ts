@@ -182,7 +182,14 @@ export const acceptMemberInvite: ActionDefinition<
     return {
       result: { eventId, joined: true },
       activity: [
-        { action: 'join', entityType: 'member', entityId: member.id, before: null, after },
+        {
+          action: 'join',
+          entityType: 'member',
+          entityId: member.id,
+          eventId,
+          before: null,
+          after,
+        },
       ],
     };
   },

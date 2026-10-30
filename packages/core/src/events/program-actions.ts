@@ -168,3 +168,42 @@ export const deleteSubEvent: ActionDefinition<
     };
   },
 };
+
+// ---- Restores (undo of a delete) ------------------------------------------------------------
+
+/** Brings back a soft-deleted venue. Sub-events it was cleared from stay without one. */
+export const restoreVenue: ActionDefinition<{ venueId: string }, Venue, CoreTx> = {
+  name: 'venues.restore',
+  permission: 'subevents.edit',
+  async execute(tx, ctx, { venueId }) {
+    const after = await tx.venues.restore(ctx.eventId!, venueId);
+    if (!after) throw new ActionError('not_found', 'Venue not found');
+    return {
+      result: after,
+      activity: [
+        { action: 'restore', entityType: 'venue', entityId: venueId, before: null, after },
+      ],
+    };
+  },
+};
+
+/** Brings back a soft-deleted sub-event; its venue is cleared if that was deleted meanwhile. */
+export const restoreSubEvent: ActionDefinition<{ subEventId: string }, SubEvent, CoreTx> = {
+  name: 'subEvents.restore',
+  permission: 'subevents.edit',
+  subEventOf: (_tx, _ctx, input) => input.subEventId,
+  async execute(tx, ctx, { subEventId }) {
+    const eventId = ctx.eventId!;
+    let after = await tx.subEvents.restore(eventId, subEventId);
+    if (!after) throw new ActionError('not_found', 'Sub-event not found');
+    if (after.venueId && !(await tx.venues.find(eventId, after.venueId))) {
+      after = (await tx.subEvents.update(eventId, subEventId, after.version, { venueId: null }))!;
+    }
+    return {
+      result: after,
+      activity: [
+        { action: 'restore', entityType: 'sub_event', entityId: subEventId, before: null, after },
+      ],
+    };
+  },
+};

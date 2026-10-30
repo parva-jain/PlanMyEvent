@@ -1,4 +1,5 @@
 import type {
+  Channel,
   EffectivePermissions,
   Event,
   EventModule,
@@ -85,6 +86,8 @@ export interface VenueStore {
   update(eventId: string, venueId: string, changes: UpdateVenue): Promise<Venue | null>;
   /** Soft-deletes the venue and clears it from sub-events (bumping their versions). */
   softDelete(eventId: string, venueId: string): Promise<boolean>;
+  /** Undoes a soft delete; null when the venue isn't deleted. */
+  restore(eventId: string, venueId: string): Promise<Venue | null>;
 }
 
 export interface NewSubEvent {
@@ -110,6 +113,8 @@ export interface SubEventStore {
     changes: UpdateSubEvent,
   ): Promise<SubEvent | null>;
   softDelete(eventId: string, subEventId: string, expectedVersion: number): Promise<boolean>;
+  /** Undoes a soft delete (bumping the version); null when the sub-event isn't deleted. */
+  restore(eventId: string, subEventId: string): Promise<SubEvent | null>;
 }
 
 export interface NewRole {
@@ -207,6 +212,35 @@ export interface MemberInviteStore {
 }
 
 /** The transaction handle every action receives. */
+/** An activity_log row as stored. */
+export interface StoredActivity {
+  id: string;
+  createdAt: string;
+  eventId: string;
+  actorUserId: string | null;
+  actorLabel: string;
+  channel: Channel;
+  /** `<entityType>.<verb>`. */
+  action: string;
+  entityType: string;
+  entityId: string;
+  before: unknown;
+  after: unknown;
+  requestId: string | null;
+  undoOfId: string | null;
+  undoneAt: string | null;
+}
+
+export type NewActivity = Omit<StoredActivity, 'id' | 'createdAt' | 'undoneAt'>;
+
+export interface ActivityStore {
+  insert(rows: NewActivity[]): Promise<StoredActivity[]>;
+  /** The entry, locked (select … for update) so two undos of it can't both run. */
+  lockForUndo(eventId: string, entryId: string): Promise<StoredActivity | null>;
+  /** Sets undone_at; false if it was already set. */
+  markUndone(eventId: string, entryId: string): Promise<boolean>;
+}
+
 export interface CoreTx {
   users: UserStore;
   workspaces: WorkspaceStore;
@@ -217,4 +251,5 @@ export interface CoreTx {
   members: MemberStore;
   access: AccessStore;
   memberInvites: MemberInviteStore;
+  activity: ActivityStore;
 }

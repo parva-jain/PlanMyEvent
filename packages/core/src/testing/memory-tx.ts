@@ -12,7 +12,7 @@ import {
 
 import type { ActionRuntime, OutboxMessage } from '../action.js';
 import { ActionError } from '../errors.js';
-import type { CoreTx, LockedMemberInvite, PersonalWorkspace } from '../ports.js';
+import type { CoreTx, LockedMemberInvite, PersonalWorkspace, StoredActivity } from '../ports.js';
 import { resolvePermissions } from '../team/access.js';
 
 interface MemoryMember {
@@ -47,6 +47,7 @@ export function memoryRuntime() {
   const rolesVersion = new Map<string, number>();
   const owners = new Map<string, string>();
   const outbox: OutboxMessage[] = [];
+  const activity: StoredActivity[] = [];
   const takenSlugs = new Set<string>();
 
   const memberCount = (roleId: string) =>
@@ -106,7 +107,7 @@ export function memoryRuntime() {
   };
 
   // Team stores are attached below, once the helpers they share are defined.
-  const base: Omit<CoreTx, 'roles' | 'members' | 'access' | 'memberInvites'> = {
+  const base: Omit<CoreTx, 'roles' | 'members' | 'access' | 'memberInvites' | 'activity'> = {
     users: {
       updateProfile: (userId, changes) => {
         const profile = profiles.get(userId);
@@ -198,6 +199,12 @@ export function memoryRuntime() {
         }
         return Promise.resolve(true);
       },
+      restore: (eventId, id) => {
+        const venue = venues.get(id);
+        if (!venue || venue.eventId !== eventId || !venue.deleted) return Promise.resolve(null);
+        venue.deleted = false;
+        return Promise.resolve(strip({ ...venue }));
+      },
     },
     subEvents: {
       insert: (eventId, list) => {
@@ -235,12 +242,43 @@ export function memoryRuntime() {
       softDelete: (eventId, id, expected) => {
         const subEvent = liveIn(subEvents, eventId, id);
         if (!subEvent || subEvent.version !== expected) return Promise.resolve(false);
-        subEvent.deleted = true;
+        Object.assign(subEvent, { deleted: true, version: subEvent.version + 1 });
         return Promise.resolve(true);
+      },
+      restore: (eventId, id) => {
+        const subEvent = subEvents.get(id);
+        if (!subEvent || subEvent.eventId !== eventId || !subEvent.deleted) {
+          return Promise.resolve(null);
+        }
+        Object.assign(subEvent, { deleted: false, version: subEvent.version + 1 });
+        return Promise.resolve(strip({ ...subEvent }));
       },
     },
   };
   const tx = base as CoreTx;
+
+  tx.activity = {
+    insert: (rows) => {
+      const stored = rows.map((row) => ({
+        ...row,
+        id: nextId(),
+        createdAt: new Date(Date.now() + activity.length).toISOString(),
+        undoneAt: null,
+      }));
+      activity.push(...stored);
+      return Promise.resolve(stored.map((row) => ({ ...row })));
+    },
+    lockForUndo: (eventId, id) => {
+      const row = activity.find((item) => item.id === id && item.eventId === eventId);
+      return Promise.resolve(row ? { ...row } : null);
+    },
+    markUndone: (eventId, id) => {
+      const row = activity.find((item) => item.id === id && item.eventId === eventId);
+      if (!row || row.undoneAt) return Promise.resolve(false);
+      row.undoneAt = new Date().toISOString();
+      return Promise.resolve(true);
+    },
+  };
 
   tx.roles = {
     insert: (eventId, list) => {
@@ -446,7 +484,25 @@ export function memoryRuntime() {
         throw new ActionError('forbidden', `You need ${permission}`, { permission });
       }
     },
-    recordActivity: () => Promise.resolve(),
+    // Mirrors packages/db: `<entityType>.<verb>`, the actor's name as the label.
+    recordActivity: async (_tx, ctx, entries) => {
+      const userId = ctx.actor.kind === 'user' ? ctx.actor.userId : null;
+      await tx.activity.insert(
+        entries.map((entry) => ({
+          eventId: entry.eventId ?? ctx.eventId!,
+          actorUserId: userId,
+          actorLabel: (userId && profiles.get(userId)?.name) || 'Someone',
+          channel: ctx.channel,
+          action: `${entry.entityType}.${entry.action}`,
+          entityType: entry.entityType,
+          entityId: entry.entityId,
+          before: entry.before,
+          after: entry.after,
+          requestId: ctx.requestId,
+          undoOfId: entry.undoOfId ?? null,
+        })),
+      );
+    },
     writeOutbox: (_tx, _ctx, messages) => {
       outbox.push(...messages);
       return Promise.resolve();
@@ -468,6 +524,7 @@ export function memoryRuntime() {
     subEvents,
     modules,
     outbox,
+    activity,
     takenSlugs,
   };
 }
