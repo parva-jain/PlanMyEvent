@@ -51,6 +51,31 @@ test.describe('create an event', () => {
     await expect(page.getByTestId('event-card')).toHaveCount(1);
     await expect(page.getByTestId('event-card')).toContainText('Verma Wedding');
   });
+
+  test('a double click on Create makes one event and reaches the done screen', async ({ page }) => {
+    await signUp(page);
+    let posts = 0;
+    // A slow API leaves time for the second click to land while the first is in flight.
+    await page.route(`${API_URL}/v1/events`, async (route) => {
+      if (route.request().method() === 'POST') {
+        posts++;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+      await route.continue();
+    });
+    await page.goto('/events/new');
+    await page.getByTestId('template-wedding').click();
+    const next = page.getByRole('button', { name: text('wizard.continue') });
+    await next.click();
+    await page.getByLabel(text('wizard.details.name')).fill('Double Wedding 🎉');
+    await page.getByLabel(text('wizard.details.startsOn')).fill('2026-12-10');
+    await next.click();
+    await page.getByRole('button', { name: text('wizard.create') }).dblclick();
+    await expect(page.getByRole('heading', { name: text('wizard.done.title') })).toBeVisible();
+    expect(posts).toBe(1);
+    await page.goto('/app');
+    await expect(page.getByTestId('event-card')).toHaveCount(1);
+  });
 });
 
 test.describe('schedule', () => {
