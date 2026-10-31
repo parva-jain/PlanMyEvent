@@ -48,6 +48,7 @@ The web app: foundation, motion, UI components and the home page.
 - [34 Tasks in the web app](frontend/34-tasks-web.md)
 - [35 Budget in the web app](frontend/35-budget-web.md)
 - [36 Subtasks in the list and adding expenses quickly](frontend/36-subtasks-inline-and-quick-expense.md)
+- [42 People in the web app](frontend/42-people-web.md)
 
 ## Infra
 
