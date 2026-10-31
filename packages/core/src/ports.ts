@@ -448,6 +448,11 @@ export interface InvitationStore {
     invitationId: string,
     attendance: { subEventId: string | null; status: AttendanceSummary['status'] }[],
   ): Promise<Invitation | null | 'already_invited'>;
+  /**
+   * Notes the guest opened their link, at most once an hour; no version bump, since nothing
+   * an organizer edits changed.
+   */
+  markOpened(eventId: string, invitationId: string, at: Date): Promise<void>;
   /** A new token (token_version + 1): the old link stops working. */
   regenerate(
     eventId: string,
@@ -463,6 +468,12 @@ export interface AttendanceStore {
     attendanceId: string,
     expectedVersion: number,
     changes: { status?: Attendance['status']; partySize?: number },
+  ): Promise<Attendance | null>;
+  /** A guest's own answer: last one wins, so no version guard. */
+  respond(
+    eventId: string,
+    attendanceId: string,
+    answer: { status: 'confirmed' | 'declined'; partySize: number; respondedAt: Date },
   ): Promise<Attendance | null>;
 }
 

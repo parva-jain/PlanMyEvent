@@ -61,6 +61,7 @@ export {
   updateInvitation,
   updateInvitations,
 } from './guests/invitation-actions.js';
+export { recordInvitationOpened, respondToInvitation } from './guests/rsvp-actions.js';
 export { EVENT_TEMPLATES } from './events/templates.js';
 export { ActionError } from './errors.js';
 export {
