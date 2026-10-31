@@ -14,8 +14,8 @@ Last updated: Oct 31, 2026 · Updated at the end of every working step.
 | 7c.1 | Guest scope switch (`POST E/guest-scope` job, DatabaseDesign "Switching guest scope") and the event's response mode in Settings | |
 | 7d | Public invite and RSVP: `GET /v1/public/invites/{token}` (the event, the guest's name, their scopes with times, venues and answers; never other guests or headcounts; opening noted at most hourly) and `POST …/rsvp` (Idempotency-Key scoped to the link, last answer wins, only invite + RSVP scopes on the invitation); 404 for an unknown or regenerated link, 410 `link_revoked` for a withdrawn one; rate limits per IP and per link (reads fail open, RSVPs fail closed); answers logged as "Sharma family (link)" on channel `public_link` and pushed live to organizers | Done |
 | 7e | People web: Guests (households or everyone, search, tag, invitation and distributor filters, bulk invite and distributor), guest panel (household with members and primary contact, expected-count stepper, single person, invitation card with delivery, distributor, share, new link, withdraw with undo, replies an organizer can correct), Invitations (delivered or sent bar, by distributor with progress rings, mark delivered then move, send on WhatsApp one by one), Responses (headcounts, per sub-event), CSV import in four steps with live progress, "Cards to deliver" for distributors linked from the event home; guest entries named in Activity | Done |
-| 7f | Invite page web: the guest's invitation and RSVP on a phone, with MOTION.md's guest-page motion | Next |
-| 7g | Review the milestone, then open the PR for merge | |
+| 7f | Invite page web: `/i/{token}` with no account; cover in the event accent, greeting, the guest's own schedule in the event's time zone with maps, yes or no and how many per scope (invite-only parts listed), a new Idempotency-Key per reply, confirmation with drawn check and confetti once per invitation, change reply, calendar file built in the browser; withdrawn, unknown and busy links explained; no referrer and noindex so the token stays private. `Button asChild` now renders its icon (ten links had lost theirs) | Done |
+| 7g | Review the milestone, then open the PR for merge | Next |
 
 Contacts and households need whole-event `guests.view` and `guests.edit`; members scoped to sub-events see guests through invitations once 7c lands.
 
@@ -312,6 +312,7 @@ None right now.
 - Invitation share messages are English only; Hindi with the rest of the app's languages.
 - Bulk invitations above 200 as a job (APIDesign); the web sends batches of 200 meanwhile.
 - `POST E/attendance` for walk-ins and manual registrations comes with open registration (milestone 8).
+- Invite page: the e2e reply flow runs against stubbed public endpoints until 7c.1 lets a test set a response mode; the API tests cover the real ones. Stitch's "note for the hosts" isn't in the RSVP contract, and the page has no host contact or accommodation section.
 - People web: the guest list joins households, contacts and invitations in the browser (fine up to the 5,000-guest limit; a server-side joined list if it gets slow). Bulk tag and bulk delete aren't built; tags are edited per person.
 - Distributors without `guests.view` reach their cards from the event home, not the nav; the nav could show People when someone has cards.
 - The People list's first load doesn't stagger rows (RevealGroup) like MOTION.md 6.15 says; filters and changes reflow with ListPresence.
@@ -348,4 +349,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [42 People in the web app](learning/frontend/42-people-web.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [43 The guest's invitation page](learning/frontend/43-invite-page-web.md).
