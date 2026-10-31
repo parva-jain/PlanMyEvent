@@ -1,5 +1,9 @@
 import type {
+  AttendanceSummary,
   EventModule,
+  Invitation,
+  UpdateAttendance,
+  UpdateInvitation,
   UpdateBudgetCategory,
   UpdateContact,
   UpdateHousehold,
@@ -30,6 +34,12 @@ import {
   updateContact,
   updateHousehold,
 } from '../guests/guest-actions.js';
+import {
+  deleteInvitation,
+  restoreInvitation,
+  updateAttendance,
+  updateInvitation,
+} from '../guests/invitation-actions.js';
 import {
   deleteSubEvent,
   deleteVenue,
@@ -116,6 +126,15 @@ const CONTACT_FIELDS = [
   'tags',
   'notes',
 ] as const satisfies readonly (keyof UpdateContact)[];
+const INVITATION_FIELDS = [
+  'deliveryStatus',
+  'distributorMemberId',
+  'subEventIds',
+] as const satisfies readonly (keyof UpdateInvitation)[];
+const ATTENDANCE_FIELDS = [
+  'status',
+  'partySize',
+] as const satisfies readonly (keyof UpdateAttendance)[];
 
 type Fields = Record<string, unknown>;
 const fields = (value: unknown): Fields => (value ?? {}) as Fields;
@@ -280,6 +299,31 @@ const PLANNERS: Record<string, Planner> = {
       changes: pick<UpdateContact>(entry.before, CONTACT_FIELDS),
     }),
   'contact.delete': (_tx, _ctx, entry) => inverse(restoreContact, { contactId: entry.entityId }),
+  'invitation.create': (_tx, _ctx, entry) =>
+    inverse(deleteInvitation, {
+      invitationId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+    }),
+  'invitation.update': (_tx, _ctx, entry) =>
+    inverse(updateInvitation, {
+      invitationId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      changes: pick<UpdateInvitation>(entry.before, INVITATION_FIELDS),
+    }),
+  'invitation.delete': (_tx, _ctx, entry) =>
+    inverse(restoreInvitation, {
+      invitationId: entry.entityId,
+      // The answers it had, so undo brings them back rather than starting over.
+      attendance: ((fields(entry.before).attendance as Invitation['attendance'] | undefined) ?? [])
+        .filter((row: AttendanceSummary) => row.status !== 'cancelled')
+        .map(({ subEventId, status }: AttendanceSummary) => ({ subEventId, status })),
+    }),
+  'attendance.update': (_tx, _ctx, entry) =>
+    inverse(updateAttendance, {
+      attendanceId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      changes: pick<UpdateAttendance>(entry.before, ATTENDANCE_FIELDS),
+    }),
 };
 
 /** Whether the log can reverse this kind of entry at all (the feed's canUndo uses it). */
