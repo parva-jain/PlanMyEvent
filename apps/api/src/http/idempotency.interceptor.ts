@@ -36,7 +36,8 @@ export const RequireIdempotencyKey = () => SetMetadata(REQUIRED, true);
  * Idempotency-Key on POST (APIDesign "Idempotency-Key", CLAUDE.md rule 7): the first request
  * runs and its response is stored; a retry with the same key and body gets that response
  * again, a different body gets 422, and a retry while the first still runs gets 409.
- * Keys are scoped per user. Failed requests release their key so the retry runs for real.
+ * Keys are scoped per user, or per link on a guest's public route. Failed requests release
+ * their key so the retry runs for real.
  */
 @Injectable()
 export class IdempotencyInterceptor implements NestInterceptor {
@@ -57,13 +58,19 @@ export class IdempotencyInterceptor implements NestInterceptor {
     ) {
       throw new ActionError('bad_request', 'Send an Idempotency-Key with this request');
     }
-    if (req.method !== 'POST' || typeof key !== 'string' || !req.user) {
+    // Members' keys are theirs; a guest's are their link's (the token, hashed).
+    const token = req.params.token;
+    const scope = req.user
+      ? `user:${req.user.id}`
+      : typeof token === 'string'
+        ? `invite:${createHash('sha256').update(token).digest('hex')}`
+        : null;
+    if (req.method !== 'POST' || typeof key !== 'string' || !scope) {
       return next.handle();
     }
     if (!KEY_PATTERN.test(key)) {
       throw new ActionError('bad_request', 'Idempotency-Key must be 8-128 letters, digits, - or _');
     }
-    const scope = `user:${req.user.id}`;
     // Nest sets the status after interceptors run, so take it from the route: @HttpCode or 201.
     const status = this.reflector.get<number>(HTTP_CODE_METADATA, context.getHandler()) ?? 201;
     const hash = createHash('sha256')

@@ -1,0 +1,3 @@
+export const PUBLIC_QUERIES = Symbol('PUBLIC_QUERIES');
+export const PUBLIC_READ_LIMITER = Symbol('PUBLIC_READ_LIMITER');
+export const PUBLIC_WRITE_LIMITER = Symbol('PUBLIC_WRITE_LIMITER');

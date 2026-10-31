@@ -19,6 +19,7 @@ import { LifecycleModule } from './lifecycle/lifecycle.module';
 import { LiveModule } from './live/live.module';
 import { LoggingModule } from './logging/logging.module';
 import { MeModule } from './me/me.module';
+import { PublicModule } from './public/public.module';
 import { RedisModule } from './redis/redis.module';
 import { TasksModule } from './tasks/tasks.module';
 import { TeamModule } from './team/team.module';
@@ -41,6 +42,7 @@ import { TeamModule } from './team/team.module';
     BudgetModule,
     GuestsModule,
     JobsModule,
+    PublicModule,
     LiveModule,
   ],
   providers: [
