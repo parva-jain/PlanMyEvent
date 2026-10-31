@@ -15,10 +15,7 @@ import { cn } from '@/lib/utils';
 import { useCurrentEvent } from './current-event';
 import { eventHref } from './nav';
 
-/**
- * Sessions, tasks and expenses open their form straight away; guests open their section
- * until its create form exists (milestone 7).
- */
+/** Each opens its section with its create form already open. */
 const ACTIONS = [
   {
     key: 'session',
@@ -35,7 +32,7 @@ const ACTIONS = [
     icon: ReceiptIndianRupee,
     permission: 'budget.edit',
   },
-  { key: 'guest', section: 'people', query: '', icon: UserPlus, permission: 'guests.edit' },
+  { key: 'guest', section: 'people', query: '?add=1', icon: UserPlus, permission: 'guests.edit' },
 ] as const;
 
 /** The quick-add actions I can use; adding is event-wide, so whole-event grants only. */
