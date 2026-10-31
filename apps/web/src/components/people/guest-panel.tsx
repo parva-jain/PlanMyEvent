@@ -17,12 +17,11 @@ import {
   Trash2,
   UserRoundPlus,
 } from 'lucide-react';
-import { AnimatePresence, m } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState, type FormEvent } from 'react';
 
 import { ListItem, ListPresence } from '@/components/motion/list-presence';
-import { useShouldReduceMotion } from '@/components/motion/motion-provider';
+import { RollingNumber } from '@/components/motion/rolling-number';
 import { useCurrentEvent } from '@/components/shell/current-event';
 import { useOfferUndo } from '@/components/shell/use-offer-undo';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +31,6 @@ import { Select, Textarea } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApiError } from '@/lib/api';
 import { highlight } from '@/lib/live-highlights';
-import { distance, duration } from '@/lib/motion';
 import { useDeleteGuest, useSaveContact, useSaveHousehold } from '@/lib/people';
 
 import { InvitationCard } from './invitation-card';
@@ -168,10 +166,7 @@ function ExpectedStepper({
   disabled?: boolean;
 }) {
   const t = useTranslations('people.panel');
-  const reduced = useShouldReduceMotion();
-  const [direction, setDirection] = useState(1);
   const step = (by: number) => {
-    setDirection(by);
     onChange(Math.min(MAX_EXPECTED, Math.max(1, value + by)));
   };
   return (
@@ -190,23 +185,7 @@ function ExpectedStepper({
         >
           <Minus aria-hidden />
         </Button>
-        <span
-          aria-live="polite"
-          data-testid="expected-count"
-          className="relative flex h-10 w-10 items-center justify-center overflow-hidden text-h3 tabular-nums"
-        >
-          <AnimatePresence initial={false} mode="popLayout">
-            <m.span
-              key={value}
-              initial={{ y: reduced ? 0 : direction * distance.rise, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: reduced ? 0 : -direction * distance.rise, opacity: 0 }}
-              transition={{ duration: duration.fast }}
-            >
-              {value}
-            </m.span>
-          </AnimatePresence>
-        </span>
+        <RollingNumber value={value} testId="expected-count" className="h-10 w-10 text-h3" />
         <Button
           type="button"
           size="icon"

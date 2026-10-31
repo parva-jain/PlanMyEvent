@@ -134,6 +134,22 @@ export function refreshPeople(queryClient: QueryClient, eventId: string) {
   }
 }
 
+/** Puts a saved row into a cached list at once (added or replaced); the refetch follows. */
+function upsert<T extends { id: string }>(
+  queryClient: QueryClient,
+  key: readonly unknown[],
+  row: T,
+) {
+  queryClient.setQueryData<T[]>(
+    key,
+    (rows) =>
+      rows &&
+      (rows.some((item) => item.id === row.id)
+        ? rows.map((item) => (item.id === row.id ? row : item))
+        : [...rows, row]),
+  );
+}
+
 export function useSaveHousehold(eventId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -147,6 +163,7 @@ export function useSaveHousehold(eventId: string) {
             body: input.changes,
             headers: ifMatch(input.household.version),
           }),
+    onSuccess: (household) => upsert(queryClient, peopleKeys.households(eventId), household),
     onSettled: () => refreshPeople(queryClient, eventId),
   });
 }
@@ -164,6 +181,7 @@ export function useSaveContact(eventId: string) {
             body: input.changes,
             headers: ifMatch(input.contact.version),
           }),
+    onSuccess: (contact) => upsert(queryClient, peopleKeys.contacts(eventId), contact),
     onSettled: () => refreshPeople(queryClient, eventId),
   });
 }
@@ -196,6 +214,7 @@ export function useCreateInvitation(eventId: string) {
   return useMutation({
     mutationFn: (input: CreateInvitation) =>
       apiFetch<Invitation>(`${E(eventId)}/invitations`, { method: 'POST', body: input }),
+    onSuccess: (invitation) => upsert(queryClient, peopleKeys.invitations(eventId), invitation),
     onSettled: () => refreshPeople(queryClient, eventId),
   });
 }
