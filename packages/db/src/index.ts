@@ -19,6 +19,7 @@ export { hashLinkToken, invitationToken } from './invitation-links.js';
 export { activityQueries, type ActivityQueries, type ActivityViewer } from './queries/activity.js';
 export { budgetQueries, type BudgetQueries, type BudgetVisibility } from './queries/budget.js';
 export { eventQueries, type EventQueries } from './queries/events.js';
+export { publicQueries, type InviteLookup, type PublicQueries } from './queries/public.js';
 export { guestQueries, type GuestQueries } from './queries/guests.js';
 export {
   invitationQueries,
