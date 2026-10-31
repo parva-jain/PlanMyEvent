@@ -22,8 +22,9 @@ export const ACTION_RUNTIME = Symbol('ACTION_RUNTIME');
     { provide: DB, inject: [PG_POOL], useFactory: createDb },
     {
       provide: ACTION_RUNTIME,
-      inject: [DB],
-      useFactory: (db: Database) => createActionRuntime(db),
+      inject: [DB, API_ENV],
+      useFactory: (db: Database, env: ApiEnv) =>
+        createActionRuntime(db, { invitationLinkKey: env.INVITATION_LINK_KEY }),
     },
   ],
   exports: [PG_POOL, DB, ACTION_RUNTIME],

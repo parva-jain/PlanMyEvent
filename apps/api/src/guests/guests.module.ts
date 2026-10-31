@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { guestQueries, type Database } from '@pme/db';
+import { guestQueries, invitationQueries, type Database } from '@pme/db';
 import type { Redis } from 'ioredis';
 
 import { DB } from '../database/database.module';
@@ -8,13 +8,19 @@ import { EventsModule } from '../events/events.module';
 import { JobsModule } from '../jobs/jobs.module';
 import { REDIS } from '../redis/redis.module';
 import { GuestsController } from './guests.controller';
-import { GUEST_QUERIES, IMPORT_RATE_LIMITER } from './guests.tokens';
+import { GUEST_QUERIES, IMPORT_RATE_LIMITER, INVITATION_QUERIES } from './guests.tokens';
+import { InvitationsController } from './invitations.controller';
 
 @Module({
   imports: [EventsModule, JobsModule],
-  controllers: [GuestsController],
+  controllers: [GuestsController, InvitationsController],
   providers: [
     { provide: GUEST_QUERIES, inject: [DB], useFactory: (db: Database) => guestQueries(db) },
+    {
+      provide: INVITATION_QUERIES,
+      inject: [DB],
+      useFactory: (db: Database) => invitationQueries(db),
+    },
     {
       provide: IMPORT_RATE_LIMITER,
       inject: [REDIS],
