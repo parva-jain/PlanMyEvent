@@ -49,6 +49,7 @@ The web app: foundation, motion, UI components and the home page.
 - [35 Budget in the web app](frontend/35-budget-web.md)
 - [36 Subtasks in the list and adding expenses quickly](frontend/36-subtasks-inline-and-quick-expense.md)
 - [42 People in the web app](frontend/42-people-web.md)
+- [43 The guest's invitation page](frontend/43-invite-page-web.md)
 
 ## Infra
 
