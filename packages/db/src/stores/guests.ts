@@ -168,6 +168,22 @@ export function contactStore(db: Queryable): ContactStore {
           .returning(),
       );
     },
+    async inHouseholds(eventId, householdIds) {
+      if (!householdIds.length) return [];
+      return toContacts(
+        db,
+        await db
+          .select()
+          .from(contacts)
+          .where(
+            and(
+              eq(contacts.eventId, eventId),
+              isNull(contacts.deletedAt),
+              inArray(contacts.householdId, householdIds),
+            ),
+          ),
+      );
+    },
     async findMatches(eventId, { phones, emails }) {
       if (!phones.length && !emails.length) return [];
       return toContacts(

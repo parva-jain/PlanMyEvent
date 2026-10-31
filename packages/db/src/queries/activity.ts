@@ -8,6 +8,7 @@ import { activityLog } from '../schema/activity.js';
 import { budgetCategories, expenses } from '../schema/budget.js';
 import { events, subEvents, venues } from '../schema/events.js';
 import { contacts, households } from '../schema/guests.js';
+import { attendance, invitations } from '../schema/invitations.js';
 import { tasks } from '../schema/tasks.js';
 import { memberInvites, members, roles } from '../schema/team.js';
 import { toStoredActivity } from '../stores/activity.js';
@@ -127,6 +128,25 @@ export function activityQueries(db: Database) {
           .select({ id: contacts.id, label: contacts.name })
           .from(contacts)
           .where(and(eq(contacts.eventId, eventId), inArray(contacts.id, contactIds))),
+      );
+    }
+    // Invitations and attendance rows go by their guest's name.
+    for (const [type, table] of [
+      ['invitation', invitations],
+      ['attendance', attendance],
+    ] as const) {
+      const rowIds = ids(type);
+      if (!rowIds.length) continue;
+      add(
+        await db
+          .select({
+            id: table.id,
+            label: sql<string | null>`coalesce(${households.name}, ${contacts.name})`,
+          })
+          .from(table)
+          .leftJoin(households, eq(households.id, table.householdId))
+          .leftJoin(contacts, eq(contacts.id, table.contactId))
+          .where(and(eq(table.eventId, eventId), inArray(table.id, rowIds))),
       );
     }
     const inviteIds = ids('member_invite');

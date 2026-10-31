@@ -3,8 +3,10 @@ import {
   type AccessStore,
   type BudgetCategoryStore,
   type ActionContext,
+  type AttendanceStore,
   type ContactStore,
   type HouseholdStore,
+  type InvitationStore,
   type ActivityStore,
   type ActionRuntime,
   type CoreTx,
@@ -31,6 +33,7 @@ import { activityStore } from './stores/activity.js';
 import { budgetCategoryStore, expenseStore } from './stores/budget.js';
 import { eventStore, subEventStore, venueStore } from './stores/events.js';
 import { contactStore, householdStore } from './stores/guests.js';
+import { attendanceStore, invitationStore } from './stores/invitations.js';
 import { taskStore } from './stores/tasks.js';
 import { accessStore, memberInviteStore, memberStore, roleStore } from './stores/team.js';
 
@@ -82,6 +85,11 @@ function userStore(db: DrizzleTx): UserStore {
   };
 }
 
+export interface RuntimeOptions {
+  /** Derives invitation link tokens (APIDesign "Link tokens"); the API sets it. */
+  invitationLinkKey?: string;
+}
+
 /** CoreTx backed by one Drizzle transaction; `db` stays reachable for the runtime's own writes. */
 export class DbTx implements CoreTx {
   readonly users: UserStore;
@@ -99,8 +107,13 @@ export class DbTx implements CoreTx {
   readonly expenses: ExpenseStore;
   readonly households: HouseholdStore;
   readonly contacts: ContactStore;
+  readonly invitations: InvitationStore;
+  readonly attendance: AttendanceStore;
 
-  constructor(readonly db: DrizzleTx) {
+  constructor(
+    readonly db: DrizzleTx,
+    options: RuntimeOptions = {},
+  ) {
     this.users = userStore(db);
     this.workspaces = workspaceStore(db);
     this.events = eventStore(db);
@@ -116,6 +129,8 @@ export class DbTx implements CoreTx {
     this.expenses = expenseStore(db);
     this.households = householdStore(db);
     this.contacts = contactStore(db);
+    this.invitations = invitationStore(db, options.invitationLinkKey);
+    this.attendance = attendanceStore(db);
   }
 }
 
@@ -141,12 +156,15 @@ const LOCK_TIMEOUT = '2s';
  * inside the action's transaction (never from cache), so a role change committed a moment
  * ago already counts.
  */
-export function createActionRuntime(db: Database): ActionRuntime<DbTx> {
+export function createActionRuntime(
+  db: Database,
+  options: RuntimeOptions = {},
+): ActionRuntime<DbTx> {
   return {
     transaction: (fn) =>
       db.transaction(async (tx) => {
         await tx.execute(sql.raw(`set local lock_timeout = '${LOCK_TIMEOUT}'`));
-        return fn(new DbTx(tx));
+        return fn(new DbTx(tx, options));
       }),
     async checkPermission(tx, ctx, permission, subEventId) {
       const access =
