@@ -10,8 +10,9 @@ Last updated: Oct 30, 2026 · Updated at the end of every working step.
 | --- | --- | --- |
 | 7a | Contacts and households backend: `households` and `contacts` (migration 0007, trigram and tag indexes), phones normalized to E.164 (+91 for Indian numbers), create, update, delete and restore actions with undo, primary contact from the household's own, `E/households` and `E/contacts` with search (name, email, phone), tag and household filters; guest entries hidden from activity feeds of members without `guests.view` | Done |
 | 7b | CSV import: `POST E/contacts/import` checks the file and mapping (422) and queues a job through the outbox (Idempotency-Key, 10 per hour per event); the worker's `imports` queue imports 500 rows per transaction as the member who started it, matching guests by phone or email and only filling blanks, households from a column; progress over `job.progress` and `GET /v1/jobs/{id}`; per-row errors with line numbers | Done |
-| 7c | Invitations and attendance backend: invitations with HMAC-derived links, delivery status and distributor, sub-events when guests are per sub-event, share text and wa.me link, regenerate and withdraw, bulk create and bulk delivery updates; attendance rows and headcounts | Next |
-| 7d | Public invite and RSVP: `GET /v1/public/invites/{token}` (cached by content version, rate limited) and `POST …/rsvp` (Idempotency-Key, upsert per household and scope), activity as "Sharma family (link)"; a guest sees only their own invitation, never other guests or headcounts, even at a shared sub-event | |
+| 7c | Invitations and attendance backend: `invitations`, `invitation_sub_events` and `attendance` (migration 0008); links derived with HMAC from id and token version under `INVITATION_LINK_KEY`, only their SHA-256 stored; invite a household or contact (sub-events when guests are per sub-event), bulk invite up to 200 with skipped guests reported, no double invites through a household; delivery status and distributor (who may mark their own cards delivered without `guests.invite`), bulk delivery updates; share link with a WhatsApp message to the primary contact's phone; regenerate; withdraw cancels attendance and undo brings answers back; `E/attendance` list and corrections in sub-event scope | Done |
+| 7c.1 | Guest scope switch (`POST E/guest-scope` job, DatabaseDesign "Switching guest scope") and the event's response mode in Settings | |
+| 7d | Public invite and RSVP: `GET /v1/public/invites/{token}` (cached by content version, rate limited) and `POST …/rsvp` (Idempotency-Key, upsert per household and scope), activity as "Sharma family (link)"; a guest sees only their own invitation, never other guests or headcounts, even at a shared sub-event | Next |
 | 7e | People web: contacts and households, search and tags, CSV import with mapping and progress, invitations with delivery tracking, distributor view, share | |
 | 7f | Invite page web: the guest's invitation and RSVP on a phone, with MOTION.md's guest-page motion | |
 | 7g | Review the milestone, then open the PR for merge | |
@@ -258,6 +259,11 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Job status lives in Redis for a day, written by the API (queued) and the worker; only the starter may read it | Progress information only; the imported contacts and the activity entries are in Postgres | `apps/api/src/jobs/`, `apps/worker/src/imports/` |
 | The worker depends on `@pme/core` and runs imports through `runAction` as the member who started them | Every write goes through a core action; permissions are re-checked per chunk | `apps/worker/src/imports/imports.processor.ts` |
 | Guests never see other guests or headcounts, even when invited to the same sub-event | Product rule (Oct 31); APIDesign "What a guest can see" | 7d |
+| Invitation links come from HMAC(INVITATION_LINK_KEY, id:tokenVersion), computed inside the db store; core never sees the key | A database leak can't produce links; organizers can re-share any time; regenerating bumps the version | `packages/db/src/invitation-links.ts`, `packages/db/src/stores/invitations.ts` |
+| Inviting and managing invitations needs whole-event `guests.invite`; the card's distributor may change its delivery status and list their own cards | PRD flow C: distributors mark cards delivered from their phones without seeing the guest list | `packages/core/src/guests/invitation-actions.ts` |
+| Members with `guests.view` scoped to sub-events see invitations covering those sub-events and their attendance rows; contacts and households stay whole-event | Lets a Mehendi coordinator see the Mehendi guest list | `apps/api/src/guests/invitations.controller.ts` |
+| A guest is invited once: a contact whose household is invited, or a household one of whose people has their own invitation, is refused (409 `conflict`, reason) or reported as skipped in bulk | Headcounts would count them twice | `packages/core/src/guests/invitation-actions.ts` |
+| Withdrawing an invitation cancels its attendance rows; undo restores their statuses from the log; inviting the guest again reopens the same row | Attendance has no soft delete (DatabaseDesign), so history and headcounts stay intact | `packages/db/src/stores/invitations.ts` |
 
 ## Open questions
 
@@ -299,6 +305,9 @@ None right now.
   - A double tap on Leave can write two `leave` activity rows if both pass the member check; stop when `members.remove` returns false (M4 #6).
 - Undo of a venue delete brings the venue back but doesn't re-attach the sub-events it was cleared from (that clearing writes no entries of its own).
 - Undo for team changes (role edits, removing a member, revoking an invite) and redo of an undo.
+- Invitation share messages are English only; Hindi with the rest of the app's languages.
+- Bulk invitations above 200 as a job (APIDesign); the web sends batches of 200 meanwhile.
+- `POST E/attendance` for walk-ins and manual registrations comes with open registration (milestone 8).
 - CSV import: the full error list as a downloadable CSV (APIDesign) waits for file storage; the job keeps the first 100 errors with line numbers. Imports can't be undone in one step.
 - An import retried after a crash resumes after its last finished chunk only while Redis holds the status; otherwise it reruns from the start, where phone and email matching avoid most duplicates (contacts with neither could repeat).
 - The activity feed's entity filter takes any string; restrict to `ACTIVITY_ENTITY_TYPES` once every module records its type.
@@ -332,4 +341,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [39 CSV import as a background job](learning/backend/39-csv-import.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [40 Invitations, magic links and attendance](learning/backend/40-invitations.md).

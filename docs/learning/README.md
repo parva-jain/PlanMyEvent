@@ -25,6 +25,7 @@ API, worker, database and the shared packages behind them.
 - [37 Reviewing milestone 6](backend/37-milestone-6-review.md)
 - [38 Contacts and households on the server](backend/38-contacts-households.md)
 - [39 CSV import as a background job](backend/39-csv-import.md)
+- [40 Invitations, magic links and attendance](backend/40-invitations.md)
 
 ## Frontend
 
