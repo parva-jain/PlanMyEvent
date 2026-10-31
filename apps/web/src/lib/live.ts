@@ -4,6 +4,7 @@ import {
   LIVE_NAMESPACE,
   type ClientToServerEvents,
   type EntityChanged,
+  type JobProgress,
   type MemberRemoved,
   type PermissionsChanged,
   type ServerToClientEvents,
@@ -16,6 +17,7 @@ import { invalidateEntity } from './activity';
 import { API_URL, isOwnRequest } from './api';
 import { eventKeys } from './events';
 import { highlight } from './live-highlights';
+import { peopleKeys } from './people';
 
 type LiveSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -151,12 +153,19 @@ export function useLiveEvent(eventId: string, myMemberId: string | undefined): b
       void queryClient.invalidateQueries({ queryKey: eventKeys.mine });
     };
 
+    // A job I started moved on: re-read its status (the signal itself is only a nudge).
+    const progress = (signal: JobProgress) => {
+      if (signal.eventId !== eventId) return;
+      void queryClient.invalidateQueries({ queryKey: peopleKeys.job(eventId, signal.jobId) });
+    };
+
     live.on('connect', connected);
     live.on('disconnect', lost);
     live.on('connect_error', lost);
     live.on('entity.changed', changed);
     live.on('permissions.changed', permissions);
     live.on('member.removed', memberRemoved);
+    live.on('job.progress', progress);
     return () => {
       clearInterval(poller);
       live.off('connect', connected);
@@ -165,6 +174,7 @@ export function useLiveEvent(eventId: string, myMemberId: string | undefined): b
       live.off('entity.changed', changed);
       live.off('permissions.changed', permissions);
       live.off('member.removed', memberRemoved);
+      live.off('job.progress', progress);
       leaveRoom(live, eventId);
     };
   }, [eventId, queryClient]);
