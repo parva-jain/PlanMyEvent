@@ -1,4 +1,6 @@
 import type {
+  Attendance,
+  AttendanceSummary,
   BudgetCategory,
   Channel,
   Contact,
@@ -8,6 +10,7 @@ import type {
   Expense,
   Grant,
   Household,
+  Invitation,
   Member,
   MemberInvite,
   Permission,
@@ -382,8 +385,85 @@ export interface ContactStore {
   ): Promise<Contact | null>;
   softDelete(eventId: string, contactId: string, expectedVersion: number): Promise<boolean>;
   restore(eventId: string, contactId: string): Promise<Contact | null>;
+  /** Live contacts in these households. */
+  inHouseholds(eventId: string, householdIds: string[]): Promise<Contact[]>;
   /** Live contacts with any of these phones (E.164) or emails, ignoring case (CSV import). */
   findMatches(eventId: string, by: { phones: string[]; emails: string[] }): Promise<Contact[]>;
+}
+
+export interface NewInvitation {
+  householdId: string | null;
+  contactId: string | null;
+  distributorMemberId: string | null;
+  /** Per sub-event: the sub-events it covers; empty for the whole event. */
+  subEventIds: string[];
+  /** Attendance rows to start (or reopen) as invited: null for the whole event. */
+  attendance: { subEventId: string | null; partySize: number }[];
+}
+
+export interface InvitationChanges {
+  deliveryStatus?: Invitation['deliveryStatus'];
+  distributorMemberId?: string | null;
+  sentAt?: Date | null;
+  deliveredAt?: Date | null;
+}
+
+/**
+ * Invitations skip soft-deleted rows. The store derives each link token from the id and
+ * token version with the server key, and stores only its SHA-256 (APIDesign "Link tokens").
+ */
+export interface InvitationStore {
+  /** Also starts the attendance rows, reopening a cancelled one for the same guest and scope. */
+  insert(eventId: string, list: NewInvitation[]): Promise<Invitation[]>;
+  find(eventId: string, invitationId: string): Promise<Invitation | null>;
+  /** Live invitations of these households or contacts. */
+  findForGuests(
+    eventId: string,
+    guests: { householdIds: string[]; contactIds: string[] },
+  ): Promise<Invitation[]>;
+  update(
+    eventId: string,
+    invitationId: string,
+    expectedVersion: number,
+    changes: InvitationChanges,
+  ): Promise<Invitation | null>;
+  /**
+   * Adds sub-events (attendance invited) and takes some away (attendance cancelled), bumping
+   * the version, only if it still matches.
+   */
+  changeSubEvents(
+    eventId: string,
+    invitationId: string,
+    expectedVersion: number,
+    change: { add: { subEventId: string; partySize: number }[]; remove: string[] },
+  ): Promise<Invitation | null>;
+  /** Withdraws it: the link stops working and its attendance rows are cancelled. */
+  softDelete(eventId: string, invitationId: string, expectedVersion: number): Promise<boolean>;
+  /**
+   * Undoes a withdrawal, putting its attendance rows back to the given statuses; 'invited'
+   * when the guest has another live invitation now.
+   */
+  restore(
+    eventId: string,
+    invitationId: string,
+    attendance: { subEventId: string | null; status: AttendanceSummary['status'] }[],
+  ): Promise<Invitation | null | 'already_invited'>;
+  /** A new token (token_version + 1): the old link stops working. */
+  regenerate(
+    eventId: string,
+    invitationId: string,
+    expectedVersion: number,
+  ): Promise<Invitation | null>;
+}
+
+export interface AttendanceStore {
+  find(eventId: string, attendanceId: string): Promise<Attendance | null>;
+  update(
+    eventId: string,
+    attendanceId: string,
+    expectedVersion: number,
+    changes: { status?: Attendance['status']; partySize?: number },
+  ): Promise<Attendance | null>;
 }
 
 /** An activity_log row as stored. */
@@ -432,4 +512,6 @@ export interface CoreTx {
   expenses: ExpenseStore;
   households: HouseholdStore;
   contacts: ContactStore;
+  invitations: InvitationStore;
+  attendance: AttendanceStore;
 }
