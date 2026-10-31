@@ -24,6 +24,7 @@ API, worker, database and the shared packages behind them.
 - [33 Budget on the server](backend/33-budget-backend.md)
 - [37 Reviewing milestone 6](backend/37-milestone-6-review.md)
 - [38 Contacts and households on the server](backend/38-contacts-households.md)
+- [39 CSV import as a background job](backend/39-csv-import.md)
 
 ## Frontend
 
