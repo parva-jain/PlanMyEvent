@@ -12,8 +12,8 @@ Last updated: Oct 30, 2026 · Updated at the end of every working step.
 | 7b | CSV import: `POST E/contacts/import` checks the file and mapping (422) and queues a job through the outbox (Idempotency-Key, 10 per hour per event); the worker's `imports` queue imports 500 rows per transaction as the member who started it, matching guests by phone or email and only filling blanks, households from a column; progress over `job.progress` and `GET /v1/jobs/{id}`; per-row errors with line numbers | Done |
 | 7c | Invitations and attendance backend: `invitations`, `invitation_sub_events` and `attendance` (migration 0008); links derived with HMAC from id and token version under `INVITATION_LINK_KEY`, only their SHA-256 stored; invite a household or contact (sub-events when guests are per sub-event), bulk invite up to 200 with skipped guests reported, no double invites through a household; delivery status and distributor (who may mark their own cards delivered without `guests.invite`), bulk delivery updates; share link with a WhatsApp message to the primary contact's phone; regenerate; withdraw cancels attendance and undo brings answers back; `E/attendance` list and corrections in sub-event scope | Done |
 | 7c.1 | Guest scope switch (`POST E/guest-scope` job, DatabaseDesign "Switching guest scope") and the event's response mode in Settings | |
-| 7d | Public invite and RSVP: `GET /v1/public/invites/{token}` (cached by content version, rate limited) and `POST …/rsvp` (Idempotency-Key, upsert per household and scope), activity as "Sharma family (link)"; a guest sees only their own invitation, never other guests or headcounts, even at a shared sub-event | Next |
-| 7e | People web: contacts and households, search and tags, CSV import with mapping and progress, invitations with delivery tracking, distributor view, share | |
+| 7d | Public invite and RSVP: `GET /v1/public/invites/{token}` (the event, the guest's name, their scopes with times, venues and answers; never other guests or headcounts; opening noted at most hourly) and `POST …/rsvp` (Idempotency-Key scoped to the link, last answer wins, only invite + RSVP scopes on the invitation); 404 for an unknown or regenerated link, 410 `link_revoked` for a withdrawn one; rate limits per IP and per link (reads fail open, RSVPs fail closed); answers logged as "Sharma family (link)" on channel `public_link` and pushed live to organizers | Done |
+| 7e | People web: contacts and households, search and tags, CSV import with mapping and progress, invitations with delivery tracking, distributor view, share | Next |
 | 7f | Invite page web: the guest's invitation and RSVP on a phone, with MOTION.md's guest-page motion | |
 | 7g | Review the milestone, then open the PR for merge | |
 
@@ -264,6 +264,8 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Members with `guests.view` scoped to sub-events see invitations covering those sub-events and their attendance rows; contacts and households stay whole-event | Lets a Mehendi coordinator see the Mehendi guest list | `apps/api/src/guests/invitations.controller.ts` |
 | A guest is invited once: a contact whose household is invited, or a household one of whose people has their own invitation, is refused (409 `conflict`, reason) or reported as skipped in bulk | Headcounts would count them twice | `packages/core/src/guests/invitation-actions.ts` |
 | Withdrawing an invitation cancels its attendance rows; undo restores their statuses from the log; inviting the guest again reopens the same row | Attendance has no soft delete (DatabaseDesign), so history and headcounts stay intact | `packages/db/src/stores/invitations.ts` |
+| The public invite page isn't cached in Redis yet | Its answers change with every RSVP and `content_version` isn't bumped by program edits yet; one indexed lookup per view is cheap at MVP scale | `apps/api/src/public/public-invites.controller.ts` |
+| A guest's Idempotency-Key is scoped to their link (`invite:<sha256 of token>`) | Public routes have no user to scope by | `apps/api/src/http/idempotency.interceptor.ts` |
 
 ## Open questions
 
@@ -305,6 +307,8 @@ None right now.
   - A double tap on Leave can write two `leave` activity rows if both pass the member check; stop when `members.remove` returns false (M4 #6).
 - Undo of a venue delete brings the venue back but doesn't re-attach the sub-events it was cleared from (that clearing writes no entries of its own).
 - Undo for team changes (role edits, removing a member, revoking an invite) and redo of an undo.
+- Cache the public invite page by content version (APIDesign), once program edits bump `content_version`.
+- RSVP deadlines (`rsvp_closed`) are V2.
 - Invitation share messages are English only; Hindi with the rest of the app's languages.
 - Bulk invitations above 200 as a job (APIDesign); the web sends batches of 200 meanwhile.
 - `POST E/attendance` for walk-ins and manual registrations comes with open registration (milestone 8).
@@ -341,4 +345,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [40 Invitations, magic links and attendance](learning/backend/40-invitations.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [41 The guest's side: public invite and RSVP](learning/backend/41-public-invite-rsvp.md).
