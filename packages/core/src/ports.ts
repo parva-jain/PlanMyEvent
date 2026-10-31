@@ -353,6 +353,8 @@ export interface HouseholdStore {
   ): Promise<Household | null>;
   softDelete(eventId: string, householdId: string, expectedVersion: number): Promise<boolean>;
   restore(eventId: string, householdId: string): Promise<Household | null>;
+  /** Live households with these names, ignoring case (CSV import). */
+  findByNames(eventId: string, names: string[]): Promise<Household[]>;
 }
 
 export interface NewContact {
@@ -380,6 +382,8 @@ export interface ContactStore {
   ): Promise<Contact | null>;
   softDelete(eventId: string, contactId: string, expectedVersion: number): Promise<boolean>;
   restore(eventId: string, contactId: string): Promise<Contact | null>;
+  /** Live contacts with any of these phones (E.164) or emails, ignoring case (CSV import). */
+  findMatches(eventId: string, by: { phones: string[]; emails: string[] }): Promise<Contact[]>;
 }
 
 /** An activity_log row as stored. */

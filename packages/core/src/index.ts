@@ -50,6 +50,7 @@ export {
   updateContact,
   updateHousehold,
 } from './guests/guest-actions.js';
+export { importContacts, startContactImport } from './guests/import-actions.js';
 export { EVENT_TEMPLATES } from './events/templates.js';
 export { ActionError } from './errors.js';
 export {
