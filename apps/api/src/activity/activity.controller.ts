@@ -20,8 +20,8 @@ import { UuidPipe } from '../http/uuid.pipe';
 import { ActivityPageDto, ActivityQueryDto, UndoResultDto } from './activity.dto';
 import { ACTIVITY_QUERIES } from './activity.tokens';
 
-/** Guest entries carry phones and emails; without guests.view the feed leaves them out. */
-const GUEST_ENTITY_TYPES = ['household', 'contact'];
+/** Guest entries carry names, phones and emails; without guests.view the feed leaves them out. */
+const GUEST_ENTITY_TYPES = ['household', 'contact', 'invitation', 'attendance'];
 
 const viewerOf = (user: SessionUser, access: MemberAccess): ActivityViewer => ({
   userId: user.id,
