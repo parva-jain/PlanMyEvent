@@ -19,6 +19,7 @@
     "@nestjs/core": "11.2.7",
     "@pme/config": "workspace:*",
     "@pme/contracts": "workspace:*",
+    "@pme/core": "workspace:*",
     "@pme/db": "workspace:*",
     "@socket.io/redis-emitter": "5.1.0",
     "bullmq": "6.4.0",

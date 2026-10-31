@@ -7,6 +7,7 @@ import type { WorkerEnv } from './config/env';
 import { redisConnection } from './config/redis-connection';
 import { DatabaseModule } from './database/database.module';
 import { EmailModule } from './email/email.module';
+import { ImportsModule } from './imports/imports.module';
 import { LifecycleService } from './lifecycle/lifecycle.service';
 import { OutboxModule } from './outbox/outbox.module';
 import { SampleModule } from './queues/sample/sample.module';
@@ -33,6 +34,7 @@ import { SampleModule } from './queues/sample/sample.module';
     DatabaseModule,
     OutboxModule,
     EmailModule,
+    ImportsModule,
     SampleModule,
   ],
   providers: [LifecycleService],
