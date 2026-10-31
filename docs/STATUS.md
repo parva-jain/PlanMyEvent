@@ -1,21 +1,27 @@
 # Project status
 
-Last updated: Oct 30, 2026 · Updated at the end of every working step.
+Last updated: Oct 31, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Milestone 6 — tasks, budget categories and expenses**, branch `feat/m6-tasks-budget`. Milestones 1–5 and the review fixes are merged to `main` (PRs #1 and #2 squashed, #3–#6 rebase-merged).
+**Milestone 7 — contacts, households, CSV import; invitations, magic links, RSVP**, branch `feat/m7-guests`. Milestones 1–6 and the review fixes are merged to `main` (PRs #1 and #2 squashed, #3–#7 rebase-merged).
 
 | Step | What | Status |
 | --- | --- | --- |
-| 6a | Tasks backend: `tasks` and `task_assignees` (migration 0005); create, update, assign, delete and restore actions with sub-event scope, `tasks.update_own` for assignees, one level of subtasks, fractional positions per status column; starter tasks from each template; `E/tasks`, `E/tasks/{id}/assignees` and `GET /v1/me/tasks`; activity and undo for tasks | Done |
-| 6b | Budget backend: categories with planned, committed and paid totals; expenses with amounts that match their payment status, duplicate transaction refs refused, Idempotency-Key required on `POST E/expenses`; starter categories; activity and undo | Done |
-| 6c | Tasks web: list grouped by status and a kanban board (dnd-kit, keyboard dragging), filters (mine, sub-event, assignee, status), quick add, tick-to-complete with strike and slide, phone swipe to complete, edit panel with assignees and subtasks, delete with undo, "Deleted sub-event" chip, My tasks on the My events page, live updates (MOTION.md 6.6) | Done |
-| 6d | Budget web: overall budget and totals with count-ups, due soon, by category (bars with paid and committed segments, over-plan chip, expanding expense lists) and by sub-event, expense panel with status-driven fields and the duplicate-reference error, category panel, deletes with undo, "every payment is settled" celebration (MOTION.md 6.14) | Done |
-| 6d.1 | Feedback: subtasks show under their task in the list (smaller, indented, tick from the row); budget gets an "Add an expense" quick-add bar (title, amount, category, already paid), an All expenses tab, and a + on every category | Done |
-| 6e | Milestone review: moving a task to another sub-event now takes its subtasks along (they stayed behind, outside the new scope); a subtask ticked twice quickly from its row no longer sends a stale version; regression test for a Helper undoing their own tick-off. PR #7 ready to merge | Done |
+| 7a | Contacts and households backend: `households` and `contacts` (migration 0007, trigram and tag indexes), phones normalized to E.164 (+91 for Indian numbers), create, update, delete and restore actions with undo, primary contact from the household's own, `E/households` and `E/contacts` with search (name, email, phone), tag and household filters; guest entries hidden from activity feeds of members without `guests.view` | Done |
+| 7b | CSV import: `POST E/contacts/import` checks the file and mapping (422) and queues a job through the outbox (Idempotency-Key, 10 per hour per event); the worker's `imports` queue imports 500 rows per transaction as the member who started it, matching guests by phone or email and only filling blanks, households from a column; progress over `job.progress` and `GET /v1/jobs/{id}`; per-row errors with line numbers | Done |
+| 7c | Invitations and attendance backend: `invitations`, `invitation_sub_events` and `attendance` (migration 0008); links derived with HMAC from id and token version under `INVITATION_LINK_KEY`, only their SHA-256 stored; invite a household or contact (sub-events when guests are per sub-event), bulk invite up to 200 with skipped guests reported, no double invites through a household; delivery status and distributor (who may mark their own cards delivered without `guests.invite`), bulk delivery updates; share link with a WhatsApp message to the primary contact's phone; regenerate; withdraw cancels attendance and undo brings answers back; `E/attendance` list and corrections in sub-event scope | Done |
+| 7c.1 | Guest scope switch (`POST E/guest-scope` job, DatabaseDesign "Switching guest scope") and the event's response mode in Settings | |
+| 7d | Public invite and RSVP: `GET /v1/public/invites/{token}` (the event, the guest's name, their scopes with times, venues and answers; never other guests or headcounts; opening noted at most hourly) and `POST …/rsvp` (Idempotency-Key scoped to the link, last answer wins, only invite + RSVP scopes on the invitation); 404 for an unknown or regenerated link, 410 `link_revoked` for a withdrawn one; rate limits per IP and per link (reads fail open, RSVPs fail closed); answers logged as "Sharma family (link)" on channel `public_link` and pushed live to organizers | Done |
+| 7e | People web: Guests (households or everyone, search, tag, invitation and distributor filters, bulk invite and distributor), guest panel (household with members and primary contact, expected-count stepper, single person, invitation card with delivery, distributor, share, new link, withdraw with undo, replies an organizer can correct), Invitations (delivered or sent bar, by distributor with progress rings, mark delivered then move, send on WhatsApp one by one), Responses (headcounts, per sub-event), CSV import in four steps with live progress, "Cards to deliver" for distributors linked from the event home; guest entries named in Activity | Done |
+| 7f | Invite page web: `/i/{token}` with no account; cover in the event accent, greeting, the guest's own schedule in the event's time zone with maps, yes or no and how many per scope (invite-only parts listed), a new Idempotency-Key per reply, confirmation with drawn check and confetti once per invitation, change reply, calendar file built in the browser; withdrawn, unknown and busy links explained; no referrer and noindex so the token stays private. `Button asChild` now renders its icon (ten links had lost theirs) | Done |
+| 7g | Review the milestone, then open the PR for merge | Next |
 
-Receipt uploads wait for the media table (gallery, milestone 8).
+Contacts and households need whole-event `guests.view` and `guests.edit`; members scoped to sub-events see guests through invitations once 7c lands.
+
+### Milestone 6 (done)
+
+Tasks with a list and keyboard-draggable board, budget categories and expenses with payments, quick add, subtasks inline, and the review fixes. Merged as rebase of PR #7 (`7eb24fd`).
 
 ### Milestone 5 (done)
 
@@ -243,6 +249,23 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | dnd-kit 6.3.1 / sortable 10.0.0 for the board | MOTION.md section 3: dnd-kit for logic, keyboard dragging included | `apps/web/package.json` |
 | pnpm override `socket.io: 4.8.4` | `@nestjs/platform-socket.io` pins 4.8.3; two copies made the server's and our types differ | `pnpm-workspace.yaml` |
 | Playwright runs against `next build` + `next start` on port 3100, projects `desktop` (1280 × 860) and `phone` (Pixel 7); reduced motion via `test.use({ reducedMotion: 'reduce' })`; expected text read from `messages/en.json` | Production behaviour; own port so a dev server is never tested by mistake | `apps/web/playwright.config.ts` |
+| Contacts and households are whole-event: their actions and reads need `guests.*` without a sub-event scope | They have no sub_event_id; per-sub-event visibility comes from invitations (7c) | `packages/core/src/guests/guest-actions.ts` |
+| A deleted household leaves its contacts in place, read as not in a household; restoring it links them again | Undo needs no bookkeeping, and nobody's details are lost by deleting a group | `packages/db/src/stores/guests.ts` |
+| A contact moving out of its household, or deleted, stops being its primary contact, logged as a household update | The primary contact must be one of the household's own | `packages/core/src/guests/guest-actions.ts` |
+| Phones are stored in E.164; a bare 10-digit number is Indian | India first, international guests type their + prefix | `packages/contracts/src/guests.ts` |
+| The activity feed leaves out household and contact entries for members without whole-event `guests.view` | Those entries carry phones and emails | `apps/api/src/activity/activity.controller.ts` |
+| CSV import matches a guest by phone or email and only fills what they lack, adding new tags | Re-importing a corrected file never overwrites what someone typed or duplicates guests | `packages/core/src/guests/import-actions.ts` |
+| Import payloads go through the outbox as sensitive rows (deleted once published, job removed when done) | They hold guests' phones and emails | `packages/contracts/src/outbox.ts` |
+| Job status lives in Redis for a day, written by the API (queued) and the worker; only the starter may read it | Progress information only; the imported contacts and the activity entries are in Postgres | `apps/api/src/jobs/`, `apps/worker/src/imports/` |
+| The worker depends on `@pme/core` and runs imports through `runAction` as the member who started them | Every write goes through a core action; permissions are re-checked per chunk | `apps/worker/src/imports/imports.processor.ts` |
+| Guests never see other guests or headcounts, even when invited to the same sub-event | Product rule (Oct 31); APIDesign "What a guest can see" | 7d |
+| Invitation links come from HMAC(INVITATION_LINK_KEY, id:tokenVersion), computed inside the db store; core never sees the key | A database leak can't produce links; organizers can re-share any time; regenerating bumps the version | `packages/db/src/invitation-links.ts`, `packages/db/src/stores/invitations.ts` |
+| Inviting and managing invitations needs whole-event `guests.invite`; the card's distributor may change its delivery status and list their own cards | PRD flow C: distributors mark cards delivered from their phones without seeing the guest list | `packages/core/src/guests/invitation-actions.ts` |
+| Members with `guests.view` scoped to sub-events see invitations covering those sub-events and their attendance rows; contacts and households stay whole-event | Lets a Mehendi coordinator see the Mehendi guest list | `apps/api/src/guests/invitations.controller.ts` |
+| A guest is invited once: a contact whose household is invited, or a household one of whose people has their own invitation, is refused (409 `conflict`, reason) or reported as skipped in bulk | Headcounts would count them twice | `packages/core/src/guests/invitation-actions.ts` |
+| Withdrawing an invitation cancels its attendance rows; undo restores their statuses from the log; inviting the guest again reopens the same row | Attendance has no soft delete (DatabaseDesign), so history and headcounts stay intact | `packages/db/src/stores/invitations.ts` |
+| The public invite page isn't cached in Redis yet | Its answers change with every RSVP and `content_version` isn't bumped by program edits yet; one indexed lookup per view is cheap at MVP scale | `apps/api/src/public/public-invites.controller.ts` |
+| A guest's Idempotency-Key is scoped to their link (`invite:<sha256 of token>`) | Public routes have no user to scope by | `apps/api/src/http/idempotency.interceptor.ts` |
 
 ## Open questions
 
@@ -284,6 +307,17 @@ None right now.
   - A double tap on Leave can write two `leave` activity rows if both pass the member check; stop when `members.remove` returns false (M4 #6).
 - Undo of a venue delete brings the venue back but doesn't re-attach the sub-events it was cleared from (that clearing writes no entries of its own).
 - Undo for team changes (role edits, removing a member, revoking an invite) and redo of an undo.
+- Cache the public invite page by content version (APIDesign), once program edits bump `content_version`.
+- RSVP deadlines (`rsvp_closed`) are V2.
+- Invitation share messages are English only; Hindi with the rest of the app's languages.
+- Bulk invitations above 200 as a job (APIDesign); the web sends batches of 200 meanwhile.
+- `POST E/attendance` for walk-ins and manual registrations comes with open registration (milestone 8).
+- Invite page: the e2e reply flow runs against stubbed public endpoints until 7c.1 lets a test set a response mode; the API tests cover the real ones. Stitch's "note for the hosts" isn't in the RSVP contract, and the page has no host contact or accommodation section.
+- People web: the guest list joins households, contacts and invitations in the browser (fine up to the 5,000-guest limit; a server-side joined list if it gets slow). Bulk tag and bulk delete aren't built; tags are edited per person.
+- Distributors without `guests.view` reach their cards from the event home, not the nav; the nav could show People when someone has cards.
+- The People list's first load doesn't stagger rows (RevealGroup) like MOTION.md 6.15 says; filters and changes reflow with ListPresence.
+- CSV import: the full error list as a downloadable CSV (APIDesign) waits for file storage; the job keeps the first 100 errors with line numbers. Imports can't be undone in one step.
+- An import retried after a crash resumes after its last finished chunk only while Redis holds the status; otherwise it reruns from the start, where phone and email matching avoid most duplicates (contacts with neither could repeat).
 - The activity feed's entity filter takes any string; restrict to `ACTIVITY_ENTITY_TYPES` once every module records its type.
 - `dashboard.changed` (throttled to once a second per event) arrives with the dashboard in milestone 8; `job.progress` and `notification.new` with jobs and notifications.
 - Presence ("Vikram is viewing") from MOTION.md 6.12 isn't in the socket contract yet.
@@ -315,4 +349,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [33 Budget on the server](learning/backend/33-budget-backend.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [43 The guest's invitation page](learning/frontend/43-invite-page-web.md).

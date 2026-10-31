@@ -10,7 +10,7 @@ interface Props {
 }
 
 /** Sections without their own page yet (the others have theirs). */
-const PLACEHOLDERS = ['people', 'gallery'] as const;
+const PLACEHOLDERS = ['gallery'] as const;
 
 function isPlaceholder(value: string): value is (typeof PLACEHOLDERS)[number] & Section {
   return (PLACEHOLDERS as readonly string[]).includes(value);

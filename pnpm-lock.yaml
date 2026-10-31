@@ -438,6 +438,9 @@ importers:
       '@pme/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@pme/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@pme/db':
         specifier: workspace:*
         version: link:../../packages/db

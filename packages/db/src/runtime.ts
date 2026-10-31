@@ -3,6 +3,10 @@ import {
   type AccessStore,
   type BudgetCategoryStore,
   type ActionContext,
+  type AttendanceStore,
+  type ContactStore,
+  type HouseholdStore,
+  type InvitationStore,
   type ActivityStore,
   type ActionRuntime,
   type CoreTx,
@@ -23,11 +27,15 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import type { Database } from './client.js';
 import { users } from './schema/auth.js';
+import { contacts, households } from './schema/guests.js';
+import { invitations } from './schema/invitations.js';
 import { outbox } from './schema/outbox.js';
 import { workspaces } from './schema/workspaces.js';
 import { activityStore } from './stores/activity.js';
 import { budgetCategoryStore, expenseStore } from './stores/budget.js';
 import { eventStore, subEventStore, venueStore } from './stores/events.js';
+import { contactStore, householdStore } from './stores/guests.js';
+import { attendanceStore, invitationStore } from './stores/invitations.js';
 import { taskStore } from './stores/tasks.js';
 import { accessStore, memberInviteStore, memberStore, roleStore } from './stores/team.js';
 
@@ -79,6 +87,11 @@ function userStore(db: DrizzleTx): UserStore {
   };
 }
 
+export interface RuntimeOptions {
+  /** Derives invitation link tokens (APIDesign "Link tokens"); the API sets it. */
+  invitationLinkKey?: string;
+}
+
 /** CoreTx backed by one Drizzle transaction; `db` stays reachable for the runtime's own writes. */
 export class DbTx implements CoreTx {
   readonly users: UserStore;
@@ -94,8 +107,15 @@ export class DbTx implements CoreTx {
   readonly tasks: TaskStore;
   readonly budgetCategories: BudgetCategoryStore;
   readonly expenses: ExpenseStore;
+  readonly households: HouseholdStore;
+  readonly contacts: ContactStore;
+  readonly invitations: InvitationStore;
+  readonly attendance: AttendanceStore;
 
-  constructor(readonly db: DrizzleTx) {
+  constructor(
+    readonly db: DrizzleTx,
+    options: RuntimeOptions = {},
+  ) {
     this.users = userStore(db);
     this.workspaces = workspaceStore(db);
     this.events = eventStore(db);
@@ -109,15 +129,28 @@ export class DbTx implements CoreTx {
     this.tasks = taskStore(db);
     this.budgetCategories = budgetCategoryStore(db);
     this.expenses = expenseStore(db);
+    this.households = householdStore(db);
+    this.contacts = contactStore(db);
+    this.invitations = invitationStore(db, options.invitationLinkKey);
+    this.attendance = attendanceStore(db);
   }
 }
 
 /**
- * "Priya Sharma", or the email's local part before Welcome; guests and the system get a fixed
- * label. The label is stored, so the log still reads right after someone renames themselves.
+ * "Priya Sharma", or the email's local part before Welcome; a guest is "Sharma family (link)"
+ * and the system "System". The label is stored, so the log still reads right after a rename.
  */
 async function actorLabelOf(tx: DbTx, ctx: ActionContext): Promise<string> {
-  if (ctx.actor.kind === 'guest') return 'Guest';
+  if (ctx.actor.kind === 'guest') {
+    // "Sharma family (link)": who answered, through their magic link.
+    const [guest] = await tx.db
+      .select({ name: sql<string | null>`coalesce(${households.name}, ${contacts.name})` })
+      .from(invitations)
+      .leftJoin(households, eq(households.id, invitations.householdId))
+      .leftJoin(contacts, eq(contacts.id, invitations.contactId))
+      .where(eq(invitations.id, ctx.actor.invitationId));
+    return guest?.name ? `${guest.name} (link)` : 'Guest';
+  }
   if (ctx.actor.kind === 'system') return 'System';
   const [user] = await tx.db
     .select({ name: users.name, email: users.email })
@@ -134,12 +167,15 @@ const LOCK_TIMEOUT = '2s';
  * inside the action's transaction (never from cache), so a role change committed a moment
  * ago already counts.
  */
-export function createActionRuntime(db: Database): ActionRuntime<DbTx> {
+export function createActionRuntime(
+  db: Database,
+  options: RuntimeOptions = {},
+): ActionRuntime<DbTx> {
   return {
     transaction: (fn) =>
       db.transaction(async (tx) => {
         await tx.execute(sql.raw(`set local lock_timeout = '${LOCK_TIMEOUT}'`));
-        return fn(new DbTx(tx));
+        return fn(new DbTx(tx, options));
       }),
     async checkPermission(tx, ctx, permission, subEventId) {
       const access =

@@ -1,10 +1,14 @@
 import {
   can,
+  type Attendance,
   type BudgetCategory,
+  type Contact,
   type Event,
   type Expense,
   type EventModule,
   type Grant,
+  type Household,
+  type Invitation,
   type Member,
   type MemberInvite,
   type Role,
@@ -61,6 +65,16 @@ export function memoryRuntime() {
   let clock = 0;
   const categories = new Map<string, BudgetCategory & { eventId: string; deleted?: boolean }>();
   const expenses = new Map<string, Expense & { eventId: string; deleted?: boolean }>();
+  const households = new Map<string, Household & { eventId: string; deleted?: boolean }>();
+  const contacts = new Map<string, Contact & { eventId: string; deleted?: boolean }>();
+  type InvitationRow = Omit<Invitation, 'guestName' | 'attendance'> & {
+    eventId: string;
+    deleted?: boolean;
+    tokenVersion: number;
+  };
+  const invitations = new Map<string, InvitationRow>();
+  type AttendanceRow = Omit<Attendance, 'guestName'> & { eventId: string };
+  const attendanceRows = new Map<string, AttendanceRow>();
   const outbox: OutboxMessage[] = [];
   const activity: StoredActivity[] = [];
   const takenSlugs = new Set<string>();
@@ -132,6 +146,10 @@ export function memoryRuntime() {
     | 'tasks'
     | 'budgetCategories'
     | 'expenses'
+    | 'households'
+    | 'contacts'
+    | 'invitations'
+    | 'attendance'
   > = {
     users: {
       updateProfile: (userId, changes) => {
@@ -528,6 +546,330 @@ export function memoryRuntime() {
     },
   };
 
+  tx.households = {
+    insert: (eventId, list) =>
+      Promise.resolve(
+        list.map((input) => {
+          const household = {
+            id: nextId(),
+            eventId,
+            name: input.name,
+            expectedCount: input.expectedCount ?? 1,
+            primaryContactId: null,
+            version: 1,
+            createdAt: new Date().toISOString(),
+          };
+          households.set(household.id, household);
+          return strip({ ...household });
+        }),
+      ),
+    find: (eventId, id) => {
+      const household = liveIn(households, eventId, id);
+      return Promise.resolve(household ? strip({ ...household }) : null);
+    },
+    update: (eventId, id, expected, changes) => {
+      const household = liveIn(households, eventId, id);
+      if (!household || household.version !== expected) return Promise.resolve(null);
+      Object.assign(household, changes, { version: household.version + 1 });
+      return Promise.resolve(strip({ ...household }));
+    },
+    softDelete: (eventId, id, expected) => {
+      const household = liveIn(households, eventId, id);
+      if (!household || household.version !== expected) return Promise.resolve(false);
+      Object.assign(household, { deleted: true, version: household.version + 1 });
+      return Promise.resolve(true);
+    },
+    restore: (eventId, id) => {
+      const household = households.get(id);
+      if (!household || household.eventId !== eventId || !household.deleted) {
+        return Promise.resolve(null);
+      }
+      Object.assign(household, { deleted: false, version: household.version + 1 });
+      return Promise.resolve(strip({ ...household }));
+    },
+    findByNames: (eventId, names) => {
+      const wanted = names.map((name) => name.toLowerCase());
+      return Promise.resolve(
+        [...households.values()]
+          .filter(
+            (item) =>
+              item.eventId === eventId && !item.deleted && wanted.includes(item.name.toLowerCase()),
+          )
+          .map((item) => strip({ ...item })),
+      );
+    },
+  };
+
+  /** A deleted household reads as none (packages/db joins live households). */
+  const toContact = (row: Contact & { eventId: string; deleted?: boolean }): Contact => {
+    const contact = strip({ ...row, tags: [...row.tags] });
+    const household = row.householdId ? households.get(row.householdId) : undefined;
+    return { ...contact, householdId: household && !household.deleted ? household.id : null };
+  };
+  tx.contacts = {
+    insert: (eventId, list) =>
+      Promise.resolve(
+        list.map((input) => {
+          const contact = {
+            ...input,
+            tags: [...input.tags],
+            id: nextId(),
+            eventId,
+            version: 1,
+            createdAt: new Date().toISOString(),
+          };
+          contacts.set(contact.id, contact);
+          return toContact(contact);
+        }),
+      ),
+    find: (eventId, id) => {
+      const contact = liveIn(contacts, eventId, id);
+      return Promise.resolve(contact ? toContact(contact) : null);
+    },
+    update: (eventId, id, expected, changes) => {
+      const contact = liveIn(contacts, eventId, id);
+      if (!contact || contact.version !== expected) return Promise.resolve(null);
+      Object.assign(contact, changes, { version: contact.version + 1 });
+      return Promise.resolve(toContact(contact));
+    },
+    softDelete: (eventId, id, expected) => {
+      const contact = liveIn(contacts, eventId, id);
+      if (!contact || contact.version !== expected) return Promise.resolve(false);
+      Object.assign(contact, { deleted: true, version: contact.version + 1 });
+      return Promise.resolve(true);
+    },
+    restore: (eventId, id) => {
+      const contact = contacts.get(id);
+      if (!contact || contact.eventId !== eventId || !contact.deleted) return Promise.resolve(null);
+      Object.assign(contact, { deleted: false, version: contact.version + 1 });
+      return Promise.resolve(toContact(contact));
+    },
+    inHouseholds: (eventId, householdIds) =>
+      Promise.resolve(
+        [...contacts.values()]
+          .filter(
+            (item) =>
+              item.eventId === eventId &&
+              !item.deleted &&
+              !!item.householdId &&
+              householdIds.includes(item.householdId),
+          )
+          .map(toContact),
+      ),
+    findMatches: (eventId, { phones, emails }) => {
+      const lower = emails.map((email) => email.toLowerCase());
+      return Promise.resolve(
+        [...contacts.values()]
+          .filter(
+            (item) =>
+              item.eventId === eventId &&
+              !item.deleted &&
+              ((item.phone && phones.includes(item.phone)) ||
+                (item.email && lower.includes(item.email.toLowerCase()))),
+          )
+          .map(toContact),
+      );
+    },
+  };
+
+  const guestName = (row: { householdId: string | null; contactId: string | null }) =>
+    (row.householdId
+      ? households.get(row.householdId)?.name
+      : contacts.get(row.contactId!)?.name) ?? '';
+  const toAttendance = (row: AttendanceRow): Attendance => {
+    const { eventId: _eventId, ...rest } = row;
+    return { ...rest, guestName: guestName(row) };
+  };
+  const toInvitation = (row: InvitationRow): Invitation => {
+    const { eventId: _eventId, deleted: _deleted, tokenVersion: _token, ...rest } = row;
+    return {
+      ...rest,
+      subEventIds: [...row.subEventIds],
+      guestName: guestName(row),
+      attendance: [...attendanceRows.values()]
+        .filter((item) => item.invitationId === row.id)
+        .map(({ id, subEventId, status, partySize, respondedAt }) => ({
+          id,
+          subEventId,
+          status,
+          partySize,
+          respondedAt,
+        })),
+    };
+  };
+  const liveInvitation = (eventId: string, id: string) => liveIn(invitations, eventId, id);
+  /** Starts a guest's row for a scope, or reopens the one they had. */
+  const invite = (
+    eventId: string,
+    invitation: InvitationRow,
+    subEventId: string | null,
+    partySize: number,
+  ) => {
+    const existing = [...attendanceRows.values()].find(
+      (item) =>
+        item.eventId === eventId &&
+        item.subEventId === subEventId &&
+        item.householdId === invitation.householdId &&
+        item.contactId === invitation.contactId,
+    );
+    if (existing) {
+      Object.assign(existing, {
+        invitationId: invitation.id,
+        source: 'invited',
+        status: 'invited',
+        partySize,
+        version: existing.version + 1,
+      });
+      return;
+    }
+    const row: AttendanceRow = {
+      id: nextId(),
+      eventId,
+      subEventId,
+      householdId: invitation.householdId,
+      contactId: invitation.contactId,
+      invitationId: invitation.id,
+      source: 'invited',
+      status: 'invited',
+      partySize,
+      respondedAt: null,
+      checkedInAt: null,
+      version: 1,
+    };
+    attendanceRows.set(row.id, row);
+  };
+  const ownRows = (invitationId: string) =>
+    [...attendanceRows.values()].filter((item) => item.invitationId === invitationId);
+
+  tx.invitations = {
+    insert: (eventId, list) =>
+      Promise.resolve(
+        list.map((input) => {
+          const row: InvitationRow = {
+            id: nextId(),
+            eventId,
+            householdId: input.householdId,
+            contactId: input.contactId,
+            deliveryStatus: 'not_sent',
+            distributorMemberId: input.distributorMemberId,
+            sentAt: null,
+            deliveredAt: null,
+            lastOpenedAt: null,
+            subEventIds: [...input.subEventIds],
+            version: 1,
+            tokenVersion: 1,
+            createdAt: new Date().toISOString(),
+          };
+          invitations.set(row.id, row);
+          for (const item of input.attendance)
+            invite(eventId, row, item.subEventId, item.partySize);
+          return toInvitation(row);
+        }),
+      ),
+    find: (eventId, id) => {
+      const row = liveInvitation(eventId, id);
+      return Promise.resolve(row ? toInvitation(row) : null);
+    },
+    findForGuests: (eventId, { householdIds, contactIds }) =>
+      Promise.resolve(
+        [...invitations.values()]
+          .filter(
+            (item) =>
+              item.eventId === eventId &&
+              !item.deleted &&
+              ((item.householdId && householdIds.includes(item.householdId)) ||
+                (item.contactId && contactIds.includes(item.contactId))),
+          )
+          .map(toInvitation),
+      ),
+    update: (eventId, id, expected, changes) => {
+      const row = liveInvitation(eventId, id);
+      if (!row || row.version !== expected) return Promise.resolve(null);
+      const { sentAt, deliveredAt, ...rest } = changes;
+      Object.assign(row, rest, { version: row.version + 1 });
+      if (sentAt !== undefined) row.sentAt = sentAt?.toISOString() ?? null;
+      if (deliveredAt !== undefined) row.deliveredAt = deliveredAt?.toISOString() ?? null;
+      return Promise.resolve(toInvitation(row));
+    },
+    changeSubEvents: (eventId, id, expected, { add, remove }) => {
+      const row = liveInvitation(eventId, id);
+      if (!row || row.version !== expected) return Promise.resolve(null);
+      for (const item of add) invite(eventId, row, item.subEventId, item.partySize);
+      for (const item of ownRows(id)) {
+        if (item.subEventId && remove.includes(item.subEventId)) item.status = 'cancelled';
+      }
+      row.subEventIds = [
+        ...row.subEventIds.filter((subEventId) => !remove.includes(subEventId)),
+        ...add.map((item) => item.subEventId),
+      ];
+      row.version += 1;
+      return Promise.resolve(toInvitation(row));
+    },
+    softDelete: (eventId, id, expected) => {
+      const row = liveInvitation(eventId, id);
+      if (!row || row.version !== expected) return Promise.resolve(false);
+      Object.assign(row, { deleted: true, version: row.version + 1 });
+      for (const item of ownRows(id)) Object.assign(item, { status: 'cancelled' });
+      return Promise.resolve(true);
+    },
+    restore: (eventId, id, statuses) => {
+      const row = invitations.get(id);
+      if (!row || row.eventId !== eventId || !row.deleted) return Promise.resolve(null);
+      const again = [...invitations.values()].some(
+        (item) =>
+          item.eventId === eventId &&
+          !item.deleted &&
+          ((row.householdId && item.householdId === row.householdId) ||
+            (row.contactId && item.contactId === row.contactId)),
+      );
+      if (again) return Promise.resolve('already_invited' as const);
+      Object.assign(row, { deleted: false, version: row.version + 1 });
+      for (const item of ownRows(id)) {
+        const wanted = statuses.find((status) => status.subEventId === item.subEventId);
+        if (wanted) Object.assign(item, { status: wanted.status, version: item.version + 1 });
+      }
+      return Promise.resolve(toInvitation(row));
+    },
+    markOpened: (eventId, id, at) => {
+      const row = liveInvitation(eventId, id);
+      const hourAgo = at.getTime() - 60 * 60 * 1000;
+      if (row && (!row.lastOpenedAt || Date.parse(row.lastOpenedAt) < hourAgo)) {
+        row.lastOpenedAt = at.toISOString();
+      }
+      return Promise.resolve();
+    },
+    regenerate: (eventId, id, expected) => {
+      const row = liveInvitation(eventId, id);
+      if (!row || row.version !== expected) return Promise.resolve(null);
+      Object.assign(row, { tokenVersion: row.tokenVersion + 1, version: row.version + 1 });
+      return Promise.resolve(toInvitation(row));
+    },
+  };
+
+  tx.attendance = {
+    find: (eventId, id) => {
+      const row = attendanceRows.get(id);
+      return Promise.resolve(row && row.eventId === eventId ? toAttendance(row) : null);
+    },
+    update: (eventId, id, expected, changes) => {
+      const row = attendanceRows.get(id);
+      if (!row || row.eventId !== eventId || row.version !== expected) return Promise.resolve(null);
+      Object.assign(row, changes, { version: row.version + 1 });
+      return Promise.resolve(toAttendance(row));
+    },
+    respond: (eventId, id, { status, partySize, respondedAt }) => {
+      const row = attendanceRows.get(id);
+      if (!row || row.eventId !== eventId) return Promise.resolve(null);
+      Object.assign(row, {
+        status,
+        partySize,
+        respondedAt: respondedAt.toISOString(),
+        version: row.version + 1,
+      });
+      return Promise.resolve(toAttendance(row));
+    },
+  };
+
   tx.activity = {
     insert: (rows) => {
       const stored = rows.map((row) => ({
@@ -796,6 +1138,10 @@ export function memoryRuntime() {
     tasks,
     categories,
     expenses,
+    households,
+    contacts,
+    invitations,
+    attendance: attendanceRows,
     modules,
     outbox,
     activity,

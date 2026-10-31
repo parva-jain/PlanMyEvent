@@ -14,6 +14,7 @@ import { apiFetch, ApiError } from './api';
 import { eventKeys } from './events';
 import { highlight } from './live-highlights';
 import { budgetKeys } from './budget';
+import { peopleKeys } from './people';
 import { taskKeys } from './tasks';
 import { teamKeys } from './team';
 
@@ -63,6 +64,18 @@ function affected(eventId: string, entityType: string): { queryKey: QueryKey; ex
       return [
         { queryKey: budgetKeys.expenses(eventId) },
         { queryKey: budgetKeys.categories(eventId) },
+      ];
+    case 'household':
+    case 'contact':
+    case 'invitation':
+    case 'attendance':
+      // Guests name each other: members of a household, the guest on an invitation, and
+      // invitations carry their attendance.
+      return [
+        { queryKey: peopleKeys.households(eventId) },
+        { queryKey: peopleKeys.contacts(eventId) },
+        { queryKey: peopleKeys.invitations(eventId) },
+        { queryKey: peopleKeys.attendance(eventId) },
       ];
     default:
       return [{ queryKey: eventKeys.event(eventId) }];

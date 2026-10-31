@@ -20,6 +20,15 @@ export function loadApiEnv(source: Record<string, string | undefined> = process.
         'local-development-secret-not-for-production',
         nodeEnv,
       ),
+      /**
+       * Derives invitation links (APIDesign "Link tokens"). At least 32 characters; changing it
+       * breaks every link already shared.
+       */
+      INVITATION_LINK_KEY: devDefault(
+        z.string().min(32),
+        'local-development-invitation-key-not-for-production',
+        nodeEnv,
+      ),
       /** Google sign-in is on only when both are set. */
       GOOGLE_CLIENT_ID: z.string().optional(),
       GOOGLE_CLIENT_SECRET: z.string().optional(),

@@ -37,6 +37,11 @@ const EVENT_TABLES = [
   'tasks',
   'expenses',
   'budget_categories',
+  'attendance',
+  'invitation_sub_events',
+  'invitations',
+  'contacts',
+  'households',
   'role_assignment_scopes',
   'role_assignments',
   'member_invites',
@@ -53,6 +58,8 @@ export async function deleteTestEvents(db: Database, eventIds: string[]) {
     eventIds.map((id) => sql`${id}::uuid`),
     sql`, `,
   );
+  // Households and contacts point at each other; break the circle first.
+  await db.execute(sql`update households set primary_contact_id = null where event_id in (${ids})`);
   for (const table of EVENT_TABLES) {
     await db.execute(sql`delete from ${sql.identifier(table)} where event_id in (${ids})`);
   }

@@ -1,6 +1,12 @@
 import type {
+  AttendanceSummary,
   EventModule,
+  Invitation,
+  UpdateAttendance,
+  UpdateInvitation,
   UpdateBudgetCategory,
+  UpdateContact,
+  UpdateHousehold,
   UpdateExpense,
   UpdateEvent,
   UpdateSubEvent,
@@ -20,6 +26,20 @@ import {
 import type { ActionContext } from '../context.js';
 import { ActionError } from '../errors.js';
 import { replaceModules, updateEvent } from '../events/event-actions.js';
+import {
+  deleteContact,
+  deleteHousehold,
+  restoreContact,
+  restoreHousehold,
+  updateContact,
+  updateHousehold,
+} from '../guests/guest-actions.js';
+import {
+  deleteInvitation,
+  restoreInvitation,
+  updateAttendance,
+  updateInvitation,
+} from '../guests/invitation-actions.js';
 import {
   deleteSubEvent,
   deleteVenue,
@@ -93,6 +113,28 @@ const EXPENSE_FIELDS = [
   'transactionRef',
   'notes',
 ] as const satisfies readonly (keyof UpdateExpense)[];
+const HOUSEHOLD_FIELDS = [
+  'name',
+  'expectedCount',
+  'primaryContactId',
+] as const satisfies readonly (keyof UpdateHousehold)[];
+const CONTACT_FIELDS = [
+  'householdId',
+  'name',
+  'phone',
+  'email',
+  'tags',
+  'notes',
+] as const satisfies readonly (keyof UpdateContact)[];
+const INVITATION_FIELDS = [
+  'deliveryStatus',
+  'distributorMemberId',
+  'subEventIds',
+] as const satisfies readonly (keyof UpdateInvitation)[];
+const ATTENDANCE_FIELDS = [
+  'status',
+  'partySize',
+] as const satisfies readonly (keyof UpdateAttendance)[];
 
 type Fields = Record<string, unknown>;
 const fields = (value: unknown): Fields => (value ?? {}) as Fields;
@@ -234,6 +276,53 @@ const PLANNERS: Record<string, Planner> = {
     inverse(restoreExpense, {
       expenseId: entry.entityId,
       subEventId: (fields(entry.before).subEventId as string | null | undefined) ?? null,
+    }),
+  'household.create': (_tx, _ctx, entry) =>
+    inverse(deleteHousehold, {
+      householdId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+    }),
+  'household.update': (_tx, _ctx, entry) =>
+    inverse(updateHousehold, {
+      householdId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      changes: pick<UpdateHousehold>(entry.before, HOUSEHOLD_FIELDS),
+    }),
+  'household.delete': (_tx, _ctx, entry) =>
+    inverse(restoreHousehold, { householdId: entry.entityId }),
+  'contact.create': (_tx, _ctx, entry) =>
+    inverse(deleteContact, { contactId: entry.entityId, expectedVersion: versionOf(entry.after) }),
+  'contact.update': (_tx, _ctx, entry) =>
+    inverse(updateContact, {
+      contactId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      changes: pick<UpdateContact>(entry.before, CONTACT_FIELDS),
+    }),
+  'contact.delete': (_tx, _ctx, entry) => inverse(restoreContact, { contactId: entry.entityId }),
+  'invitation.create': (_tx, _ctx, entry) =>
+    inverse(deleteInvitation, {
+      invitationId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+    }),
+  'invitation.update': (_tx, _ctx, entry) =>
+    inverse(updateInvitation, {
+      invitationId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      changes: pick<UpdateInvitation>(entry.before, INVITATION_FIELDS),
+    }),
+  'invitation.delete': (_tx, _ctx, entry) =>
+    inverse(restoreInvitation, {
+      invitationId: entry.entityId,
+      // The answers it had, so undo brings them back rather than starting over.
+      attendance: ((fields(entry.before).attendance as Invitation['attendance'] | undefined) ?? [])
+        .filter((row: AttendanceSummary) => row.status !== 'cancelled')
+        .map(({ subEventId, status }: AttendanceSummary) => ({ subEventId, status })),
+    }),
+  'attendance.update': (_tx, _ctx, entry) =>
+    inverse(updateAttendance, {
+      attendanceId: entry.entityId,
+      expectedVersion: versionOf(entry.after),
+      changes: pick<UpdateAttendance>(entry.before, ATTENDANCE_FIELDS),
     }),
 };
 

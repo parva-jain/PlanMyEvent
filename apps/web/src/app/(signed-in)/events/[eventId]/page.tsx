@@ -2,6 +2,7 @@ import { LayoutGrid } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { CardsToDeliverLink } from '@/components/people/cards-to-deliver-link';
 import { EventHeader } from '@/components/shell/event-header';
 import { SectionPlaceholder } from '@/components/shell/section-placeholder';
 
@@ -15,6 +16,7 @@ export default function EventHomePage() {
   return (
     <div className="flex flex-col gap-6 lg:gap-8">
       <EventHeader />
+      <CardsToDeliverLink />
       <SectionPlaceholder section="home" icon={LayoutGrid} />
     </div>
   );

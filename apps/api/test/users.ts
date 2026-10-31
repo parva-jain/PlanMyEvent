@@ -87,12 +87,21 @@ export function testUsers(app: () => NestExpressApplication, codes: Map<string, 
         or id in (select event_id from members where user_id = any($1) and invited_by_user_id is null)`;
       const { rows: eventRows } = await pool.query<{ id: string }>(created, [userIds]);
       const eventIds = eventRows.map((row) => row.id);
+      // Households and contacts point at each other; break the circle first.
+      await pool.query('update households set primary_contact_id = null where event_id = any($1)', [
+        eventIds,
+      ]);
       for (const table of [
         'activity_log',
         'task_assignees',
         'tasks',
         'expenses',
         'budget_categories',
+        'attendance',
+        'invitation_sub_events',
+        'invitations',
+        'contacts',
+        'households',
         'role_assignment_scopes',
         'role_assignments',
         'member_invites',

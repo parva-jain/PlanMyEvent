@@ -40,6 +40,28 @@ export {
   updateVenue,
 } from './events/program-actions.js';
 export { eventSlug, SLUG_PATTERN } from './events/slug.js';
+export {
+  createContact,
+  createHousehold,
+  deleteContact,
+  deleteHousehold,
+  restoreContact,
+  restoreHousehold,
+  updateContact,
+  updateHousehold,
+} from './guests/guest-actions.js';
+export { importContacts, startContactImport } from './guests/import-actions.js';
+export {
+  createInvitation,
+  createInvitations,
+  deleteInvitation,
+  regenerateInvitationLink,
+  restoreInvitation,
+  updateAttendance,
+  updateInvitation,
+  updateInvitations,
+} from './guests/invitation-actions.js';
+export { recordInvitationOpened, respondToInvitation } from './guests/rsvp-actions.js';
 export { EVENT_TEMPLATES } from './events/templates.js';
 export { ActionError } from './errors.js';
 export {
@@ -94,7 +116,16 @@ export type {
   NewTask,
   BudgetCategoryChanges,
   BudgetCategoryStore,
+  AttendanceStore,
+  ContactStore,
   ExpenseStore,
+  InvitationChanges,
+  InvitationStore,
+  NewInvitation,
+  HouseholdChanges,
+  HouseholdStore,
+  NewContact,
+  NewHousehold,
   NewBudgetCategory,
   NewExpense,
   TaskChanges,
