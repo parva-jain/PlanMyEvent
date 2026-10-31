@@ -1,6 +1,6 @@
 import type { Contact, Household } from '@pme/contracts';
 import type { ContactStore, HouseholdStore } from '@pme/core';
-import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 
 import type { Database } from '../client.js';
 import type { DrizzleTx } from '../runtime.js';
@@ -99,6 +99,23 @@ export function householdStore(db: Queryable): HouseholdStore {
         .returning();
       return row ? toHousehold(row) : null;
     },
+    async findByNames(eventId, names) {
+      if (!names.length) return [];
+      const rows = await db
+        .select()
+        .from(households)
+        .where(
+          and(
+            eq(households.eventId, eventId),
+            isNull(households.deletedAt),
+            inArray(
+              sql`lower(${households.name})`,
+              names.map((name) => name.toLowerCase()),
+            ),
+          ),
+        );
+      return rows.map(toHousehold);
+    },
   };
 }
 
@@ -149,6 +166,30 @@ export function contactStore(db: Queryable): ContactStore {
             ),
           )
           .returning(),
+      );
+    },
+    async findMatches(eventId, { phones, emails }) {
+      if (!phones.length && !emails.length) return [];
+      return toContacts(
+        db,
+        await db
+          .select()
+          .from(contacts)
+          .where(
+            and(
+              eq(contacts.eventId, eventId),
+              isNull(contacts.deletedAt),
+              or(
+                phones.length ? inArray(contacts.phone, phones) : undefined,
+                emails.length
+                  ? inArray(
+                      sql`lower(${contacts.email}::text)`,
+                      emails.map((email) => email.toLowerCase()),
+                    )
+                  : undefined,
+              ),
+            ),
+          ),
       );
     },
   };
