@@ -27,6 +27,8 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import type { Database } from './client.js';
 import { users } from './schema/auth.js';
+import { contacts, households } from './schema/guests.js';
+import { invitations } from './schema/invitations.js';
 import { outbox } from './schema/outbox.js';
 import { workspaces } from './schema/workspaces.js';
 import { activityStore } from './stores/activity.js';
@@ -135,11 +137,20 @@ export class DbTx implements CoreTx {
 }
 
 /**
- * "Priya Sharma", or the email's local part before Welcome; guests and the system get a fixed
- * label. The label is stored, so the log still reads right after someone renames themselves.
+ * "Priya Sharma", or the email's local part before Welcome; a guest is "Sharma family (link)"
+ * and the system "System". The label is stored, so the log still reads right after a rename.
  */
 async function actorLabelOf(tx: DbTx, ctx: ActionContext): Promise<string> {
-  if (ctx.actor.kind === 'guest') return 'Guest';
+  if (ctx.actor.kind === 'guest') {
+    // "Sharma family (link)": who answered, through their magic link.
+    const [guest] = await tx.db
+      .select({ name: sql<string | null>`coalesce(${households.name}, ${contacts.name})` })
+      .from(invitations)
+      .leftJoin(households, eq(households.id, invitations.householdId))
+      .leftJoin(contacts, eq(contacts.id, invitations.contactId))
+      .where(eq(invitations.id, ctx.actor.invitationId));
+    return guest?.name ? `${guest.name} (link)` : 'Guest';
+  }
   if (ctx.actor.kind === 'system') return 'System';
   const [user] = await tx.db
     .select({ name: users.name, email: users.email })

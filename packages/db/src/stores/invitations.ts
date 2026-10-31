@@ -314,6 +314,20 @@ export function invitationStore(db: Queryable, key: string | undefined): Invitat
       }
       return one(rows);
     },
+    async markOpened(eventId, invitationId, at) {
+      await db
+        .update(invitations)
+        .set({ lastOpenedAt: at })
+        .where(
+          and(
+            liveInvitation(eventId, invitationId),
+            or(
+              isNull(invitations.lastOpenedAt),
+              sql`${invitations.lastOpenedAt} < ${at.toISOString()}::timestamptz - interval '1 hour'`,
+            ),
+          ),
+        );
+    },
     async regenerate(eventId, invitationId, expectedVersion) {
       const signing = keyOrThrow();
       const [current] = await db
@@ -356,6 +370,15 @@ export function attendanceStore(db: Queryable): AttendanceStore {
           .update(attendance)
           .set({ ...changes, version: sql`${attendance.version} + 1` })
           .where(and(of(eventId, attendanceId), eq(attendance.version, expectedVersion)))
+          .returning(),
+      );
+    },
+    async respond(eventId, attendanceId, answer) {
+      return one(
+        await db
+          .update(attendance)
+          .set({ ...answer, version: sql`${attendance.version} + 1` })
+          .where(of(eventId, attendanceId))
           .returning(),
       );
     },
