@@ -575,6 +575,17 @@ export function memoryRuntime() {
       Object.assign(household, { deleted: false, version: household.version + 1 });
       return Promise.resolve(strip({ ...household }));
     },
+    findByNames: (eventId, names) => {
+      const wanted = names.map((name) => name.toLowerCase());
+      return Promise.resolve(
+        [...households.values()]
+          .filter(
+            (item) =>
+              item.eventId === eventId && !item.deleted && wanted.includes(item.name.toLowerCase()),
+          )
+          .map((item) => strip({ ...item })),
+      );
+    },
   };
 
   /** A deleted household reads as none (packages/db joins live households). */
@@ -620,6 +631,20 @@ export function memoryRuntime() {
       if (!contact || contact.eventId !== eventId || !contact.deleted) return Promise.resolve(null);
       Object.assign(contact, { deleted: false, version: contact.version + 1 });
       return Promise.resolve(toContact(contact));
+    },
+    findMatches: (eventId, { phones, emails }) => {
+      const lower = emails.map((email) => email.toLowerCase());
+      return Promise.resolve(
+        [...contacts.values()]
+          .filter(
+            (item) =>
+              item.eventId === eventId &&
+              !item.deleted &&
+              ((item.phone && phones.includes(item.phone)) ||
+                (item.email && lower.includes(item.email.toLowerCase()))),
+          )
+          .map(toContact),
+      );
     },
   };
 
