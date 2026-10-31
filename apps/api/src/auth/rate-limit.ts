@@ -30,11 +30,15 @@ export interface RateLimitResult {
 }
 
 /**
- * Rate limits for sign-in, which is a public write: if Redis is unavailable they fail
- * closed (SystemDesign "Failure modes"), so nobody can flood the email provider while
- * limits can't be counted. Google sign-in keeps working.
+ * Rate limits. If Redis is unavailable, public writes like sign-in fail closed (SystemDesign
+ * "Failure modes"), so nobody can flood the email provider while limits can't be counted;
+ * signed-in routes pass `failOpen` (APIDesign "Rate limits").
  */
-export function createRateLimiter(redis: Redis, prefix = 'ratelimit') {
+export function createRateLimiter(
+  redis: Redis,
+  prefix = 'ratelimit',
+  { failOpen = false }: { failOpen?: boolean } = {},
+) {
   return {
     async consume(key: string, rule: RateLimitRule): Promise<RateLimitResult> {
       try {
@@ -49,7 +53,9 @@ export function createRateLimiter(redis: Redis, prefix = 'ratelimit') {
           ? { allowed: true, retryAfter: null }
           : { allowed: false, retryAfter: retry };
       } catch {
-        return { allowed: false, retryAfter: UNAVAILABLE_RETRY_SECONDS };
+        return failOpen
+          ? { allowed: true, retryAfter: null }
+          : { allowed: false, retryAfter: UNAVAILABLE_RETRY_SECONDS };
       }
     },
   };
