@@ -12,6 +12,7 @@ import { ProblemFilter } from './errors/problem.filter';
 import { EventsModule } from './events/events.module';
 import { GuestsModule } from './guests/guests.module';
 import { HealthModule } from './health/health.module';
+import { JobsModule } from './jobs/jobs.module';
 import { ETagInterceptor } from './http/etag.interceptor';
 import { IdempotencyInterceptor } from './http/idempotency.interceptor';
 import { LifecycleModule } from './lifecycle/lifecycle.module';
@@ -39,6 +40,7 @@ import { TeamModule } from './team/team.module';
     TasksModule,
     BudgetModule,
     GuestsModule,
+    JobsModule,
     LiveModule,
   ],
   providers: [

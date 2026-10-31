@@ -1,18 +1,26 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type {
-  ActivityPage,
-  Contact,
-  CreatedEvent,
-  CreatedMemberInvite,
-  Household,
-  MyMembership,
-  Problem,
-  Role,
-  SubEvent,
+import {
+  importRows,
+  parseCsv,
+  type ActivityPage,
+  type Contact,
+  type ContactImportResult,
+  type CreatedEvent,
+  type CreatedMemberInvite,
+  type Household,
+  type JobAccepted,
+  type JobStatus,
+  type MyMembership,
+  type Problem,
+  type Role,
+  type SubEvent,
 } from '@pme/contracts';
+import { importContacts, runAction } from '@pme/core';
+import { createActionRuntime, type Database } from '@pme/db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { SIGN_IN_CODE_SENDER } from '../src/auth/sign-in-codes';
+import { DB } from '../src/database/database.module';
 import { createApp } from './create-app';
 import { asUser, capturingSender, testUsers } from './users';
 
@@ -150,5 +158,79 @@ describe('guests API', () => {
 
     const { cookie } = await users.signIn();
     await as(cookie).get(`${E}/contacts`).expect(404);
+  });
+
+  it('accepts a CSV import as a job the starter can follow; worker chunks match by phone and email', async () => {
+    const { owner, event, E } = await wedding();
+    const csv =
+      'Name,Mobile,Email,Family,Tags\n' +
+      'Asha Sharma,98765 43210,asha@example.com,Sharma family,VIP\n' +
+      'Rohit Sharma,,,Sharma family,\n';
+    const mapping = {
+      name: ['Name'],
+      phone: 'Mobile',
+      email: 'Email',
+      household: 'Family',
+      tags: 'Tags',
+    };
+    const key = () => crypto.randomUUID();
+    await owner.post(`${E}/contacts/import`).send({ csv, mapping }).expect(400);
+    const bad = await owner
+      .post(`${E}/contacts/import`)
+      .set('Idempotency-Key', key())
+      .send({ csv, mapping: { ...mapping, notes: 'Remarks' } })
+      .expect(422);
+    expect((bad.body as Problem).detail).toBe('Not in the file: Remarks');
+
+    const accepted = await owner
+      .post(`${E}/contacts/import`)
+      .set('Idempotency-Key', key())
+      .send({ csv, mapping })
+      .expect(202);
+    const job = accepted.body as JobAccepted;
+    expect(job).toMatchObject({ status: 'queued', statusUrl: `/v1/jobs/${job.jobId}` });
+    expect(accepted.headers.location).toBe(job.statusUrl);
+    const status = (await owner.get(job.statusUrl).expect(200)).body as JobStatus;
+    expect(status).toMatchObject({
+      kind: 'contacts.import',
+      eventId: event.id,
+      progress: { done: 0, total: 2 },
+    });
+    // Only the starter may follow it.
+    const { cookie } = await users.signIn();
+    await as(cookie).get(job.statusUrl).expect(404);
+
+    // What the worker runs for each chunk, against Postgres.
+    const me = (await owner.get(`${E}/me`).expect(200)).body as MyMembership;
+    const runtime = createActionRuntime(app.get<Database>(DB));
+    const chunk = (text: string): Promise<ContactImportResult> =>
+      runAction(
+        runtime,
+        {
+          requestId: job.jobId,
+          channel: 'app',
+          actor: { kind: 'user', userId: me.member.userId, memberId: null },
+          eventId: event.id,
+          now: new Date(),
+        },
+        importContacts,
+        {
+          importId: job.jobId,
+          rows: importRows(parseCsv(text), mapping),
+          householdSizes: { 'sharma family': 2 },
+        },
+      );
+    expect(await chunk(csv)).toMatchObject({ created: 2, householdsCreated: 1 });
+    const again = await chunk(
+      'Name,Mobile,Email,Family,Tags\n' +
+        'A. Sharma,+919876543210,,,VIP\n' +
+        'Asha,,ASHA@example.com,,Bride side\n',
+    );
+    expect(again).toMatchObject({ created: 0, updated: 1, skipped: 1 });
+    const asha = list<Contact>(await owner.get(`${E}/contacts?q=asha`).expect(200));
+    expect(asha).toHaveLength(1);
+    expect(asha[0]).toMatchObject({ name: 'Asha Sharma', tags: ['VIP', 'Bride side'] });
+    const sharmas = list<Household>(await owner.get(`${E}/households`).expect(200));
+    expect(sharmas).toMatchObject([{ name: 'Sharma family', expectedCount: 2 }]);
   });
 });

@@ -27,6 +27,9 @@ export class ProblemFilter implements ExceptionFilter {
     if (res.headersSent) {
       return;
     }
+    // 429 and 503 say when to come back (APIDesign "Error codes").
+    const retryAfter = (problem as { retryAfter?: unknown }).retryAfter;
+    if (typeof retryAfter === 'number') res.setHeader('Retry-After', String(retryAfter));
     res
       .status(problem.status)
       .type(PROBLEM_CONTENT_TYPE)
