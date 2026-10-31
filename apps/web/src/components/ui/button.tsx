@@ -54,9 +54,11 @@ function Button({
   const classes = cn(buttonVariants({ variant, size }), className);
 
   if (asChild) {
+    // The icon goes inside the child (a link), before its own content.
     return (
       <Slot.Root data-slot="button" className={classes} {...props}>
-        {children}
+        {icon}
+        <Slot.Slottable>{children}</Slot.Slottable>
       </Slot.Root>
     );
   }
