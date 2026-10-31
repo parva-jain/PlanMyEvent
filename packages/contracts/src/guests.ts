@@ -121,3 +121,101 @@ export const ContactQuerySchema = z.object({
   householdId: z.uuid().optional(),
 });
 export type ContactQuery = z.infer<typeof ContactQuerySchema>;
+
+// ---- CSV import -----------------------------------------------------------------------------
+
+/** PRD scale limit: one import holds at most this many guests. */
+export const MAX_IMPORT_ROWS = 5_000;
+/** The worker writes this many rows per transaction (SystemDesign 5.3 "imports"). */
+export const IMPORT_CHUNK_SIZE = 500;
+/** Row errors kept in the job result; the counts cover all of them. */
+export const MAX_IMPORT_ERRORS = 100;
+
+const column = z.string().trim().min(1).max(100);
+
+/**
+ * Which CSV column feeds which field, by header. A name can join up to three columns ("First
+ * name" + "Last name"). Tags split on commas or semicolons within the cell.
+ */
+export const ContactImportMappingSchema = z.object({
+  name: z.array(column).min(1, 'Choose the name column').max(3),
+  phone: column.optional(),
+  email: column.optional(),
+  tags: column.optional(),
+  /** Rows with the same value join one household, made if it doesn't exist. */
+  household: column.optional(),
+  /** The household's expected count; without it a new household counts its rows. */
+  expectedCount: column.optional(),
+  notes: column.optional(),
+});
+export type ContactImportMapping = z.infer<typeof ContactImportMappingSchema>;
+
+/** POST E/contacts/import: the file's text (UTF-8) and the mapping. */
+export const StartContactImportSchema = z.object({
+  csv: z.string().min(1, 'The file is empty').max(900_000, 'The file is over 900 KB'),
+  mapping: ContactImportMappingSchema,
+});
+export type StartContactImport = z.infer<typeof StartContactImportSchema>;
+
+/** One CSV row read through the mapping, before any checks. */
+export interface ContactImportRow {
+  line: number;
+  name: string;
+  phone: string;
+  email: string;
+  tags: string[];
+  household: string;
+  expectedCount: string;
+  notes: string;
+}
+
+/** The mapping's columns missing from the headers, so the client can say which. */
+export function missingColumns(headers: readonly string[], mapping: ContactImportMapping) {
+  const wanted = [
+    ...mapping.name,
+    mapping.phone,
+    mapping.email,
+    mapping.tags,
+    mapping.household,
+    mapping.expectedCount,
+    mapping.notes,
+  ];
+  return wanted.filter((name): name is string => !!name && !headers.includes(name));
+}
+
+/** The parsed file's rows through the mapping (headers already checked). */
+export function importRows(
+  csv: { headers: readonly string[]; rows: readonly { line: number; cells: string[] }[] },
+  mapping: ContactImportMapping,
+): ContactImportRow[] {
+  const at = (cells: string[], name: string | undefined) =>
+    name ? (cells[csv.headers.indexOf(name)] ?? '').trim() : '';
+  return csv.rows.map(({ line, cells }) => ({
+    line,
+    name: mapping.name
+      .map((name) => at(cells, name))
+      .filter(Boolean)
+      .join(' '),
+    phone: at(cells, mapping.phone),
+    email: at(cells, mapping.email),
+    tags: at(cells, mapping.tags)
+      .split(/[,;]/)
+      .map((tag) => tag.trim())
+      .filter(Boolean),
+    household: at(cells, mapping.household),
+    expectedCount: at(cells, mapping.expectedCount),
+    notes: at(cells, mapping.notes),
+  }));
+}
+
+/** What one import did. */
+export const ContactImportResultSchema = z.object({
+  created: z.number().int(),
+  updated: z.number().int(),
+  skipped: z.number().int(),
+  householdsCreated: z.number().int(),
+  /** Every row with a problem, counted; the first MAX_IMPORT_ERRORS listed. */
+  errorCount: z.number().int(),
+  errors: z.array(z.object({ line: z.number().int(), message: z.string() })),
+});
+export type ContactImportResult = z.infer<typeof ContactImportResultSchema>;
