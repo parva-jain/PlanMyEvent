@@ -830,6 +830,14 @@ export function memoryRuntime() {
       }
       return Promise.resolve(toInvitation(row));
     },
+    markOpened: (eventId, id, at) => {
+      const row = liveInvitation(eventId, id);
+      const hourAgo = at.getTime() - 60 * 60 * 1000;
+      if (row && (!row.lastOpenedAt || Date.parse(row.lastOpenedAt) < hourAgo)) {
+        row.lastOpenedAt = at.toISOString();
+      }
+      return Promise.resolve();
+    },
     regenerate: (eventId, id, expected) => {
       const row = liveInvitation(eventId, id);
       if (!row || row.version !== expected) return Promise.resolve(null);
@@ -847,6 +855,17 @@ export function memoryRuntime() {
       const row = attendanceRows.get(id);
       if (!row || row.eventId !== eventId || row.version !== expected) return Promise.resolve(null);
       Object.assign(row, changes, { version: row.version + 1 });
+      return Promise.resolve(toAttendance(row));
+    },
+    respond: (eventId, id, { status, partySize, respondedAt }) => {
+      const row = attendanceRows.get(id);
+      if (!row || row.eventId !== eventId) return Promise.resolve(null);
+      Object.assign(row, {
+        status,
+        partySize,
+        respondedAt: respondedAt.toISOString(),
+        version: row.version + 1,
+      });
       return Promise.resolve(toAttendance(row));
     },
   };
