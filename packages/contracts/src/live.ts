@@ -41,8 +41,19 @@ export type PermissionsChanged = z.infer<typeof PermissionsChangedSchema>;
 export const MemberRemovedSchema = z.object({ eventId: z.uuid() });
 export type MemberRemoved = z.infer<typeof MemberRemovedSchema>;
 
+/** A job I started moved on (APIDesign "Async jobs"); the full status is at GET /v1/jobs/{id}. */
+export const JobProgressSchema = z.object({
+  jobId: z.uuid(),
+  eventId: z.uuid(),
+  status: z.enum(['queued', 'running', 'succeeded', 'failed']),
+  done: z.number().int(),
+  total: z.number().int(),
+});
+export type JobProgress = z.infer<typeof JobProgressSchema>;
+
 export interface ServerToClientEvents {
   'entity.changed': (signal: EntityChanged) => void;
+  'job.progress': (signal: JobProgress) => void;
   'permissions.changed': (signal: PermissionsChanged) => void;
   'member.removed': (signal: MemberRemoved) => void;
 }
@@ -64,7 +75,7 @@ export const LiveSignalSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('emit'),
     room: z.string(),
-    event: z.enum(['entity.changed', 'permissions.changed', 'member.removed']),
+    event: z.enum(['entity.changed', 'permissions.changed', 'member.removed', 'job.progress']),
     data: z.record(z.string(), z.unknown()),
   }),
   z.object({ kind: z.literal('leave'), userId: z.uuid(), eventId: z.uuid() }),

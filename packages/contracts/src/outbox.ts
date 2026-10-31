@@ -1,9 +1,13 @@
 import { z } from 'zod';
 
+import { ContactImportMappingSchema } from './guests.js';
+
 /** BullMQ queues, separated by urgency (SystemDesign 5.3). */
 export const QUEUES = {
   /** Sign-in codes and member invites: small, urgent, highest priority. */
   emailCritical: 'email-critical',
+  /** CSV contact imports, in chunks of 500 rows. */
+  imports: 'imports',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -33,6 +37,16 @@ export const EmailJobSchema = z.discriminatedUnion('template', [
 ]);
 export type EmailJob = z.infer<typeof EmailJobSchema>;
 
+/** A CSV contact import, run as the member who started it. Holds guests' details: sensitive. */
+export const ContactImportJobSchema = z.object({
+  importId: z.uuid(),
+  eventId: z.uuid(),
+  userId: z.uuid(),
+  csv: z.string(),
+  mapping: ContactImportMappingSchema,
+});
+export type ContactImportJob = z.infer<typeof ContactImportJobSchema>;
+
 interface OutboxRoute {
   queue: QueueName;
   /** BullMQ job name. */
@@ -53,6 +67,13 @@ export const OUTBOX_ROUTES = {
     queue: QUEUES.emailCritical,
     job: 'send',
     attempts: 5,
+    backoffMs: 5_000,
+    sensitive: true,
+  },
+  'contacts.import': {
+    queue: QUEUES.imports,
+    job: 'contacts',
+    attempts: 3,
     backoffMs: 5_000,
     sensitive: true,
   },
