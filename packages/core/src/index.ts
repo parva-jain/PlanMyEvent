@@ -28,6 +28,11 @@ export {
 } from './budget/budget-actions.js';
 export type { ActionContext, Actor } from './context.js';
 export { createEvent, replaceModules, updateEvent } from './events/event-actions.js';
+export {
+  mergeRows,
+  startGuestScopeSwitch,
+  switchGuestScope,
+} from './events/guest-scope-actions.js';
 export { liveSignals, permissionsChanged } from './live.js';
 export {
   createSubEvent,
@@ -107,6 +112,7 @@ export type {
   NewMemberInvite,
   NewRole,
   RoleChanges,
+  ScopedAttendance,
   RoleStore,
   NewEvent,
   NewSubEvent,
@@ -122,6 +128,7 @@ export type {
   InvitationChanges,
   InvitationStore,
   NewInvitation,
+  GuestScopeStore,
   HouseholdChanges,
   HouseholdStore,
   NewContact,

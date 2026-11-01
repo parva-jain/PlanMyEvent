@@ -38,7 +38,7 @@ async function findInvitation(tx: CoreTx, ctx: ActionContext, invitationId: stri
 
 /** The event's guest scope decides whether sub-events are chosen, and they must be live. */
 async function checkSubEvents(tx: CoreTx, eventId: string, subEventIds: string[] | undefined) {
-  const event = await tx.events.find(eventId);
+  const event = await tx.events.findForShare(eventId);
   if (!event) throw new ActionError('not_found', 'Event not found');
   if (event.guestScope === 'whole_event') {
     if (subEventIds?.length) {
