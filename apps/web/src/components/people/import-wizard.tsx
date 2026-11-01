@@ -524,7 +524,7 @@ function RunStep({ jobId, back }: { jobId: string; back: string }) {
   }, [finished, queryClient, eventId]);
 
   const percent = job && job.progress.total ? (job.progress.done / job.progress.total) * 100 : 0;
-  const result = job?.result;
+  const result = job?.result && 'created' in job.result ? job.result : null;
 
   return (
     <div className="flex flex-col gap-6" data-testid="import-run">
