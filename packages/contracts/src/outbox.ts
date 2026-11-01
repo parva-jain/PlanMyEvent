@@ -1,12 +1,13 @@
 import { z } from 'zod';
 
+import { GuestScopeSchema } from './enums.js';
 import { ContactImportMappingSchema } from './guests.js';
 
 /** BullMQ queues, separated by urgency (SystemDesign 5.3). */
 export const QUEUES = {
   /** Sign-in codes and member invites: small, urgent, highest priority. */
   emailCritical: 'email-critical',
-  /** CSV contact imports, in chunks of 500 rows. */
+  /** CSV contact imports (in chunks of 500 rows) and guest-scope switches. */
   imports: 'imports',
 } as const;
 
@@ -47,6 +48,15 @@ export const ContactImportJobSchema = z.object({
 });
 export type ContactImportJob = z.infer<typeof ContactImportJobSchema>;
 
+/** A guest-scope switch, run as the member who asked for it. Ids only: not sensitive. */
+export const GuestScopeJobSchema = z.object({
+  switchId: z.uuid(),
+  eventId: z.uuid(),
+  userId: z.uuid(),
+  guestScope: GuestScopeSchema,
+});
+export type GuestScopeJob = z.infer<typeof GuestScopeJobSchema>;
+
 interface OutboxRoute {
   queue: QueueName;
   /** BullMQ job name. */
@@ -76,6 +86,13 @@ export const OUTBOX_ROUTES = {
     attempts: 3,
     backoffMs: 5_000,
     sensitive: true,
+  },
+  'event.guest_scope': {
+    queue: QUEUES.imports,
+    job: 'guest-scope',
+    attempts: 3,
+    backoffMs: 5_000,
+    sensitive: false,
   },
 } as const satisfies Record<string, OutboxRoute>;
 

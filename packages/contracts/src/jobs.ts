@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { GuestScopeResultSchema } from './events.js';
 import { ContactImportResultSchema } from './guests.js';
 
 /**
@@ -23,7 +24,7 @@ export function jobId(...parts: [string, ...(string | number)[]]): string {
 
 // ---- Job status (APIDesign "Async jobs") -----------------------------------------------------
 
-export const JOB_KINDS = ['contacts.import'] as const;
+export const JOB_KINDS = ['contacts.import', 'event.guest_scope'] as const;
 export const JobKindSchema = z.enum(JOB_KINDS);
 export type JobKind = z.infer<typeof JobKindSchema>;
 
@@ -40,7 +41,7 @@ export const JobStatusSchema = z.object({
   eventId: z.uuid(),
   status: JobStateSchema,
   progress: z.object({ done: z.number().int(), total: z.number().int() }),
-  result: ContactImportResultSchema.nullable(),
+  result: z.union([ContactImportResultSchema, GuestScopeResultSchema]).nullable(),
   /** Why it failed, for people. */
   error: z.string().nullable(),
 });
@@ -56,6 +57,11 @@ export type JobAccepted = z.infer<typeof JobAcceptedSchema>;
 
 /** Redis key of a job's status, with the user who started it (only they may read it). */
 export const jobStatusKey = (id: string) => `job:${id}`;
+/**
+ * Redis key naming the event's latest guest-scope switch (its job id), so a second request
+ * while it's queued or running gets 409 job_already_running.
+ */
+export const guestScopeJobKey = (eventId: string) => `job:guest-scope:${eventId}`;
 export const JOB_STATUS_TTL_SECONDS = 24 * 60 * 60;
 export const StoredJobStatusSchema = JobStatusSchema.extend({ userId: z.uuid() });
 export type StoredJobStatus = z.infer<typeof StoredJobStatusSchema>;
