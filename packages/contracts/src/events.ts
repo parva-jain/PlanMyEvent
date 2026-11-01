@@ -132,10 +132,27 @@ export const UpdateEventSchema = z
     timeZone: TimeZoneSchema,
     status: EventStatusSchema,
     budgetPaise: PaiseSchema.nullable(),
+    /** How guests respond when they belong to the whole event (per sub-event: on each one). */
+    responseMode: ResponseModeSchema,
   })
   .partial()
   .refine(dateOrder, dateOrderIssue);
 export type UpdateEvent = z.infer<typeof UpdateEventSchema>;
+
+/**
+ * POST E/guest-scope: guests for the whole event, or separate per sub-event. Runs as a job
+ * (DatabaseDesign "Switching guest scope").
+ */
+export const SwitchGuestScopeSchema = z.object({ guestScope: GuestScopeSchema });
+export type SwitchGuestScope = z.infer<typeof SwitchGuestScopeSchema>;
+
+/** What a switch did. */
+export const GuestScopeResultSchema = z.object({
+  guestScope: GuestScopeSchema,
+  /** Attendance rows written: copies made, or rows merged into one per guest. */
+  attendanceRows: z.number().int(),
+});
+export type GuestScopeResult = z.infer<typeof GuestScopeResultSchema>;
 
 /** GET /v1/me/events item: an event I'm an active member of, with my role names. */
 export const MyEventSchema = EventSchema.pick({
