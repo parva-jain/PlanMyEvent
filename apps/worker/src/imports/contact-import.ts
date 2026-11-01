@@ -37,6 +37,10 @@ const empty = (): ContactImportResult => ({
   errors: [],
 });
 
+/** An import's running totals (a status's result may belong to another kind of job). */
+const importResult = (result: StoredJobStatus['result'] | undefined): ContactImportResult =>
+  result && 'created' in result ? result : empty();
+
 function add(total: ContactImportResult, chunk: ContactImportResult): ContactImportResult {
   return {
     created: total.created + chunk.created,
@@ -48,9 +52,13 @@ function add(total: ContactImportResult, chunk: ContactImportResult): ContactImp
   };
 }
 
-/** The member lost guests.edit or left, or the event is gone: retrying won't help. */
+/**
+ * The member lost the permission or left, the event is gone, or the request no longer makes
+ * sense: retrying won't help.
+ */
 export const isPermanent = (error: unknown) =>
-  error instanceof ActionError && (error.code === 'forbidden' || error.code === 'not_found');
+  error instanceof ActionError &&
+  (error.code === 'forbidden' || error.code === 'not_found' || error.code === 'validation_failed');
 
 /**
  * Runs a CSV import (SystemDesign 5.3 "imports"): 500 rows per transaction, as the member who
@@ -73,7 +81,7 @@ export async function runContactImport(job: ContactImportJob, deps: ImportDeps):
     userId: job.userId,
     status: 'running',
     progress: { done: previous?.progress.done ?? 0, total: rows.length },
-    result: previous?.result ?? empty(),
+    result: importResult(previous?.result),
     error: null,
   };
   const report = async (next: StoredJobStatus) => {
@@ -112,7 +120,7 @@ export async function runContactImport(job: ContactImportJob, deps: ImportDeps):
     await report({
       ...status,
       progress: { done: start + chunk.length, total: rows.length },
-      result: add(status.result ?? empty(), result),
+      result: add(importResult(status.result), result),
     });
   }
   await report({ ...status, status: 'succeeded' });
