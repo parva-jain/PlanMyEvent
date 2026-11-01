@@ -40,7 +40,9 @@ function affected(eventId: string, entityType: string): { queryKey: QueryKey; ex
   const event = { queryKey: eventKeys.event(eventId), exact: true };
   switch (entityType) {
     case 'event':
-      return [event, { queryKey: eventKeys.mine }];
+      // The event's settings shape every screen (a guest-scope switch rewrites guests), so
+      // everything on screen for it re-reads.
+      return [{ queryKey: eventKeys.event(eventId) }, { queryKey: eventKeys.mine }];
     case 'event_modules':
       return [event, { queryKey: eventKeys.modules(eventId) }];
     case 'venue':

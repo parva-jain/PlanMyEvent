@@ -809,6 +809,45 @@
         "registration": "A public page where people sign up",
         "gallery": "Photos shared with the team"
       }
+    },
+    "guests": {
+      "title": "People and responses",
+      "subtitle": "Who's invited to what, and how guests answer.",
+      "scopeHeading": "Who's invited to what?",
+      "wholeEvent": "Same people for everything",
+      "wholeEventHelp": "One guest list for the whole event: one invitation, one reply and one headcount.",
+      "perSubEvent": "Different people for each sub-event",
+      "perSubEventHelp": "Each sub-event has its own guest list, replies and headcount.",
+      "toPerSubEvent": "Switch to separate lists",
+      "toWholeEvent": "Use one list for everything",
+      "modeHeading": "How guests respond",
+      "modeFor": "How guests respond to {name}",
+      "modes": {
+        "invite_only": "Invite only",
+        "invite_rsvp": "Invite + RSVP",
+        "open_registration": "Open registration"
+      },
+      "modeHelp": {
+        "invite_only": "No replies; the headcount is what you expect.",
+        "invite_rsvp": "Guests say through their link if they're coming, and how many.",
+        "open_registration": ""
+      },
+      "comingSoon": "Comes with the public registration page.",
+      "conflict": "The event changed a moment ago. Try again.",
+      "failed": "Couldn't save. Try again in a moment.",
+      "confirmPerSubEvent": "Use different people for each sub-event?",
+      "explainPerSubEvent": "Everyone on your list is added to every sub-event, with their replies. You can then take people off the sub-events they're not part of. This takes a few seconds.",
+      "confirmWholeEvent": "Use one list for everything?",
+      "explainWholeEvent": "Each guest's sub-events merge into one invitation for the whole event, keeping their warmest reply and largest party.",
+      "canSwitchBack": "You can switch back later; replies are kept.",
+      "progressLabel": "Switching guest lists",
+      "running": "Switching… replies wait for a moment until it's done.",
+      "done": "Done. Every screen now shows the new lists.",
+      "alreadyRunning": "A switch is already running for this event.",
+      "startFailed": "Couldn't switch. Try again in a moment.",
+      "cancel": "Cancel",
+      "switch": "Switch",
+      "close": "Close"
     }
   },
   "team": {
@@ -1116,7 +1155,8 @@
     "actions": {
       "event": {
         "create": "<b>{actor}</b> created the event",
-        "update": "<b>{actor}</b> updated the event details"
+        "update": "<b>{actor}</b> updated the event details",
+        "guest_scope": "<b>{actor}</b> changed who's invited to what"
       },
       "event_modules": {
         "update": "<b>{actor}</b> changed the modules"

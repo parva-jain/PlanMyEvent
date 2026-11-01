@@ -13,6 +13,8 @@ import { ApiError } from '@/lib/api';
 import { useModules, useReplaceModules, useUpdateEvent } from '@/lib/events';
 import { timeZoneOptions } from '@/lib/format';
 
+import { GuestSettings } from './guest-settings';
+
 const selectClass =
   'h-12 w-full rounded-control border border-border-strong bg-surface-muted px-4 text-body text-fg focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary-tint focus-visible:outline-none';
 
@@ -28,6 +30,7 @@ export function EventSettings() {
     <div className="flex flex-col gap-6 lg:gap-8">
       <h1 className="text-h1-phone sm:text-h1">{t('title')}</h1>
       <DetailsForm />
+      <GuestSettings />
       <ModulesForm />
     </div>
   );

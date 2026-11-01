@@ -8,6 +8,8 @@ import type {
   Event,
   EventModule,
   EventTemplate,
+  GuestScope,
+  JobAccepted,
   MyEvent,
   SubEvent,
   UpdateEvent,
@@ -206,5 +208,29 @@ export function useDeleteSubEvent(eventId: string) {
       return requestId;
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: eventKeys.subEvents(eventId) }),
+  });
+}
+
+/**
+ * POST E/guest-scope: 202 with a job (follow it with useJobStatus). One key per confirmed
+ * switch, so a retried request can't queue it twice.
+ */
+export function useSwitchGuestScope(eventId: string) {
+  return useMutation({
+    mutationFn: ({
+      guestScope,
+      idempotencyKey,
+    }: {
+      guestScope: GuestScope;
+      idempotencyKey: string;
+    }) =>
+      apiFetch<JobAccepted>(`${E(eventId)}/guest-scope`, {
+        method: 'POST',
+        body: { guestScope },
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
+    retry: (count, error) =>
+      error instanceof ApiError && error.problem?.code === 'request_in_progress' && count < 5,
+    retryDelay: 1000,
   });
 }
