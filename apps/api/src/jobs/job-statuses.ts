@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  guestScopeJobKey,
   JOB_STATUS_TTL_SECONDS,
   jobStatusKey,
   StoredJobStatusSchema,
@@ -23,6 +24,28 @@ export class JobStatuses {
     const value: StoredJobStatus = { ...status, status: 'queued', result: null, error: null };
     await this.redis
       .set(jobStatusKey(status.jobId), JSON.stringify(value), 'EX', JOB_STATUS_TTL_SECONDS)
+      .catch(() => undefined);
+  }
+
+  /**
+   * Whether the event's last guest-scope switch is still queued or running. Fails open: a
+   * second switch that slips through finds the scope already changed and does nothing.
+   */
+  async switchInProgress(eventId: string): Promise<boolean> {
+    try {
+      const jobId = await this.redis.get(guestScopeJobKey(eventId));
+      const value = jobId ? await this.redis.get(jobStatusKey(jobId)) : null;
+      const status = value ? StoredJobStatusSchema.safeParse(JSON.parse(value)) : null;
+      return !!status?.success && ['queued', 'running'].includes(status.data.status);
+    } catch {
+      return false;
+    }
+  }
+
+  /** Notes the event's latest switch, for switchInProgress. Best effort. */
+  async rememberSwitch(eventId: string, jobId: string): Promise<void> {
+    await this.redis
+      .set(guestScopeJobKey(eventId), jobId, 'EX', JOB_STATUS_TTL_SECONDS)
       .catch(() => undefined);
   }
 

@@ -8,6 +8,7 @@ import {
   JobAcceptedSchema,
   listOf,
   StartContactImportSchema,
+  SwitchGuestScopeSchema,
   UpdateContactSchema,
   UpdateHouseholdSchema,
 } from '@pme/contracts';
@@ -26,3 +27,4 @@ export class CreateContactDto extends createZodDto(CreateContactSchema) {}
 export class UpdateContactDto extends createZodDto(UpdateContactSchema) {}
 export class StartContactImportDto extends createZodDto(StartContactImportSchema) {}
 export class JobAcceptedDto extends createZodDto(JobAcceptedSchema) {}
+export class SwitchGuestScopeDto extends createZodDto(SwitchGuestScopeSchema) {}
