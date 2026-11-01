@@ -279,7 +279,7 @@ The MVP has about 75 operations across 20 resources. In the tables, E stands for
 | --- | --- | --- | --- |
 | POST | /v1/events | Create from a template; creator becomes Owner | Signed in, plan limit |
 | GET | E | Event details, guest scope, response mode | event.view |
-| PATCH | E | Name, dates, time zone, status, budgetPaise, description, cover | event.settings |
+| PATCH | E | Name, dates, time zone, status, budgetPaise, description, cover, responseMode (used while guests belong to the whole event) | event.settings |
 | DELETE | E | Delete event and all data; 202 job | event.delete |
 | GET | E/me | My member record and effective permissions by scope | Member |
 | GET | E/dashboard | Countdown, task progress, budget totals, headcounts, delivery progress | event.view |

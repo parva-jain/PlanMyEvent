@@ -20,6 +20,7 @@ import {
   deleteHousehold,
   runAction,
   startContactImport,
+  startGuestScopeSwitch,
   updateContact,
   updateHousehold,
   type ActionContext,
@@ -48,6 +49,7 @@ import {
   HouseholdsDto,
   JobAcceptedDto,
   StartContactImportDto,
+  SwitchGuestScopeDto,
   UpdateContactDto,
   UpdateHouseholdDto,
 } from './guests.dto';
@@ -176,6 +178,49 @@ export class GuestsController {
       userId: ctx.actor.kind === 'user' ? ctx.actor.userId : '',
       progress: { done: 0, total },
     });
+    const statusUrl = `/v1/jobs/${jobId}`;
+    res.setHeader('Location', statusUrl);
+    return { jobId, status: 'queued' as const, statusUrl };
+  }
+
+  /**
+   * Guests for the whole event or separate per sub-event (DatabaseDesign "Switching guest
+   * scope"). 202 with a job; one switch per event at a time (409, reason job_already_running).
+   */
+  @Post('guest-scope')
+  @HttpCode(202)
+  @EventRoute('event.settings')
+  @RequireIdempotencyKey()
+  @ZodResponse({ status: 202, type: JobAcceptedDto })
+  async switchGuestScope(
+    @EventContext() ctx: ActionContext,
+    @Body() body: SwitchGuestScopeDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const eventId = ctx.eventId!;
+    if (await this.jobs.switchInProgress(eventId)) {
+      throw new ActionError('conflict', 'A guest scope switch is already running', {
+        reason: 'job_already_running',
+      });
+    }
+    const limit = await this.limiter.consume(`guest-scope:${eventId}`, IMPORTS_PER_HOUR);
+    if (!limit.allowed) {
+      throw new ActionError('rate_limited', 'This event has switched 10 times in the last hour', {
+        retryAfter: limit.retryAfter,
+      });
+    }
+    const { jobId } = await runAction(this.runtime, ctx, startGuestScopeSwitch, {
+      ...body,
+      switchId: newId(),
+    });
+    await this.jobs.queued({
+      jobId,
+      kind: 'event.guest_scope',
+      eventId,
+      userId: ctx.actor.kind === 'user' ? ctx.actor.userId : '',
+      progress: { done: 0, total: 1 },
+    });
+    await this.jobs.rememberSwitch(eventId, jobId);
     const statusUrl = `/v1/jobs/${jobId}`;
     res.setHeader('Location', statusUrl);
     return { jobId, status: 'queued' as const, statusUrl };
