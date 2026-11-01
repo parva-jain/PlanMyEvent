@@ -9,11 +9,13 @@ import type {
   EventModule,
   Expense,
   Grant,
+  GuestScope,
   Household,
   Invitation,
   Member,
   MemberInvite,
   Permission,
+  ResponseMode,
   Role,
   SubEvent,
   Task,
@@ -74,6 +76,11 @@ export interface EventStore {
   /** 'slug_taken' when the slug's unique index rejects it. */
   insert(event: NewEvent): Promise<Event | 'slug_taken'>;
   find(eventId: string): Promise<Event | null>;
+  /**
+   * The event, read with a shared lock (select … for share): guest actions that depend on the
+   * guest scope wait while a scope switch holds the row, then see the new scope.
+   */
+  findForShare(eventId: string): Promise<Event | null>;
   /** Applies the changes and bumps the version, only if the version still matches. */
   update(eventId: string, expectedVersion: number, changes: UpdateEvent): Promise<Event | null>;
   listModules(eventId: string): Promise<EventModule[]>;
@@ -477,6 +484,49 @@ export interface AttendanceStore {
   ): Promise<Attendance | null>;
 }
 
+/** An attendance row as a guest-scope switch sees it, cancelled ones included. */
+export interface ScopedAttendance {
+  id: string;
+  householdId: string | null;
+  contactId: string | null;
+  subEventId: string | null;
+  status: Attendance['status'];
+  partySize: number;
+}
+
+/**
+ * Switching guest scope (DatabaseDesign "Switching guest scope"): the bulk writes, in the
+ * switch's one transaction. The rules (which status wins, who gets copies) are core's.
+ */
+export interface GuestScopeStore {
+  /** The event, locked (select … for update) until the switch commits. */
+  lockEvent(eventId: string): Promise<Event | null>;
+  /** Live sub-events, in schedule order. */
+  subEventIds(eventId: string): Promise<string[]>;
+  attendance(eventId: string): Promise<ScopedAttendance[]>;
+  /**
+   * Each whole-event row becomes one row per sub-event with the same answer (copies, then
+   * the original is removed). Returns how many rows were written.
+   */
+  spread(eventId: string, subEventIds: string[]): Promise<number>;
+  /** One whole-event row per guest: `keepId` takes the status and party size, the rest go. */
+  collapse(
+    eventId: string,
+    merges: {
+      keepId: string;
+      status: Attendance['status'];
+      partySize: number;
+      removeIds: string[];
+    }[],
+  ): Promise<void>;
+  /** Every live invitation covers exactly these sub-events (none: the whole event). */
+  setInvitationSubEvents(eventId: string, subEventIds: string[]): Promise<void>;
+  /** Every live sub-event's response mode; null when guests belong to the whole event. */
+  setSubEventResponseModes(eventId: string, mode: ResponseMode | null): Promise<void>;
+  /** Sets the scope, bumping version and content_version. */
+  setScope(eventId: string, scope: GuestScope): Promise<Event>;
+}
+
 /** An activity_log row as stored. */
 export interface StoredActivity {
   id: string;
@@ -525,4 +575,5 @@ export interface CoreTx {
   contacts: ContactStore;
   invitations: InvitationStore;
   attendance: AttendanceStore;
+  guestScope: GuestScopeStore;
 }

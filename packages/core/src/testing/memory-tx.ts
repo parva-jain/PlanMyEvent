@@ -150,6 +150,7 @@ export function memoryRuntime() {
     | 'contacts'
     | 'invitations'
     | 'attendance'
+    | 'guestScope'
   > = {
     users: {
       updateProfile: (userId, changes) => {
@@ -192,6 +193,8 @@ export function memoryRuntime() {
         return Promise.resolve({ ...event });
       },
       find: (id) => Promise.resolve(liveEvent(id) ? strip({ ...liveEvent(id)! }) : null),
+      // One transaction at a time here, so a shared lock is just a read.
+      findForShare: (id) => Promise.resolve(liveEvent(id) ? strip({ ...liveEvent(id)! }) : null),
       update: (id, expected, changes) => {
         const event = liveEvent(id);
         if (!event || event.version !== expected) return Promise.resolve(null);
@@ -867,6 +870,75 @@ export function memoryRuntime() {
         version: row.version + 1,
       });
       return Promise.resolve(toAttendance(row));
+    },
+  };
+
+  const liveSubEventIds = (eventId: string) =>
+    [...subEvents.values()]
+      .filter((item) => item.eventId === eventId && !item.deleted)
+      .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+      .map((item) => item.id);
+
+  tx.guestScope = {
+    lockEvent: (eventId) => tx.events.find(eventId),
+    subEventIds: (eventId) => Promise.resolve(liveSubEventIds(eventId)),
+    attendance: (eventId) =>
+      Promise.resolve(
+        [...attendanceRows.values()]
+          .filter((row) => row.eventId === eventId)
+          .map(({ id, householdId, contactId, subEventId, status, partySize }) => ({
+            id,
+            householdId,
+            contactId,
+            subEventId,
+            status,
+            partySize,
+          })),
+      ),
+    spread: (eventId, subEventIds) => {
+      let written = 0;
+      for (const row of [...attendanceRows.values()]) {
+        if (row.eventId !== eventId || row.subEventId !== null) continue;
+        for (const subEventId of subEventIds) {
+          const copy = { ...row, id: nextId(), subEventId, version: 1 };
+          attendanceRows.set(copy.id, copy);
+          written++;
+        }
+        attendanceRows.delete(row.id);
+      }
+      return Promise.resolve(written);
+    },
+    collapse: (eventId, merges) => {
+      for (const merge of merges) {
+        for (const id of merge.removeIds) attendanceRows.delete(id);
+        const keep = attendanceRows.get(merge.keepId);
+        if (keep && keep.eventId === eventId) {
+          Object.assign(keep, {
+            subEventId: null,
+            status: merge.status,
+            partySize: merge.partySize,
+            version: keep.version + 1,
+          });
+        }
+      }
+      return Promise.resolve();
+    },
+    setInvitationSubEvents: (eventId, subEventIds) => {
+      for (const row of invitations.values()) {
+        if (row.eventId === eventId && !row.deleted) row.subEventIds = [...subEventIds];
+      }
+      return Promise.resolve();
+    },
+    setSubEventResponseModes: (eventId, mode) => {
+      for (const item of subEvents.values()) {
+        if (item.eventId === eventId && !item.deleted) item.responseMode = mode;
+      }
+      return Promise.resolve();
+    },
+    setScope: (eventId, scope) => {
+      const event = liveEvent(eventId)!;
+      Object.assign(event, { guestScope: scope, version: event.version + 1 });
+      return Promise.resolve(strip({ ...event }));
     },
   };
 

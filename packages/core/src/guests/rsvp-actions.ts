@@ -43,7 +43,7 @@ export const respondToInvitation: ActionDefinition<Rsvp, Attendance[], CoreTx> =
     const eventId = ctx.eventId!;
     const invitation = await tx.invitations.find(eventId, invitationIdOf(ctx.actor));
     if (!invitation) throw new ActionError('link_revoked', 'This invitation was withdrawn');
-    const event = await tx.events.find(eventId);
+    const event = await tx.events.findForShare(eventId);
     if (!event) throw new ActionError('not_found', 'Event not found');
 
     const seen = new Set<string | null>();
