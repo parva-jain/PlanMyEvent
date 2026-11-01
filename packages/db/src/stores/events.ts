@@ -81,6 +81,10 @@ export function eventStore(db: Queryable): EventStore {
       const [row] = await db.select().from(events).where(liveEvent(eventId));
       return row ? toEvent(row) : null;
     },
+    async findForShare(eventId) {
+      const [row] = await db.select().from(events).where(liveEvent(eventId)).for('share');
+      return row ? toEvent(row) : null;
+    },
     async update(eventId, expectedVersion, changes) {
       const [row] = await db
         .update(events)
