@@ -268,6 +268,8 @@ function Entry({
           setError(t('alreadyUndone'));
         } else if (reason === 'not_undoable') {
           setError(t('notUndoable'));
+        } else if (reason === 'guest_scope_changed') {
+          setError(t('guestScopeChanged'));
         } else {
           setError(t('undoFailed'));
         }

@@ -1,6 +1,7 @@
 import { LIVE_TOPIC } from '@pme/contracts';
 import { describe, expect, it } from 'vitest';
 
+import { undoActivity } from '../activity/undo.js';
 import { createHousehold, createContact } from '../guests/guest-actions.js';
 import { createInvitation, updateAttendance } from '../guests/invitation-actions.js';
 import { testWedding } from '../testing/wedding.js';
@@ -122,6 +123,27 @@ describe('guest scope', () => {
     expect(raviRows).toMatchObject([{ subEventId: null, status: 'invited' }]);
     expect(invitations.get(card.id)!.subEventIds).toEqual([]);
     expect(live().every((item) => item.responseMode === null)).toBe(true);
+  });
+
+  it("undo refuses guest changes made before a switch, since they'd come back in the old shape", async () => {
+    const { run, sharmas, card, activity } = await wedding();
+    await run('owner', updateAttendance, {
+      attendanceId: card.attendance[0]!.id,
+      expectedVersion: 1,
+      changes: { status: 'confirmed' },
+    });
+    const answered = activity.at(-1)!;
+    const household = activity.find((item) => item.entityId === sharmas.id)!;
+    await run('owner', switchGuestScope, { guestScope: 'per_sub_event' });
+
+    await expect(run('owner', undoActivity, { entryId: answered.id })).rejects.toMatchObject({
+      code: 'conflict',
+      details: { reason: 'guest_scope_changed' },
+    });
+    // Households and contacts keep their shape, so their undo still works.
+    await expect(run('owner', undoActivity, { entryId: household.id })).resolves.toMatchObject({
+      entityType: 'household',
+    });
   });
 
   it('merging ranks checked in, then confirmed, then invited, then declined; cancelled last', () => {
