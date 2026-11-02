@@ -6,7 +6,7 @@ Context for AI coding sessions. Read this first. Before designing or changing an
 
 Plan My Event: a web app where a team plans and runs one event together (sub-events, tasks, budget, guests, invitations, attendance) with live updates. Generic across weddings, conferences, college fests, fairs and celebrations. Portfolio project intended to launch as a freemium product. Solo developer, India-first (INR, Indian phone numbers, Hindi later).
 
-Status: design complete; implementation starting with milestone 1 (scaffolding).
+Status: milestones 1–7 merged to `main`; milestone 8 is next. `docs/STATUS.md` says where to start.
 
 ## Source of truth
 
@@ -61,6 +61,7 @@ TypeScript everywhere. pnpm workspaces + Turborepo.
 - Conventional commits (`feat:`, `fix:`, `chore:`…); one branch and PR per milestone or feature.
 - Tests: Vitest for `core`, `api` and `worker`; Playwright for key flows. Every core action gets tests for its permission check and its outbox rows.
 - Keep dependencies on current stable versions; pin exact versions in lockfiles.
+- Never revert or discard changes in `docs/` you didn't make; other sessions edit them.
 
 ## Commands
 
