@@ -1,10 +1,23 @@
 # Project status
 
-Last updated: Oct 31, 2026 · Updated at the end of every working step.
+Last updated: Nov 2, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Milestone 7 — contacts, households, CSV import; invitations, magic links, RSVP**, branch `feat/m7-guests`. Milestones 1–6 and the review fixes are merged to `main` (PRs #1 and #2 squashed, #3–#7 rebase-merged).
+**Next: milestone 8 — open registration; dashboard aggregates; notifications; basic gallery.** Not started; no branch yet (create `feat/m8-…` from `main`). Milestones 1–7 are merged to `main` (PRs #1 and #2 squashed, #3–#8 rebase-merged).
+
+### Start here (next session)
+
+1. `git checkout main && git pull`, then `docker compose -f infra/docker-compose.yml up -d --wait`, `pnpm install`, `pnpm db:migrate`.
+2. Read the milestone 8 parts of `docs/PRD.md` (open registration, dashboard, notifications, gallery), then `docs/APIDesign.md`, `docs/DatabaseDesign.md` and `docs/MOTION.md` for those screens, and the Stitch screens for them. `docs/STITCH_PROGRESS.md` lists batch E (public event page, registration, gallery, notifications, profile) as not designed yet; design those first or build from DESIGN.md.
+3. Propose 8a, 8b, … in this file before building, same pattern as milestone 7: backend step, then web step, then a review step that ends with the PR.
+4. Pieces already waiting for milestone 8 (see Follow-ups): `open_registration` response mode (shown disabled in Settings, refused by the API), `POST E/attendance` for walk-ins, `dashboard.changed` socket signal, `notification.new`, media table (expense receipts, gallery), task comments and reminders, the scheduled queue (outbox and idempotency cleanup).
+
+Working style: a step at a time with a pause for the go-ahead; one learning note per step in `docs/learning/`; STATUS updated every step; one-line commits staged by file name; PRs rebase-merged.
+
+### Milestone 7 (done)
+
+Contacts, households, CSV import; invitations, magic links, RSVP; guest-scope switch; the People pages and the guest's invite page. Merged as rebase of PR #8.
 
 | Step | What | Status |
 | --- | --- | --- |
@@ -15,9 +28,9 @@ Last updated: Oct 31, 2026 · Updated at the end of every working step.
 | 7d | Public invite and RSVP: `GET /v1/public/invites/{token}` (the event, the guest's name, their scopes with times, venues and answers; never other guests or headcounts; opening noted at most hourly) and `POST …/rsvp` (Idempotency-Key scoped to the link, last answer wins, only invite + RSVP scopes on the invitation); 404 for an unknown or regenerated link, 410 `link_revoked` for a withdrawn one; rate limits per IP and per link (reads fail open, RSVPs fail closed); answers logged as "Sharma family (link)" on channel `public_link` and pushed live to organizers | Done |
 | 7e | People web: Guests (households or everyone, search, tag, invitation and distributor filters, bulk invite and distributor), guest panel (household with members and primary contact, expected-count stepper, single person, invitation card with delivery, distributor, share, new link, withdraw with undo, replies an organizer can correct), Invitations (delivered or sent bar, by distributor with progress rings, mark delivered then move, send on WhatsApp one by one), Responses (headcounts, per sub-event), CSV import in four steps with live progress, "Cards to deliver" for distributors linked from the event home; guest entries named in Activity | Done |
 | 7f | Invite page web: `/i/{token}` with no account; cover in the event accent, greeting, the guest's own schedule in the event's time zone with maps, yes or no and how many per scope (invite-only parts listed), a new Idempotency-Key per reply, confirmation with drawn check and confetti once per invitation, change reply, calendar file built in the browser; withdrawn, unknown and busy links explained; no referrer and noindex so the token stays private. `Button asChild` now renders its icon (ten links had lost theirs) | Done |
-| 7g | Review the milestone, then open the PR for merge | Next |
+| 7g | Review: undo refuses invitation and attendance changes made before a guest-scope switch (409 `conflict`, reason `guest_scope_changed`); a Postgres lock timeout answers 503 `service_unavailable` with `Retry-After: 2` instead of 500, and the invite page says the hosts are updating | Done |
 
-Contacts and households need whole-event `guests.view` and `guests.edit`; members scoped to sub-events see guests through invitations once 7c lands.
+Contacts and households need whole-event `guests.view` and `guests.edit`; members scoped to sub-events see guests through invitations and attendance only. Guests never see other guests.
 
 ### Milestone 6 (done)
 
@@ -91,7 +104,7 @@ Step G (Oct 24): `pnpm test:e2e` runs 8 Playwright smoke tests on desktop and ph
 | Check | Result |
 | --- | --- |
 | `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test` | Pass |
-| `pnpm test:e2e` (Playwright, builds web, API and worker first) | 52 pass, 2 skipped (sheet tests on desktop); sign-in and events tests run the real API and worker (codes from Mailpit) |
+| `pnpm test:e2e` (Playwright, builds web, API and worker first) | All pass in CI (desktop and phone) through milestone 7; locally the first test of a run sometimes misses its Mailpit code on a loaded laptop. Tests run the real API and worker (codes from Mailpit) |
 | `docker compose -f infra/docker-compose.yml --profile app up -d --build --wait` | migrate exits 0 ("Migrations applied"); API ready with Postgres and Redis up, `/v1/docs` 404 in production; worker processes its sample job; web serves the home page and CSS, `/dev/ui` 404; containers run as `node` |
 | `docker compose -f infra/docker-compose.yml up -d --wait` | All four healthy in about 12 s; migrations apply; API ready reports Postgres and Redis up; worker processes its sample job; S3 auth and public/private access verified; Mailpit receives SMTP; data survives restart |
 | `pnpm db:migrate` against Postgres 17.11 | Applies `0000_extensions` (citext, pg_trgm); idempotent |
@@ -266,6 +279,9 @@ Local services: `docker compose -f infra/docker-compose.yml up -d --wait` (Postg
 | Withdrawing an invitation cancels its attendance rows; undo restores their statuses from the log; inviting the guest again reopens the same row | Attendance has no soft delete (DatabaseDesign), so history and headcounts stay intact | `packages/db/src/stores/invitations.ts` |
 | The public invite page isn't cached in Redis yet | Its answers change with every RSVP and `content_version` isn't bumped by program edits yet; one indexed lookup per view is cheap at MVP scale | `apps/api/src/public/public-invites.controller.ts` |
 | A guest's Idempotency-Key is scoped to their link (`invite:<sha256 of token>`) | Public routes have no user to scope by | `apps/api/src/http/idempotency.interceptor.ts` |
+| A guest-scope switch is a job on the `imports` queue, one transaction holding the event row `for update`; guest actions read the event `for share`; one switch per event at a time through a Redis job key (fails open) | DatabaseDesign "Switching guest scope"; a second switch to the same scope finds nothing to do | `packages/core/src/events/guest-scope-actions.ts`, `apps/api/src/jobs/job-statuses.ts` |
+| Undo refuses invitation and attendance entries older than the event's last guest-scope switch (409 `conflict`, reason `guest_scope_changed`); households and contacts still undo | The switch reshapes those rows; undo would bring back the old shape | `packages/core/src/activity/undo.ts` |
+| A Postgres lock timeout (55P03, after the 2 s `lock_timeout`) is 503 `service_unavailable` with `Retry-After: 2` | Busy, not broken: an RSVP waiting on a long switch can simply retry | `apps/api/src/errors/problem.ts` |
 
 ## Open questions
 
@@ -273,7 +289,7 @@ None right now.
 
 ## Follow-ups
 
-- Deleting an event (202 job) and switching guest scope (job) are designed but not built; both arrive with the jobs they need (guest scope with guests in milestone 7).
+- Deleting an event (202 job) is designed but not built.
 - Free-plan event limits (402 plan_limit_reached) once limits are set before launch.
 - Idempotency-key cleanup job for expired rows (scheduled queue, milestone 5).
 - Rate limits trust the first `X-Forwarded-For` value. In production behind Cloudflare, read `CF-Connecting-IP` instead (make the header configurable), or clients can rotate the header to dodge per-IP limits; the per-email limit still holds.
@@ -313,7 +329,7 @@ None right now.
 - Bulk invitations above 200 as a job (APIDesign); the web sends batches of 200 meanwhile.
 - `POST E/attendance` for walk-ins and manual registrations comes with open registration (milestone 8).
 - Invite page: the stubbed e2e reply tests stay for the per-sub-event shape; `guest-settings.spec.ts` now replies through a real link. Stitch's "note for the hosts" isn't in the RSVP contract, and the page has no host contact or accommodation section.
-- Guest scope switch: undoing an older invitation or reply change after a switch restores rows in the old shape (undo isn't scope-aware). An RSVP waiting on a long switch can hit the 2 s lock timeout and fail with 500; the page's retry usually lands. Progress is a stage bar (queued, running, done), not row counts, since the switch is one transaction. Open registration as a response mode waits for milestone 8.
+- Guest scope switch: progress is a stage bar (queued, running, done), not row counts, since the switch is one transaction. Open registration as a response mode waits for milestone 8. The Activity feed still offers Undo on entries a switch made un-undoable; clicking explains why.
 - E2e: the first test of a run sometimes misses its sign-in code in Mailpit (30 s wait) on a loaded laptop; it passes on retry and in CI.
 - People web: the guest list joins households, contacts and invitations in the browser (fine up to the 5,000-guest limit; a server-side joined list if it gets slow). Bulk tag and bulk delete aren't built; tags are edited per person.
 - Distributors without `guests.view` reach their cards from the event home, not the nav; the nav could show People when someone has cards.
@@ -351,4 +367,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [44 Switching guest scope](learning/backend/44-guest-scope-switch.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [45 Reviewing milestone 7](learning/backend/45-milestone-7-review.md).
