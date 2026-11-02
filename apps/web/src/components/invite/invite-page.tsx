@@ -360,7 +360,9 @@ function RsvpForm({
               ? t('withdrawnBody')
               : failed instanceof ApiError && failed.status === 429
                 ? t('busyBody')
-                : t('sendFailed'),
+                : failed instanceof ApiError && failed.status === 503
+                  ? t('sendBusy')
+                  : t('sendFailed'),
           ),
       },
     );
