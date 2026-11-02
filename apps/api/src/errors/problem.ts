@@ -53,6 +53,14 @@ function isHttpLikeError(error: unknown): error is HttpLikeError {
   );
 }
 
+/** Postgres lock_not_available: the action waited past its lock_timeout (packages/db runtime). */
+const LOCK_NOT_AVAILABLE = '55P03';
+const pgCode = (error: unknown) =>
+  typeof error === 'object' && error !== null ? (error as { code?: unknown }).code : undefined;
+const isLockTimeout = (error: unknown) =>
+  pgCode(error) === LOCK_NOT_AVAILABLE ||
+  (error instanceof Error && pgCode(error.cause) === LOCK_NOT_AVAILABLE);
+
 function fieldErrors(error: ZodError): FieldError[] {
   return error.issues.map((issue) => ({ path: issue.path.join('.'), message: issue.message }));
 }
@@ -90,6 +98,15 @@ export function toProblem(error: unknown): { problem: Problem; expected: boolean
       DEFAULT_CODE_BY_STATUS[status] ?? (status >= 500 ? 'internal_error' : 'bad_request');
     const detail = status >= 500 ? undefined : error.message;
     return { problem: build(code, status, detail), expected: status < 500 };
+  }
+  if (isLockTimeout(error)) {
+    // Something long holds the row (a guest-scope switch, say): busy, not broken.
+    return {
+      problem: build('service_unavailable', 503, 'Busy with another change; try again.', {
+        retryAfter: 2,
+      }),
+      expected: true,
+    };
   }
   if (isHttpLikeError(error)) {
     const code = error.type === 'entity.too.large' ? 'payload_too_large' : 'bad_request';

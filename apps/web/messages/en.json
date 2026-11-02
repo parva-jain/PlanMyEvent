@@ -1282,6 +1282,7 @@
     "undoneBy": "Undone by {name} · {time}",
     "alreadyUndone": "This was already undone.",
     "notUndoable": "This change can't be undone.",
+    "guestScopeChanged": "Who's invited to what has changed since, so this can't be undone.",
     "undoFailed": "Couldn't undo. Try again in a moment.",
     "blocked": {
       "title": "This changed since",
@@ -1874,6 +1875,7 @@
     "errorTitle": "Couldn't open your invitation",
     "errorBody": "Check your connection and try again.",
     "busyBody": "Too many tries just now. Wait a minute and try again.",
+    "sendBusy": "The hosts are updating the invitation right now. Try again in a moment.",
     "retry": "Try again",
     "sentWith": "Sent with Plan My Event"
   }
