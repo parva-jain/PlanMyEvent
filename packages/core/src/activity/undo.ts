@@ -330,8 +330,28 @@ const PLANNERS: Record<string, Planner> = {
 export const isUndoable = (entry: Pick<StoredActivity, 'action' | 'undoOfId'>) =>
   entry.undoOfId === null && Object.hasOwn(PLANNERS, entry.action);
 
-const notUndoable = (reason: 'already_undone' | 'not_undoable', message: string) =>
-  new ActionError('conflict', message, { reason });
+const notUndoable = (
+  reason: 'already_undone' | 'not_undoable' | 'guest_scope_changed',
+  message: string,
+) => new ActionError('conflict', message, { reason });
+
+/** Entries whose rows a guest-scope switch rewrites (invitation links, attendance rows). */
+const SCOPE_SHAPED = new Set(['invitation', 'attendance']);
+
+/**
+ * A guest-scope switch reshapes invitations and attendance, so undoing a change made before
+ * it would bring rows back in the old shape. Those undos are refused instead.
+ */
+async function assertSameGuestScope(tx: CoreTx, eventId: string, entry: StoredActivity) {
+  if (!SCOPE_SHAPED.has(entry.entityType)) return;
+  const switchedAt = await tx.activity.lastEventEntryAt(eventId, 'event.guest_scope');
+  if (switchedAt && Date.parse(entry.createdAt) < Date.parse(switchedAt)) {
+    throw notUndoable(
+      'guest_scope_changed',
+      "Who's invited to what has changed since, so this can't be undone",
+    );
+  }
+}
 
 /**
  * POST E/activity/{entryId}/undo (SystemDesign 5.8): undo is a normal action. Its author or
@@ -355,6 +375,7 @@ export const undoActivity: ActionDefinition<
     if (entry.undoneAt) throw notUndoable('already_undone', 'This change was already undone');
     const planner = entry.undoOfId === null ? PLANNERS[entry.action] : undefined;
     if (!planner) throw notUndoable('not_undoable', "This change can't be undone");
+    await assertSameGuestScope(tx, eventId, entry);
 
     const reverse = await planner(tx, ctx, entry);
     await reverse.check(tx, ctx);

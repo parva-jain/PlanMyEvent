@@ -963,6 +963,12 @@ export function memoryRuntime() {
       row.undoneAt = new Date().toISOString();
       return Promise.resolve(true);
     },
+    lastEventEntryAt: (eventId, action) => {
+      const row = activity.findLast(
+        (item) => item.eventId === eventId && item.entityId === eventId && item.action === action,
+      );
+      return Promise.resolve(row?.createdAt ?? null);
+    },
   };
 
   tx.roles = {

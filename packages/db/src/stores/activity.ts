@@ -1,6 +1,6 @@
 import type { Channel } from '@pme/contracts';
 import type { ActivityStore, StoredActivity } from '@pme/core';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 
 import type { Database } from '../client.js';
 import type { DrizzleTx } from '../runtime.js';
@@ -52,6 +52,23 @@ export function activityStore(db: Queryable): ActivityStore {
         .where(and(byId(eventId, entryId), isNull(activityLog.undoneAt)))
         .returning({ id: activityLog.id });
       return rows.length > 0;
+    },
+    async lastEventEntryAt(eventId, action) {
+      // activity_log_entity_idx: the event's own entries, newest first.
+      const [row] = await db
+        .select({ createdAt: activityLog.createdAt })
+        .from(activityLog)
+        .where(
+          and(
+            eq(activityLog.entityType, 'event'),
+            eq(activityLog.entityId, eventId),
+            eq(activityLog.eventId, eventId),
+            eq(activityLog.action, action),
+          ),
+        )
+        .orderBy(desc(activityLog.createdAt))
+        .limit(1);
+      return row?.createdAt.toISOString() ?? null;
     },
   };
 }

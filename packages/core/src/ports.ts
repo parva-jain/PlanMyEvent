@@ -554,6 +554,8 @@ export interface ActivityStore {
   lockForUndo(eventId: string, entryId: string): Promise<StoredActivity | null>;
   /** Sets undone_at; false if it was already set. */
   markUndone(eventId: string, entryId: string): Promise<boolean>;
+  /** When the event last logged this action on itself (e.g. `event.guest_scope`), or null. */
+  lastEventEntryAt(eventId: string, action: string): Promise<string | null>;
 }
 
 /** The transaction handle every action receives. */

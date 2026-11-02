@@ -198,5 +198,16 @@ describe('guest scope and response mode', () => {
     ]);
     const back = (await owner.get(`${E}/invitations/${card.id}`).expect(200)).body as Invitation;
     expect(back.subEventIds).toEqual([]);
+
+    // The answer changed before the switch can't be undone into the old shape.
+    const entries = list<{ id: string; action: string }>(
+      await owner.get(`${E}/activity?limit=100`),
+    );
+    const answered = entries.filter((item) => item.action === 'attendance.update').at(-1)!;
+    const refused = await owner.post(`${E}/activity/${answered.id}/undo`).expect(409);
+    expect(refused.body as Problem).toMatchObject({
+      code: 'conflict',
+      reason: 'guest_scope_changed',
+    });
   });
 });
