@@ -18,6 +18,9 @@ export function loadWorkerEnv(source: Record<string, string | undefined> = proce
       /** Rows claimed per pass. */
       OUTBOX_BATCH_SIZE: z.coerce.number().int().min(1).max(1_000).default(100),
 
+      /** Repeating cleanup and reminder jobs. Every worker may register them; BullMQ keeps one schedule. */
+      SCHEDULED_JOBS_ENABLED: envSchemas.bool(true),
+
       /** `smtp` locally (Mailpit) and for self-hosting; `resend` in production. */
       EMAIL_TRANSPORT: devDefault(z.enum(['smtp', 'resend']), 'smtp', nodeEnv),
       SMTP_URL: z.url({ protocol: /^smtps?$/ }).optional(),
