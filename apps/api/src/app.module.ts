@@ -7,6 +7,7 @@ import { ActivityModule } from './activity/activity.module';
 import { AuthModule } from './auth/auth.module';
 import { BudgetModule } from './budget/budget.module';
 import { ConfigModule } from './config/config.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { DatabaseModule } from './database/database.module';
 import { ProblemFilter } from './errors/problem.filter';
 import { EventsModule } from './events/events.module';
@@ -37,6 +38,7 @@ import { TeamModule } from './team/team.module';
     HealthModule,
     MeModule,
     NotificationsModule,
+    DashboardModule,
     EventsModule,
     TeamModule,
     ActivityModule,
