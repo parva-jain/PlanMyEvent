@@ -4,7 +4,7 @@ Last updated: Nov 18, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Now: milestone 8 — open registration; dashboard aggregates; notifications; basic gallery.** On branch `feat/m8-registration-dashboard`; 8a done, 8b next. Milestones 1–7 are merged to `main` (PRs #1 and #2 squashed, #3–#8 rebase-merged).
+**Now: milestone 8 — open registration; dashboard aggregates; notifications; basic gallery.** On branch `feat/m8-registration-dashboard`; 8a and 8b done, 8c next. Milestones 1–7 are merged to `main` (PRs #1 and #2 squashed, #3–#8 rebase-merged).
 
 ### Start here (next session)
 
@@ -22,7 +22,7 @@ Branch `feat/m8-registration-dashboard`. Backend step, then web step, per featur
 | Step | What | Status |
 | --- | --- | --- |
 | 8a | Notifications and the scheduled queue: `notifications` (migration 0009, `dedupe_key` with a partial unique index); actions write the rows in their own transaction through core's `notify()` (task assigned on create and on new assignees, role changed when the roles really change; never to the person acting) and `notification.new` to `user:{id}` through the outbox; `GET /v1/notifications` (cursor, `unread`, `unreadCount`) and `POST /v1/notifications/read` (`ids` or `all`); worker `scheduled` queue with `upsertJobScheduler`: outbox cleanup (published over 7 days) and idempotency cleanup hourly, read notifications over 90 days daily, and a 30-minute `task_due` scan (events past 08:00 local with assigned unfinished tasks due on the local date, one transaction per event, deduped per task and day); `SCHEDULED_JOBS_ENABLED` | Done |
-| 8b | Dashboard backend: `GET E/dashboard` (countdown, tasks, budget, headcounts per scope, invitation distribution; plus what the Stitch dashboards show: "needs your attention" items, upcoming deadlines, sub-events with capacity fill, budget by category, registrations over the last 7 days), scoped to the member's permissions; 30 s Redis cache with stampede lock and Postgres fallback; `dashboard.changed` from the relay, throttled to once a second per event | Proposed |
+| 8b | Dashboard backend: `GET E/dashboard` (route needs `event.view` anywhere): countdown (days to go in the event's time zone, next sub-event), tasks (top-level counts, overdue, due this week, 5 upcoming), budget (totals, payments due within 6 days, by category), headcounts per scope, sub-events with capacity and `taken`, invitation distribution, registrations (people, waitlist, 14 days by day), team size; each section null without its permission and filtered to the caller's sub-event scope. One aggregate per event split by sub-event (`loadDashboardAggregate`), projected per member by core's `dashboardFor`; cached at `dash:v1:{eventId}:{generation}` for 30 s with a stampede lock (others wait up to 0.5 s) and Postgres fallback. The relay bumps `dash-gen:{eventId}` on task, expense, category, invitation, attendance, sub-event, event and member changes and sends `dashboard.changed`, throttled across workers to once a second per event with a trailing signal. "Needs your attention" is derived on the web | Done |
 | 8c | Dashboard and notifications web: event home becomes the dashboard (MOTION.md 6.5: RevealGroup, CountUp, ProgressFill, live re-fetch), bell with unread badge and notifications sheet in the shell | Proposed |
 | 8d | Open registration backend: `open_registration` response mode allowed; `GET /v1/public/events/{slug}` (public sub-events, venues, registration status; 404 for draft and archived) and `POST …/registrations` (Turnstile, per-IP limit, Idempotency-Key, contact matched by email or phone, capacity under row lock, invitation row `sent_digitally`, confirmation email with the magic link through the outbox); `POST E/attendance` for walk-ins | Proposed |
 | 8e | Public event page and registration web: `/e/{slug}` with details, schedule and register form, confirmation state; Settings enables open registration and shows the public link; People gets a Registrations tab after Stitch "DevFest Bhopal 2026 — Registrations" (total vs capacity, per-sub-event fill cards, searchable list, register attendee); waitlist, tickets and badges stay V2/Later | Proposed |
@@ -350,7 +350,7 @@ None right now.
 - CSV import: the full error list as a downloadable CSV (APIDesign) waits for file storage; the job keeps the first 100 errors with line numbers. Imports can't be undone in one step.
 - An import retried after a crash resumes after its last finished chunk only while Redis holds the status; otherwise it reruns from the start, where phone and email matching avoid most duplicates (contacts with neither could repeat).
 - The activity feed's entity filter takes any string; restrict to `ACTIVITY_ENTITY_TYPES` once every module records its type.
-- `dashboard.changed` (throttled to once a second per event) arrives with the dashboard in milestone 8 (8b).
+- Dashboard: an event-wide `whole_event` guest list counts toward every sub-event's `taken`; registration counts are 0 until open registration lands (8d). If many events are busy at once each change costs a Redis INCR and a SET NX; fine at MVP scale.
 - Presence ("Vikram is viewing") from MOTION.md 6.12 isn't in the socket contract yet.
 - Receipts on expenses (`receipt_media_id`, uploads) arrive with the media table in milestone 8.
 - Budget by sub-event has no endpoint; the web adds it up from the expense list (fine at MVP sizes).
@@ -379,4 +379,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [46 Notifications and scheduled jobs](learning/backend/46-notifications-scheduled-jobs.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [47 Dashboard cache](learning/backend/47-dashboard-cache.md).

@@ -282,7 +282,7 @@ The MVP has about 75 operations across 20 resources. In the tables, E stands for
 | PATCH | E | Name, dates, time zone, status, budgetPaise, description, cover, responseMode (used while guests belong to the whole event) | event.settings |
 | DELETE | E | Delete event and all data; 202 job | event.delete |
 | GET | E/me | My member record and effective permissions by scope | Member |
-| GET | E/dashboard | Countdown, task progress, budget totals, headcounts, delivery progress | event.view |
+| GET | E/dashboard | Countdown, task progress and upcoming deadlines, budget by category and payments due, headcounts, sub-event fill, delivery progress, registrations per day, team size; each section null without its permission, filtered to the caller's sub-event scope | event.view (anywhere) |
 | POST | E/guest-scope | Switch whole\_event and per\_sub\_event; 202 job | event.settings |
 | POST | E/transfer-ownership | Make another member the Owner | Owner only |
 | GET / PUT | E/modules | Read or replace enabled modules and their config | event.view / event.settings |
@@ -495,14 +495,19 @@ The server re-checks that amounts match the status and that transactionRef is un
 GET /v1/events/0192f6c1-.../dashboard
 
 {
-  "countdown": { "eventStartsOn": "2026-12-10", "nextSubEvent": { "id": "...", "name": "Haldi", "startsAt": "2026-12-10T04:30:00Z" } },
-  "tasks": { "total": 42, "done": 17, "overdue": 3 },
-  "budget": { "budgetPaise": 250000000, "plannedPaise": 238000000, "committedPaise": 121000000, "paidPaise": 43000000 },
-  "headcounts": [ { "subEventId": null, "expected": 412, "confirmed": 0, "checkedIn": 0 } ],
+  "countdown": { "eventStartsOn": "2026-12-10", "eventEndsOn": "2026-12-12", "timeZone": "Asia/Kolkata", "daysToGo": 9, "nextSubEvent": { "id": "...", "name": "Haldi", "startsAt": "2026-12-10T04:30:00Z" } },
+  "tasks": { "total": 42, "done": 17, "inProgress": 6, "blocked": 1, "overdue": 3, "dueThisWeek": 5, "upcoming": [ { "id": "...", "title": "Book the band", "dueOn": "2026-12-02", "...": "a full Task" } ] },
+  "budget": { "budgetPaise": 250000000, "plannedPaise": 238000000, "committedPaise": 121000000, "paidPaise": 43000000, "paymentsDue": { "count": 2, "outstandingPaise": 8500000 }, "categories": [ { "id": "...", "name": "Venue", "plannedPaise": 80000000, "committedPaise": 64000000, "paidPaise": 20000000 } ] },
+  "headcounts": [ { "subEventId": null, "expected": 412, "confirmed": 0, "registered": 0, "waitlisted": 0, "declined": 0, "checkedIn": 0 } ],
+  "subEvents": [ { "id": "...", "name": "Haldi", "startsAt": "...", "endsAt": "...", "groupLabel": null, "capacity": 150, "taken": 96 } ],
   "invitations": { "total": 340, "notSent": 60, "sentDigitally": 68, "deliveredInPerson": 212 },
+  "registrations": null,
+  "team": { "members": 6 },
   "generatedAt": "2026-10-20T08:13:02Z"
 }
 ```
+
+Sections and the permission each needs: tasks (tasks.view), budget (budget.view; categories' planned amounts are event-wide, committed and paid cover the expenses the caller can see), headcounts and each sub-event's taken (guests.view or registrations.view), invitations (guests.view; an invitation counts if it covers one of the caller's sub-events), registrations (registrations.view: people registered or checked in, the waitlist, and people per day for the last 14 days), team (members.view for the whole event). Counts are of top-level tasks; "needs your attention" on the web is derived from tasks.overdue, budget.paymentsDue and sub-events at 90% of capacity.
 
 The dashboard is served from the 30-second cache; generatedAt tells the client how fresh it is, and dashboard.changed prompts a re-fetch.
 

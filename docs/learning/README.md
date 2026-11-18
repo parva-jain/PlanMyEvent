@@ -30,6 +30,7 @@ API, worker, database and the shared packages behind them.
 - [44 Switching guest scope](backend/44-guest-scope-switch.md)
 - [45 Reviewing milestone 7](backend/45-milestone-7-review.md)
 - [46 Notifications and scheduled jobs](backend/46-notifications-scheduled-jobs.md)
+- [47 Dashboard cache](backend/47-dashboard-cache.md)
 
 ## Frontend
 

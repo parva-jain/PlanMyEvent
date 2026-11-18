@@ -388,7 +388,7 @@ Redis is a speed layer only. Every cache read falls back to Postgres if Redis is
 | --- | --- | --- | --- |
 | Effective permissions per member | perm:{eventId}:{userId}:{rolesVersion} | 10 min | events.roles\_version increments on any role or assignment change, so old keys are never read again |
 | Session lookup | sess:{sessionId} | 5 min | Deleted on sign-out or revoke |
-| Dashboard aggregates | dash:{eventId} | 30 s | Deleted by the outbox relay on relevant changes; recomputed on next read |
+| Dashboard aggregates | dash:v1:{eventId}:{generation} | 30 s | The outbox relay increments dash-gen:{eventId} on relevant changes, so the next read misses and recomputes; a value computed before a change lands under the old generation and is never read. Stored per event split by sub-event; each member's view is filtered from it on read |
 | Invitation page data | inv:{tokenHash} | 5 min | Includes the event's content version, bumped when event or sub-event details change |
 | Public event page | CDN and Next.js page cache | 60 s | On-demand revalidation when the event page is edited |
 | Rate-limit counters | rl:{scope}:{id}:{window} | Window length | Expire naturally |
@@ -396,7 +396,7 @@ Redis is a speed layer only. Every cache read falls back to Postgres if Redis is
 
 Two safeguards:
 
-- **Stampede protection.** When a hot key expires (a dashboard 50 people are watching), only one request recomputes it, using a short Redis lock; the others wait briefly or get the stale value.
+- **Stampede protection.** When a hot key expires (a dashboard 50 people are watching), only one request recomputes it, using a short Redis lock; the others wait up to half a second for it, then compute it themselves.
 - **No caching of money or permissions decisions without a version in the key.** Stale counts are acceptable; stale permissions or amounts are not.
 
 ### 5.3 Queues and workers
@@ -427,7 +427,7 @@ Rules every job follows:
 - Socket.io runs inside the API containers with the **Redis adapter**, so a message published by any instance reaches clients connected to every instance.
 - Clients authenticate on connect (session cookie or token) and join room event:{id} after an event.view check; personal notifications go to room user:{id}.
 - The outbox relay publishes entity.changed; the client uses TanStack Query to invalidate that entity and re-fetch through the API, which re-applies permissions and sub-event scope.
-- dashboard.changed is throttled to one per second per event, so a check-in rush sends one refresh signal per second instead of hundreds.
+- dashboard.changed is throttled to one per second per event, so a check-in rush sends one refresh signal per second instead of hundreds. The window is claimed in Redis (SET NX, 1 s), so it holds across worker instances; changes inside a claimed window leave one trailing signal for when it ends, so the last change is always signalled.
 - On reconnect (phones drop connections often), the client re-fetches everything on screen, so missed messages do not matter.
 - WebSocket-only transport avoids sticky sessions behind the load balancer; clients fall back to polling every 30 s if sockets fail entirely.
 
