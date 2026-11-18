@@ -34,6 +34,7 @@ export const VALUE_SETS = {
   channel: ['app', 'public_link', 'system', 'ai', 'whatsapp'],
   webhookStatus: ['received', 'processing', 'processed', 'failed'],
   usageMetric: ['ai_call', 'email_sent', 'whatsapp_message', 'storage_bytes'],
+  notificationType: ['task_assigned', 'task_due', 'role_changed', 'job_failed'],
 } as const satisfies Record<string, readonly [string, ...string[]]>;
 
 export type ValueSetName = keyof typeof VALUE_SETS;
@@ -58,6 +59,7 @@ export const MediaStatusSchema = z.enum(VALUE_SETS.mediaStatus);
 export const ChannelSchema = z.enum(VALUE_SETS.channel);
 export const WebhookStatusSchema = z.enum(VALUE_SETS.webhookStatus);
 export const UsageMetricSchema = z.enum(VALUE_SETS.usageMetric);
+export const NotificationTypeSchema = z.enum(VALUE_SETS.notificationType);
 
 export type Plan = z.infer<typeof PlanSchema>;
 export type EventType = z.infer<typeof EventTypeSchema>;
@@ -78,3 +80,4 @@ export type MediaStatus = z.infer<typeof MediaStatusSchema>;
 export type Channel = z.infer<typeof ChannelSchema>;
 export type WebhookStatus = z.infer<typeof WebhookStatusSchema>;
 export type UsageMetric = z.infer<typeof UsageMetricSchema>;
+export type NotificationType = z.infer<typeof NotificationTypeSchema>;

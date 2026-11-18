@@ -9,6 +9,8 @@ export const QUEUES = {
   emailCritical: 'email-critical',
   /** CSV contact imports (in chunks of 500 rows) and guest-scope switches. */
   imports: 'imports',
+  /** Repeating jobs: retention cleanup and due-date reminder scans (SystemDesign 5.3). */
+  scheduled: 'scheduled',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
