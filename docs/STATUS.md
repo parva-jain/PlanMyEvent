@@ -15,6 +15,21 @@ Last updated: Nov 2, 2026 · Updated at the end of every working step.
 
 Working style: a step at a time with a pause for the go-ahead; one learning note per step in `docs/learning/`; STATUS updated every step; one-line commits staged by file name; PRs rebase-merged.
 
+### Milestone 8 (proposed Nov 18, waiting for go-ahead)
+
+Branch `feat/m8-registration-dashboard`. Backend step, then web step, per feature; a review step ends with the PR. Task comments and due-date reminders stay V2 (PRD lists them there); "task due" notifications come from a daily scan instead.
+
+| Step | What | Status |
+| --- | --- | --- |
+| 8a | Scheduled queue and notifications backend: `notifications` table (migration 0009); core actions write notification outbox rows for task assigned and role changed; daily `task_due` scan; `GET /v1/notifications`, `POST /v1/notifications/read`; `notification.new` to `user:{id}`; repeatable cleanup jobs (published outbox rows over 7 days, expired idempotency keys, read notifications over 90 days) | Proposed |
+| 8b | Dashboard backend: `GET E/dashboard` (countdown, tasks, budget, headcounts per scope, invitation distribution; plus what the Stitch dashboards show: "needs your attention" items, upcoming deadlines, sub-events with capacity fill, budget by category, registrations over the last 7 days), scoped to the member's permissions; 30 s Redis cache with stampede lock and Postgres fallback; `dashboard.changed` from the relay, throttled to once a second per event | Proposed |
+| 8c | Dashboard and notifications web: event home becomes the dashboard (MOTION.md 6.5: RevealGroup, CountUp, ProgressFill, live re-fetch), bell with unread badge and notifications sheet in the shell | Proposed |
+| 8d | Open registration backend: `open_registration` response mode allowed; `GET /v1/public/events/{slug}` (public sub-events, venues, registration status; 404 for draft and archived) and `POST …/registrations` (Turnstile, per-IP limit, Idempotency-Key, contact matched by email or phone, capacity under row lock, invitation row `sent_digitally`, confirmation email with the magic link through the outbox); `POST E/attendance` for walk-ins | Proposed |
+| 8e | Public event page and registration web: `/e/{slug}` with details, schedule and register form, confirmation state; Settings enables open registration and shows the public link; People gets a Registrations tab after Stitch "DevFest Bhopal 2026 — Registrations" (total vs capacity, per-sub-event fill cards, searchable list, register attendee); waitlist, tickets and badges stay V2/Later | Proposed |
+| 8f | Media backend: `media` table (migration), `POST E/uploads` presigned PUT (15 MB), `POST E/media/{id}/complete`, `media` queue (real type check, strip metadata, WebP 320 and 1600 px with sharp), `GET E/media`, signed URLs for receipts, `PATCH`/`DELETE`; receipts on expenses | Proposed |
+| 8g | Gallery web and receipts: gallery grid with albums per sub-event, upload with progress, viewer; attach and view a receipt on an expense | Proposed |
+| 8h | Review, fixes, PR | Proposed |
+
 ### Milestone 7 (done)
 
 Contacts, households, CSV import; invitations, magic links, RSVP; guest-scope switch; the People pages and the guest's invite page. Merged as rebase of PR #8.
