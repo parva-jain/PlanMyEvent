@@ -496,10 +496,11 @@ Indexes: unique(id), because undo and "undone by" look an entry up by id and the
 | user\_id | uuid | NN, FK users, cascade |  |
 | event\_id | uuid | FK events, cascade |  |
 | type | text | NN | task\_assigned, task\_due, role\_changed, job\_failed |
-| payload | jsonb | NN | Ids and short text for rendering |
+| payload | jsonb | NN | Ids and short text for rendering (task title, role names, actor user id); event and actor names are read at list time |
+| dedupe\_key | text |  | Set when a scan may send twice: task\_due-\<taskId>-\<dueOn> |
 | read\_at | timestamptz |  |  |
 
-Indexes: index(user\_id, created\_at desc); index(user\_id) where read\_at is null for the unread badge. Read notifications older than 90 days are deleted by a scheduled job.
+Indexes: index(user\_id, created\_at desc, id desc); index(user\_id) where read\_at is null for the unread badge; unique(user\_id, dedupe\_key) where dedupe\_key is not null, so a repeated reminder scan inserts nothing; index(event\_id) for event deletes. Rows are written by the core action in the same transaction as the change (not through a queue); notification.new goes through the outbox. Read notifications older than 90 days are deleted by a scheduled job.
 
 ## Infrastructure tables
 

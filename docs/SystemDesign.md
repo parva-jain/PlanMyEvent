@@ -407,10 +407,10 @@ Every slow or external task runs in BullMQ, in queues separated by urgency, so a
 | --- | --- | --- | --- | --- |
 | email-critical | Sign-in OTP, member invites | 10 | Provider limit, highest priority | 5, exponential from 5 s |
 | email-bulk (V2) | Invitations, reminders, announcements | 5 | Below provider limit, shared with critical | 8, exponential from 30 s |
-| notifications | In-app notifications, live signals for assignees | 20 | None | 3 |
+| notifications (later) | Digests and push; in-app notification rows are written by the action itself and notification.new goes through the outbox (step 8a) | 20 | None | 3 |
 | imports | CSV contact import, in chunks of 500 rows | 2 | None | 3, then marked failed with row errors |
 | media | Validate, compress, thumbnails | 3 | None | 3 |
-| scheduled | RSVP reminders, digests, retention cleanup, outbox cleanup | 2 | None | 3 |
+| scheduled | Task due-date reminders, retention cleanup (outbox, idempotency keys, read notifications); later RSVP reminders and digests | 2 | None | 3 |
 | ai (V2) | Quick updates, screenshot reading | 5 | Per-workspace quota | 2, then user sees "try again" |
 | whatsapp (V2) | Inbound processing, outbound replies | 5 | Provider limit | 5 |
 

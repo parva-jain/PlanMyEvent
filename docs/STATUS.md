@@ -1,10 +1,10 @@
 # Project status
 
-Last updated: Nov 2, 2026 · Updated at the end of every working step.
+Last updated: Nov 18, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Next: milestone 8 — open registration; dashboard aggregates; notifications; basic gallery.** Not started; no branch yet (create `feat/m8-…` from `main`). Milestones 1–7 are merged to `main` (PRs #1 and #2 squashed, #3–#8 rebase-merged).
+**Now: milestone 8 — open registration; dashboard aggregates; notifications; basic gallery.** On branch `feat/m8-registration-dashboard`; 8a done, 8b next. Milestones 1–7 are merged to `main` (PRs #1 and #2 squashed, #3–#8 rebase-merged).
 
 ### Start here (next session)
 
@@ -15,13 +15,13 @@ Last updated: Nov 2, 2026 · Updated at the end of every working step.
 
 Working style: a step at a time with a pause for the go-ahead; one learning note per step in `docs/learning/`; STATUS updated every step; one-line commits staged by file name; PRs rebase-merged.
 
-### Milestone 8 (proposed Nov 18, waiting for go-ahead)
+### Milestone 8 (in progress)
 
-Branch `feat/m8-registration-dashboard`. Backend step, then web step, per feature; a review step ends with the PR. Task comments and due-date reminders stay V2 (PRD lists them there); "task due" notifications come from a daily scan instead.
+Branch `feat/m8-registration-dashboard`. Backend step, then web step, per feature; a review step ends with the PR. Screens without Stitch designs (public page, registration, gallery, notifications) are built from DESIGN.md (decided Nov 18). Task comments and due-date reminders stay V2 (PRD lists them there); "task due" notifications come from a daily scan instead.
 
 | Step | What | Status |
 | --- | --- | --- |
-| 8a | Scheduled queue and notifications backend: `notifications` table (migration 0009); core actions write notification outbox rows for task assigned and role changed; daily `task_due` scan; `GET /v1/notifications`, `POST /v1/notifications/read`; `notification.new` to `user:{id}`; repeatable cleanup jobs (published outbox rows over 7 days, expired idempotency keys, read notifications over 90 days) | Proposed |
+| 8a | Notifications and the scheduled queue: `notifications` (migration 0009, `dedupe_key` with a partial unique index); actions write the rows in their own transaction through core's `notify()` (task assigned on create and on new assignees, role changed when the roles really change; never to the person acting) and `notification.new` to `user:{id}` through the outbox; `GET /v1/notifications` (cursor, `unread`, `unreadCount`) and `POST /v1/notifications/read` (`ids` or `all`); worker `scheduled` queue with `upsertJobScheduler`: outbox cleanup (published over 7 days) and idempotency cleanup hourly, read notifications over 90 days daily, and a 30-minute `task_due` scan (events past 08:00 local with assigned unfinished tasks due on the local date, one transaction per event, deduped per task and day); `SCHEDULED_JOBS_ENABLED` | Done |
 | 8b | Dashboard backend: `GET E/dashboard` (countdown, tasks, budget, headcounts per scope, invitation distribution; plus what the Stitch dashboards show: "needs your attention" items, upcoming deadlines, sub-events with capacity fill, budget by category, registrations over the last 7 days), scoped to the member's permissions; 30 s Redis cache with stampede lock and Postgres fallback; `dashboard.changed` from the relay, throttled to once a second per event | Proposed |
 | 8c | Dashboard and notifications web: event home becomes the dashboard (MOTION.md 6.5: RevealGroup, CountUp, ProgressFill, live re-fetch), bell with unread badge and notifications sheet in the shell | Proposed |
 | 8d | Open registration backend: `open_registration` response mode allowed; `GET /v1/public/events/{slug}` (public sub-events, venues, registration status; 404 for draft and archived) and `POST …/registrations` (Turnstile, per-IP limit, Idempotency-Key, contact matched by email or phone, capacity under row lock, invitation row `sent_digitally`, confirmation email with the magic link through the outbox); `POST E/attendance` for walk-ins | Proposed |
@@ -306,11 +306,9 @@ None right now.
 
 - Deleting an event (202 job) is designed but not built.
 - Free-plan event limits (402 plan_limit_reached) once limits are set before launch.
-- Idempotency-key cleanup job for expired rows (scheduled queue, milestone 5).
 - Rate limits trust the first `X-Forwarded-For` value. In production behind Cloudflare, read `CF-Connecting-IP` instead (make the header configurable), or clients can rotate the header to dodge per-IP limits; the per-email limit still holds.
 - Google sign-in before launch: publish the OAuth consent screen (Google verification; until then only test users can sign in) and add the production redirect URI `{API_URL}/v1/auth/callback/google`.
 - Google linked to an existing email account doesn't copy the profile photo (Better Auth leaves user info alone on linking). Fill `avatar_url` on link only when it's empty, without overwriting the name.
-- Outbox cleanup job for published rows older than 7 days (milestone 5 with the scheduled queue).
 - Only home-page messages need to reach the browser; today all namespaces (including `devUi`) are sent. Trim if step G needs the bytes.
 - Footer privacy and terms links once those pages exist.
 - Rate limits on `GET /v1/member-invites/{token}` and accept (APIDesign lists none for member invites; tokens are 32 random bytes).
@@ -352,7 +350,7 @@ None right now.
 - CSV import: the full error list as a downloadable CSV (APIDesign) waits for file storage; the job keeps the first 100 errors with line numbers. Imports can't be undone in one step.
 - An import retried after a crash resumes after its last finished chunk only while Redis holds the status; otherwise it reruns from the start, where phone and email matching avoid most duplicates (contacts with neither could repeat).
 - The activity feed's entity filter takes any string; restrict to `ACTIVITY_ENTITY_TYPES` once every module records its type.
-- `dashboard.changed` (throttled to once a second per event) arrives with the dashboard in milestone 8; `job.progress` and `notification.new` with jobs and notifications.
+- `dashboard.changed` (throttled to once a second per event) arrives with the dashboard in milestone 8 (8b).
 - Presence ("Vikram is viewing") from MOTION.md 6.12 isn't in the socket contract yet.
 - Receipts on expenses (`receipt_media_id`, uploads) arrive with the media table in milestone 8.
 - Budget by sub-event has no endpoint; the web adds it up from the expense list (fine at MVP sizes).
@@ -364,12 +362,11 @@ None right now.
 - The task panel's checklist shares one save for all its subtasks, so ticking two quickly can send a stale version on the second (409, rolled back). The row's subtasks wait for the save in flight.
 - Assignees who leave or are removed stay in `task_assignees` (hidden while inactive) and reappear if they rejoin.
 - The activity feed shows every task change to anyone with `activity.view`, even ones outside their sub-event scope; filter the feed by scope.
-- Task comments, due-date reminders and "task assigned" notifications (milestone 8).
+- Task comments and mentions (V2). Due-date reminders and "task assigned" notifications are done (8a); a `job_failed` notification type exists but nothing sends it yet.
 - Undo bar for team changes (revoke invite, remove member) once those are undoable; MOTION.md 6.10 asks for it.
 - The polling fallback has no Playwright test (it needs 30 s with the socket blocked); the reconnect re-fetch is untested end to end too.
 - MOTION.md 6.12's "Item deleted by someone else" (the open panel fades and offers Restore) and the conflict banner's "Use theirs / Keep mine" aren't built; an edit panel still shows the latest version with a note.
 - Activity entries show the actor's initials; their photo needs `avatarUrl` in the feed.
-- Published `live.signal` rows pile up in the outbox until the 7-day cleanup job exists (milestone 5 scheduled queue item above).
 - Socket bearer-token sign-in (`auth: { token }`) for the mobile app.
 - Logo SVG/PNG files and app icons still use the warm ink #1F1B16 and warm white #FAF8F5 (BRAND.md note); regenerate in a brand pass.
 
@@ -382,4 +379,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [45 Reviewing milestone 7](learning/backend/45-milestone-7-review.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [46 Notifications and scheduled jobs](learning/backend/46-notifications-scheduled-jobs.md).

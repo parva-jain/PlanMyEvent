@@ -350,8 +350,8 @@ The MVP has about 75 operations across 20 resources. In the tables, E stands for
 | GET | E/media | Gallery list, filter subEventId | event.view |
 | GET | E/media/{mediaId}/url | Short-lived signed URL for a private file | budget.view for receipts |
 | PATCH / DELETE | E/media/{mediaId} | Caption, album; delete | gallery.manage |
-| GET | /v1/notifications | My notifications, newest first | Signed in |
-| POST | /v1/notifications/read | Mark ids, or all, as read | Signed in |
+| GET | /v1/notifications | My notifications, newest first; ?unread=true; returns unreadCount for the bell | Signed in |
+| POST | /v1/notifications/read | { ids } or { all: true }; returns updated and unreadCount | Signed in |
 | GET | /v1/jobs/{jobId} | Status of a job I started | Starter of the job |
 | GET | /v1/health/live, /v1/health/ready | Liveness and readiness | Internal |
 
