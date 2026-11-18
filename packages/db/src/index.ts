@@ -33,6 +33,7 @@ export {
   type InvitationQueries,
   type InvitationVisibility,
 } from './queries/invitations.js';
+export { loadDashboardAggregate } from './queries/dashboard.js';
 export { notificationQueries, type NotificationQueries } from './queries/notifications.js';
 export { taskQueries, type TaskQueries, type TaskVisibility } from './queries/tasks.js';
 export { teamQueries, type TeamQueries } from './queries/team.js';
