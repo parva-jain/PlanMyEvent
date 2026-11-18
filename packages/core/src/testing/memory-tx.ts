@@ -19,7 +19,14 @@ import {
 
 import type { ActionRuntime, OutboxMessage } from '../action.js';
 import { ActionError } from '../errors.js';
-import type { CoreTx, LockedMemberInvite, PersonalWorkspace, StoredActivity } from '../ports.js';
+import type {
+  CoreTx,
+  LockedMemberInvite,
+  NewNotification,
+  PersonalWorkspace,
+  StoredActivity,
+  StoredNotification,
+} from '../ports.js';
 import { resolvePermissions } from '../team/access.js';
 
 export interface MemoryMember {
@@ -76,6 +83,7 @@ export function memoryRuntime() {
   type AttendanceRow = Omit<Attendance, 'guestName'> & { eventId: string };
   const attendanceRows = new Map<string, AttendanceRow>();
   const outbox: OutboxMessage[] = [];
+  const notifications: (NewNotification & { id: string; readAt: Date | null })[] = [];
   const activity: StoredActivity[] = [];
   const takenSlugs = new Set<string>();
 
@@ -138,6 +146,7 @@ export function memoryRuntime() {
   // Team stores are attached below, once the helpers they share are defined.
   const base: Omit<
     CoreTx,
+    | 'notifications'
     | 'roles'
     | 'members'
     | 'access'
@@ -426,6 +435,52 @@ export function memoryRuntime() {
       Object.assign(task, { assigneeIds: [...memberIds], version: task.version + 1 });
       return Promise.resolve(toTask(task));
     },
+    listDue: (eventId, dueOn) =>
+      Promise.resolve(
+        [...tasks.values()]
+          .filter(
+            (task) =>
+              task.eventId === eventId &&
+              !task.deletedAt &&
+              task.dueOn === dueOn &&
+              task.status !== 'done',
+          )
+          .map((task) => ({
+            taskId: task.id,
+            title: task.title,
+            userIds: toTask(task).assignees.map((assignee) => assignee.userId),
+          }))
+          .filter((task) => task.userIds.length > 0),
+      ),
+  };
+
+  tx.notifications = {
+    insert: (list) => {
+      const written: StoredNotification[] = [];
+      for (const item of list) {
+        const repeated =
+          item.dedupeKey &&
+          notifications.some(
+            (row) => row.userId === item.userId && row.dedupeKey === item.dedupeKey,
+          );
+        if (repeated) continue;
+        const row = { ...item, id: nextId(), readAt: null as Date | null };
+        notifications.push(row);
+        written.push({ id: row.id, userId: row.userId, type: row.type });
+      }
+      return Promise.resolve(written);
+    },
+    markRead: (userId, ids, now) => {
+      let updated = 0;
+      for (const row of notifications) {
+        if (row.userId !== userId || row.readAt || (ids && !ids.includes(row.id))) continue;
+        row.readAt = now;
+        updated += 1;
+      }
+      return Promise.resolve(updated);
+    },
+    unreadCount: (userId) =>
+      Promise.resolve(notifications.filter((row) => row.userId === userId && !row.readAt).length),
   };
 
   const categoryNameTaken = (eventId: string, name: string, except?: string) =>
@@ -1222,6 +1277,7 @@ export function memoryRuntime() {
     attendance: attendanceRows,
     modules,
     outbox,
+    notifications,
     activity,
     takenSlugs,
   };

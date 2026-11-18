@@ -10,6 +10,7 @@ import {
 import type { ActionDefinition } from '../action.js';
 import type { ActionContext } from '../context.js';
 import { ActionError } from '../errors.js';
+import { notify } from '../notifications/notification-actions.js';
 import { versionMismatch } from '../events/versioned.js';
 import type { CoreTx, TaskChanges } from '../ports.js';
 import { actorAccess, memberPermissions, requirePermission, userIdOf } from '../team/access.js';
@@ -51,6 +52,26 @@ async function assertAssignable(
       throw fieldError(`${path}.${index}`, `${member.name} can't see this task`);
     }
   }
+}
+
+/** task_assigned for members newly on the task (notify skips the person assigning). */
+function assigned(tx: CoreTx, ctx: ActionContext, task: Task, before: readonly string[] = []) {
+  return notify(
+    tx,
+    ctx,
+    task.assignees
+      .filter((assignee) => !before.includes(assignee.memberId))
+      .map((assignee) => ({
+        userId: assignee.userId,
+        eventId: ctx.eventId,
+        type: 'task_assigned' as const,
+        data: {
+          taskId: task.id,
+          taskTitle: task.title,
+          actorUserId: ctx.actor.kind === 'user' ? ctx.actor.userId : null,
+        },
+      })),
+  );
 }
 
 /** Last in its column: top-level tasks by status, subtasks under their parent. */
@@ -124,6 +145,7 @@ export const createTask: ActionDefinition<CreateTask, Task, CoreTx> = {
       activity: [
         { action: 'create', entityType: 'task', entityId: task!.id, before: null, after: task },
       ],
+      outbox: await assigned(tx, ctx, task!),
     };
   },
 };
@@ -232,6 +254,12 @@ export const replaceTaskAssignees: ActionDefinition<
           after: snapshot(after),
         },
       ],
+      outbox: await assigned(
+        tx,
+        ctx,
+        after,
+        task.assignees.map((assignee) => assignee.memberId),
+      ),
     };
   },
 };

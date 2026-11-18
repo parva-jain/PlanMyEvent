@@ -32,6 +32,7 @@ export const testTopic = (name: string) => `test.${name}-${newId()}`;
 
 /** Event-owned tables, children first, for removing a test's events. */
 const EVENT_TABLES = [
+  'notifications',
   'activity_log',
   'task_assignees',
   'tasks',

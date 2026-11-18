@@ -14,6 +14,13 @@ export {
   releaseIdempotencyKey,
   type IdempotencyClaim,
 } from './idempotency.js';
+export {
+  deleteExpiredIdempotencyKeys,
+  deletePublishedOutbox,
+  deleteReadNotifications,
+  eventsWithTasksDue,
+  type DueScanTarget,
+} from './maintenance.js';
 export { createActionRuntime, DbTx, type DrizzleTx, type RuntimeOptions } from './runtime.js';
 export { hashLinkToken, invitationToken } from './invitation-links.js';
 export { activityQueries, type ActivityQueries, type ActivityViewer } from './queries/activity.js';
@@ -26,6 +33,7 @@ export {
   type InvitationQueries,
   type InvitationVisibility,
 } from './queries/invitations.js';
+export { notificationQueries, type NotificationQueries } from './queries/notifications.js';
 export { taskQueries, type TaskQueries, type TaskVisibility } from './queries/tasks.js';
 export { teamQueries, type TeamQueries } from './queries/team.js';
 export { toEvent, toSubEvent, toVenue } from './stores/events.js';

@@ -4,6 +4,7 @@ import type { ActionDefinition } from '../action.js';
 import type { ActionContext } from '../context.js';
 import { versionMismatch } from '../events/versioned.js';
 import { ActionError } from '../errors.js';
+import { notify } from '../notifications/notification-actions.js';
 import type { CoreTx } from '../ports.js';
 import {
   actorAccess,
@@ -52,9 +53,22 @@ export const replaceMemberRoles: ActionDefinition<
     if (!replaced) versionMismatch(await tx.members.find(eventId, memberId), expectedVersion);
     await tx.access.bumpRolesVersion(eventId);
     const after = await reload(tx, eventId, memberId);
+    const roleNames = (member: typeof after) =>
+      [...new Set(member.assignments.map((item) => item.roleName))].sort();
+    const changed = JSON.stringify(before.assignments) !== JSON.stringify(after.assignments);
     return {
       result: after,
       activity: [{ action: 'update', entityType: 'member', entityId: memberId, before, after }],
+      outbox: changed
+        ? await notify(tx, ctx, [
+            {
+              userId: after.userId,
+              eventId,
+              type: 'role_changed',
+              data: { memberId, roleNames: roleNames(after), actorUserId: userIdOf(ctx) },
+            },
+          ])
+        : [],
     };
   },
 };

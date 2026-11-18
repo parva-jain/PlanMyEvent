@@ -14,6 +14,8 @@ import type {
   Invitation,
   Member,
   MemberInvite,
+  NotificationData,
+  NotificationType,
   Permission,
   ResponseMode,
   Role,
@@ -287,6 +289,33 @@ export interface TaskStore {
     expectedVersion: number,
     memberIds: string[],
   ): Promise<Task | null>;
+  /** Unfinished live tasks due on that date, with their active assignees' user ids. */
+  listDue(
+    eventId: string,
+    dueOn: string,
+  ): Promise<{ taskId: string; title: string; userIds: string[] }[]>;
+}
+
+/** A notification to write: who it's for, the event, and its typed payload. */
+export type NewNotification = NotificationData & {
+  userId: string;
+  eventId: string | null;
+  /** Makes a repeated send a no-op (unique per user). */
+  dedupeKey?: string | null;
+};
+
+export interface StoredNotification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+}
+
+export interface NotificationStore {
+  /** Inserts them, skipping repeated dedupe keys; returns the rows written. */
+  insert(list: readonly NewNotification[]): Promise<StoredNotification[]>;
+  /** Marks the user's unread ones (these ids, or all with null) read; returns how many. */
+  markRead(userId: string, ids: readonly string[] | null, now: Date): Promise<number>;
+  unreadCount(userId: string): Promise<number>;
 }
 
 export interface NewBudgetCategory {
@@ -578,4 +607,5 @@ export interface CoreTx {
   invitations: InvitationStore;
   attendance: AttendanceStore;
   guestScope: GuestScopeStore;
+  notifications: NotificationStore;
 }
