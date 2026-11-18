@@ -27,6 +27,7 @@ export {
   updateExpense,
 } from './budget/budget-actions.js';
 export type { ActionContext, Actor } from './context.js';
+export { dashboardFor, type DashboardAggregate } from './dashboard/dashboard.js';
 export { createEvent, replaceModules, updateEvent } from './events/event-actions.js';
 export {
   mergeRows,

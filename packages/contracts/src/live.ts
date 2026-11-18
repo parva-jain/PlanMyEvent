@@ -58,8 +58,13 @@ export const NotificationNewSchema = z.object({
 });
 export type NotificationNew = z.infer<typeof NotificationNewSchema>;
 
+/** The dashboard's numbers moved: re-fetch E/dashboard. At most once a second per event. */
+export const DashboardChangedSchema = z.object({ eventId: z.uuid() });
+export type DashboardChanged = z.infer<typeof DashboardChangedSchema>;
+
 export interface ServerToClientEvents {
   'entity.changed': (signal: EntityChanged) => void;
+  'dashboard.changed': (signal: DashboardChanged) => void;
   'job.progress': (signal: JobProgress) => void;
   'permissions.changed': (signal: PermissionsChanged) => void;
   'member.removed': (signal: MemberRemoved) => void;
@@ -89,6 +94,7 @@ export const LiveSignalSchema = z.discriminatedUnion('kind', [
       'member.removed',
       'job.progress',
       'notification.new',
+      'dashboard.changed',
     ]),
     data: z.record(z.string(), z.unknown()),
   }),
