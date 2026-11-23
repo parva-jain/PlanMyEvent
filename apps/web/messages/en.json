@@ -1527,6 +1527,20 @@
       "amountRequired": "Enter an amount",
       "categoryRequired": "Choose a category",
       "saveFailed": "Couldn't save. Try again in a moment."
+    },
+    "receipt": {
+      "label": "Receipt",
+      "attach": "Attach receipt",
+      "uploading": "Uploading receipt",
+      "processing": "Processing receipt…",
+      "attached": "Receipt attached",
+      "unreadable": "We couldn't read this file. Remove it and try a photo or PDF.",
+      "view": "View",
+      "remove": "Remove",
+      "tooBig": "Receipts can be up to 15 MB.",
+      "wrongType": "Use a photo (JPEG, PNG, WebP) or a PDF.",
+      "failed": "Couldn't upload the receipt. Try again.",
+      "openFailed": "Couldn't open the receipt. Try again."
     }
   },
   "people": {
@@ -2112,6 +2126,45 @@
       "doneTitle": "You're registered!",
       "doneEmail": "We've emailed you a confirmation with a link to view or cancel your registration.",
       "doneNoEmail": "Your place is saved. The organizers have your details."
+    }
+  },
+  "gallery": {
+    "title": "Gallery",
+    "count": "{count, plural, =0 {No photos yet} one {# photo} other {# photos}}",
+    "upload": "Upload photos",
+    "albums": "Albums",
+    "all": "All photos",
+    "wholeEvent": "Whole event",
+    "uploading": "Uploading",
+    "uploadingFile": "Uploading {name}",
+    "tooBig": "Over 15 MB",
+    "wrongType": "Use JPEG, PNG or WebP",
+    "uploadFailed": "Couldn't upload",
+    "dismiss": "Dismiss",
+    "loadFailed": "We couldn't load the photos.",
+    "retry": "Try again",
+    "emptyTitle": "No photos yet",
+    "emptyBody": "Upload photos from the event, and everyone who helped can see them here.",
+    "emptyBodyViewer": "Photos from the event will show here once someone uploads them.",
+    "photos": "Photos",
+    "more": "Show more",
+    "processing": "Processing…",
+    "failed": "Couldn't use this file",
+    "photoBy": "Photo by {name}",
+    "someone": "someone",
+    "viewer": {
+      "position": "{index} of {total}",
+      "close": "Close",
+      "previous": "Previous photo",
+      "next": "Next photo",
+      "caption": "Caption",
+      "captionPlaceholder": "Add a caption",
+      "save": "Save",
+      "by": "Photo by {name}",
+      "delete": "Delete",
+      "keep": "Keep it",
+      "confirmDelete": "Delete photo",
+      "failed": "Couldn't save. Try again."
     }
   }
 }

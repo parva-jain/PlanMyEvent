@@ -14,6 +14,7 @@ import { apiFetch, ApiError } from './api';
 import { eventKeys } from './events';
 import { highlight } from './live-highlights';
 import { budgetKeys } from './budget';
+import { mediaKeys } from './media';
 import { peopleKeys } from './people';
 import { taskKeys } from './tasks';
 import { teamKeys } from './team';
@@ -61,6 +62,9 @@ function affected(eventId: string, entityType: string): { queryKey: QueryKey; ex
       return [{ queryKey: taskKeys.all(eventId) }, { queryKey: taskKeys.mine }];
     case 'budget_category':
       return [{ queryKey: budgetKeys.categories(eventId) }];
+    case 'media':
+      // A receipt finishing shows on its expense, too.
+      return [{ queryKey: mediaKeys.all(eventId) }, { queryKey: budgetKeys.expenses(eventId) }];
     case 'expense':
       // Category totals add up expenses.
       return [
