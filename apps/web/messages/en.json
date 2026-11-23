@@ -1228,11 +1228,15 @@
         "update": "<b>{actor}</b> updated the invitation for <b>{name}</b>",
         "delete": "<b>{actor}</b> withdrew the invitation for <b>{name}</b>",
         "restore": "<b>{actor}</b> restored the invitation for <b>{name}</b>",
-        "regenerate_link": "<b>{actor}</b> made a new link for <b>{name}</b>"
+        "regenerate_link": "<b>{actor}</b> made a new link for <b>{name}</b>",
+        "register": "<b>{actor}</b> registered"
       },
       "attendance": {
         "update": "<b>{actor}</b> changed the reply for <b>{name}</b>",
-        "respond": "<b>{actor}</b> replied"
+        "respond": "<b>{actor}</b> replied",
+        "register": "<b>{actor}</b> registered again",
+        "create": "<b>{actor}</b> added <b>{name}</b> at the door",
+        "check_in": "<b>{actor}</b> checked in <b>{name}</b>"
       }
     },
     "something": "something",

@@ -13,6 +13,29 @@ ${body}
 </div></body></html>`;
 }
 
+/** "Sat, 14 Nov, 11:30 am" in the event's time zone. */
+const sessionTime = (iso: string, timeZone: string) =>
+  new Intl.DateTimeFormat('en-IN', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone,
+  }).format(new Date(iso));
+
+/** "10 Mar 2027", or "10 Mar 2027 – 11 Mar 2027". */
+const eventDates = (startsOn: string, endsOn: string) => {
+  const format = (date: string) =>
+    new Intl.DateTimeFormat('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(date));
+  return startsOn === endsOn ? format(startsOn) : `${format(startsOn)} – ${format(endsOn)}`;
+};
+
 /**
  * Email content per template. English only for now; Hindi arrives with the web app's
  * translations (CLAUDE.md: India-first, Hindi later).
@@ -47,6 +70,20 @@ export function renderEmail(job: EmailJob): Omit<EmailMessage, 'to'> {
 <p style="margin:0 0 24px"><a href="${escape(job.url)}" style="display:inline-block;background:#4338ca;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px">Join the team</a></p>
 <p style="margin:0 0 16px;font-size:13px;line-height:20px;color:#5e6384">The link works until ${expires}.</p>
 <p style="margin:0;font-size:13px;line-height:20px;color:#5e6384">If you weren't expecting this, you can ignore this email.</p>`),
+      };
+    }
+    case 'registration-confirmed': {
+      const lines = job.items.length
+        ? job.items.map((item) => `${item.name}, ${sessionTime(item.startsAt, job.timeZone)}`)
+        : [eventDates(job.eventStartsOn, job.eventEndsOn)];
+      const people = job.partySize === 1 ? '1 person' : `${job.partySize} people`;
+      return {
+        subject: `You're registered for ${job.eventName}`,
+        text: `Hi ${job.guestName},\n\nYou're registered for ${job.eventName} (${people}):\n${lines.map((line) => `- ${line}`).join('\n')}\n\nView or cancel your registration: ${job.url}\n\nKeep this link to yourself: anyone with it can change your registration.`,
+        html: layout(`<p style="margin:0 0 16px;font-size:15px;line-height:24px">Hi ${escape(job.guestName)}, you're registered for <strong>${escape(job.eventName)}</strong> (${people}):</p>
+<ul style="margin:0 0 24px;padding-left:20px;font-size:15px;line-height:24px">${lines.map((line) => `<li>${escape(line)}</li>`).join('')}</ul>
+<p style="margin:0 0 24px"><a href="${escape(job.url)}" style="display:inline-block;background:#4338ca;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px">View your registration</a></p>
+<p style="margin:0;font-size:13px;line-height:20px;color:#5e6384">Keep this link to yourself: anyone with it can change your registration.</p>`),
       };
     }
   }
