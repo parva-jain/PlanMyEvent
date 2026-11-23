@@ -15,12 +15,14 @@ import { eventHref } from '@/components/shell/nav';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSubEvents } from '@/lib/events';
 import { useAttendance, useContacts, useHouseholds, useInvitations } from '@/lib/people';
 
 import { GuestList } from './guest-list';
 import { GuestPanelBody } from './guest-panel';
 import { InvitationsTab } from './invitations-tab';
 import { MyCards } from './my-cards';
+import { RegistrationsTab } from './registrations-tab';
 import { guestRows } from './people-bits';
 import { ResponsesTab } from './responses-tab';
 import { SendSequence } from './send-sequence';
@@ -40,7 +42,8 @@ export function People() {
 
 function PeopleScreen() {
   const t = useTranslations('people');
-  const { eventId, can } = useCurrentEvent();
+  const { eventId, event, can } = useCurrentEvent();
+  const { data: subEvents = [] } = useSubEvents(eventId);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -74,6 +77,12 @@ function PeopleScreen() {
       attendance.refetch(),
     ]);
   const expected = rows.households.reduce((sum, row) => sum + row.expected, 0);
+  // Open registration in use, or registrations already in: the Registrations tab shows.
+  const registration =
+    seesAll &&
+    (event.responseMode === 'open_registration' ||
+      subEvents.some((item) => item.responseMode === 'open_registration') ||
+      (attendance.data ?? []).some((row) => row.source === 'registered'));
 
   const current =
     panel && panel.kind !== 'new'
@@ -156,6 +165,9 @@ function PeopleScreen() {
               <span className="tabular-nums text-fg-muted">{invitations.data.length}</span>
             </TabsTrigger>
             <TabsTrigger value="responses">{t('tabs.responses')}</TabsTrigger>
+            {registration && (
+              <TabsTrigger value="registrations">{t('tabs.registrations')}</TabsTrigger>
+            )}
           </TabsList>
           {seesAll && (
             <TabsContent value="guests">
@@ -177,6 +189,11 @@ function PeopleScreen() {
           <TabsContent value="responses">
             <ResponsesTab attendance={attendance.data} onOpen={seesAll ? openGuest : undefined} />
           </TabsContent>
+          {registration && (
+            <TabsContent value="registrations">
+              <RegistrationsTab attendance={attendance.data} contacts={contacts.data ?? []} />
+            </TabsContent>
+          )}
         </Tabs>
       )}
 

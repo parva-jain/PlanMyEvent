@@ -4,6 +4,7 @@ import type {
   Attendance,
   BulkCreateInvitations,
   BulkCreateInvitationsResult,
+  CreateAttendance,
   Contact,
   CreateContact,
   CreateHousehold,
@@ -307,6 +308,16 @@ export function useRegenerateLink(eventId: string) {
       }),
     onSuccess: (invitation) =>
       queryClient.invalidateQueries({ queryKey: peopleKeys.share(eventId, invitation.id) }),
+    onSettled: () => refreshPeople(queryClient, eventId),
+  });
+}
+
+/** POST E/attendance: a walk-in (checked in) or a manual registration. */
+export function useCreateAttendance(eventId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateAttendance) =>
+      apiFetch<Attendance>(`${E(eventId)}/attendance`, { method: 'POST', body }),
     onSettled: () => refreshPeople(queryClient, eventId),
   });
 }

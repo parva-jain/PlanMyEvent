@@ -830,7 +830,7 @@
       "modeHelp": {
         "invite_only": "No replies; the headcount is what you expect.",
         "invite_rsvp": "Guests say through their link if they're coming, and how many.",
-        "open_registration": ""
+        "open_registration": "Anyone registers on your public page; registering is the reply."
       },
       "comingSoon": "Comes with the public registration page.",
       "conflict": "The event changed a moment ago. Try again.",
@@ -847,7 +847,12 @@
       "startFailed": "Couldn't switch. Try again in a moment.",
       "cancel": "Cancel",
       "switch": "Switch",
-      "close": "Close"
+      "close": "Close",
+      "publicLink": "Public registration page",
+      "publicLinkHelp": "Share this link. Sub-events set to public in Schedule show on the page; registration needs them public.",
+      "copy": "Copy link",
+      "copied": "Copied",
+      "openPage": "Open"
     }
   },
   "team": {
@@ -1607,7 +1612,8 @@
     "tabs": {
       "guests": "Guests",
       "invitations": "Invitations",
-      "responses": "Responses"
+      "responses": "Responses",
+      "registrations": "Registrations"
     },
     "newGuest": "Add guests",
     "guest": "Guest",
@@ -1837,6 +1843,46 @@
       "allDone": "All your cards are delivered.",
       "people": "{count, plural, one {# person} other {# people}}",
       "finished": "All {count} of your cards are delivered"
+    },
+    "registrations": {
+      "registered": "{count, plural, one {person registered} other {people registered}}",
+      "summary": "{checkedIn} checked in · {waitlisted} waitlisted",
+      "add": "Register attendee",
+      "addTitle": "Register an attendee",
+      "sessions": "Capacity by session",
+      "state": {
+        "open": "Open",
+        "almostFull": "Almost full",
+        "full": "Full"
+      },
+      "filled": "{percent}% filled",
+      "ofCapacity": "/ {capacity}",
+      "fillLabel": "{name} places taken",
+      "search": "Search by name, email or phone",
+      "noMatch": "Nobody matches that search.",
+      "empty": "No registrations yet. Share your public page to get started.",
+      "noContact": "No contact details",
+      "atTheDoor": "At the door",
+      "form": {
+        "name": "Name",
+        "phone": "Phone",
+        "email": "Email",
+        "optional": "Optional",
+        "session": "Session",
+        "partySize": "People",
+        "status": "Status",
+        "statuses": {
+          "checked_in": "Checked in",
+          "registered": "Registered"
+        },
+        "statusHelp": {
+          "checked_in": "They're here now",
+          "registered": "Coming later"
+        },
+        "save": "Add",
+        "nameRequired": "Enter a name",
+        "failed": "Couldn't add them. Try again."
+      }
     }
   },
   "invite": {
@@ -1881,7 +1927,22 @@
     "busyBody": "Too many tries just now. Wait a minute and try again.",
     "sendBusy": "The hosts are updating the invitation right now. Try again in a moment.",
     "retry": "Try again",
-    "sentWith": "Sent with Plan My Event"
+    "sentWith": "Sent with Plan My Event",
+    "youreRegistered": "You're registered",
+    "registration": {
+      "title": "Your registration",
+      "body": "Can't make it any more? Cancel, and your place goes to someone else.",
+      "cancelledTitle": "Registration cancelled",
+      "cancelledBody": "You can register again on the event page while places are left.",
+      "people": "{count, plural, one {# person} other {# people}}",
+      "cancelled": "Cancelled",
+      "cancel": "Cancel my registration",
+      "confirm": "Cancel your registration? Your place may go to someone else.",
+      "keep": "Keep it",
+      "yesCancel": "Yes, cancel",
+      "registerAgain": "Register again",
+      "failed": "Couldn't cancel. Try again in a moment."
+    }
   },
   "dashboard": {
     "loadFailed": "We couldn't load the dashboard.",
@@ -1992,6 +2053,65 @@
       "roleChanged": "{actor} changed your role to {roles}",
       "rolesRemoved": "{actor} removed your roles",
       "jobFailed": "A background job failed"
+    }
+  },
+  "publicEvent": {
+    "schedule": "Schedule",
+    "map": "Map",
+    "mapFor": "Map for {name}",
+    "madeWith": "Made with Plan My Event",
+    "spotsLeft": "{count, plural, =0 {No places left} one {# place left} other {# places left}}",
+    "almostFull": "Almost full",
+    "state": {
+      "open": "Registration open",
+      "full": "Fully booked",
+      "closed": "Registration closed",
+      "not_open": "Event"
+    },
+    "subEventState": {
+      "open": "Open",
+      "full": "Full",
+      "closed": "Closed",
+      "not_open": "Invite only"
+    },
+    "unavailable": {
+      "full": "This event is full",
+      "closed": "Registration has closed",
+      "not_open": "Registration isn't open",
+      "open": ""
+    },
+    "unavailableBody": {
+      "full": "Every place has been taken. Places free up when someone cancels, so check back later.",
+      "closed": "This event has finished taking registrations.",
+      "not_open": "This event is by invitation. If you were invited, use the link you received.",
+      "open": ""
+    },
+    "form": {
+      "title": "Register",
+      "subtitle": "It takes a minute. We'll email you a link to view or cancel your registration.",
+      "name": "Your name",
+      "email": "Email",
+      "emailHint": "Your confirmation and link come here.",
+      "phone": "Phone",
+      "optional": "Optional",
+      "sessions": "What would you like to attend?",
+      "partySize": "People coming, including you",
+      "fewer": "One fewer",
+      "more": "One more",
+      "submit": "Register",
+      "privacy": "Your details go only to the organizers of this event.",
+      "nameRequired": "Enter your name",
+      "contactRequired": "Enter an email or a phone number",
+      "chooseOne": "Choose at least one",
+      "waitForCheck": "One moment: we're checking you're not a robot.",
+      "full": "Sorry, that just filled up. The page now shows what's still open.",
+      "closed": "Registration has just closed.",
+      "captcha": "The check didn't go through. Please try again.",
+      "busy": "Too many tries from here. Wait a minute and try again.",
+      "failed": "Couldn't register. Please try again.",
+      "doneTitle": "You're registered!",
+      "doneEmail": "We've emailed you a confirmation with a link to view or cancel your registration.",
+      "doneNoEmail": "Your place is saved. The organizers have your details."
     }
   }
 }
