@@ -33,6 +33,7 @@ API, worker, database and the shared packages behind them.
 - [47 Dashboard cache](backend/47-dashboard-cache.md)
 - [49 Open registration](backend/49-open-registration.md)
 - [51 Media uploads](backend/51-media-uploads.md)
+- [53 Reviewing milestone 8](backend/53-milestone-8-review.md)
 
 ## Frontend
 

@@ -1,21 +1,20 @@
 # Project status
 
-Last updated: Nov 18, 2026 · Updated at the end of every working step.
+Last updated: Nov 23, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Now: milestone 8 — open registration; dashboard aggregates; notifications; basic gallery.** On branch `feat/m8-registration-dashboard`; 8a–8g done, 8h (review and PR) next. Milestones 1–7 are merged to `main` (PRs #1 and #2 squashed, #3–#8 rebase-merged).
+**Now: milestone 9 — seed data ("Sharma Wedding" and "DevFest Bhopal 2026" demo events).** Milestone 8 is done on `feat/m8-registration-dashboard` and open as a PR to `main` (rebase-merge). Milestones 1–7 are merged (PRs #1 and #2 squashed, #3–#8 rebase-merged).
 
 ### Start here (next session)
 
-1. `git checkout main && git pull`, then `docker compose -f infra/docker-compose.yml up -d --wait`, `pnpm install`, `pnpm db:migrate`.
-2. Read the milestone 8 parts of `docs/PRD.md` (open registration, dashboard, notifications, gallery), then `docs/APIDesign.md`, `docs/DatabaseDesign.md` and `docs/MOTION.md` for those screens, and the Stitch screens for them. `docs/STITCH_PROGRESS.md` lists batch E (public event page, registration, gallery, notifications, profile) as not designed yet; design those first or build from DESIGN.md.
-3. Propose 8a, 8b, … in this file before building, same pattern as milestone 7: backend step, then web step, then a review step that ends with the PR.
-4. Pieces already waiting for milestone 8 (see Follow-ups): `open_registration` response mode (shown disabled in Settings, refused by the API), `POST E/attendance` for walk-ins, `dashboard.changed` socket signal, `notification.new`, media table (expense receipts, gallery), task comments and reminders, the scheduled queue (outbox and idempotency cleanup).
+1. Once the milestone 8 PR is merged: `git checkout main && git pull`, then `docker compose -f infra/docker-compose.yml up -d --wait`, `pnpm install`, `pnpm db:migrate` (0010 adds `media`).
+2. Milestone 9 is `pnpm db:seed`: the two demo events from the PRD and Stitch (a wedding with households, invitations, RSVPs, tasks and budget; a conference with open registration, sessions with capacity, registrations, a gallery). Read DatabaseDesign "Seed data" and the Stitch dashboards for the numbers they show.
+3. Propose 9a, 9b, … here before building. Before launch, also see Follow-ups (Next.js security upgrade, Turnstile and R2 setup, CORS on the R2 buckets).
 
 Working style: a step at a time with a pause for the go-ahead; one learning note per step in `docs/learning/`; STATUS updated every step; one-line commits staged by file name; PRs rebase-merged.
 
-### Milestone 8 (in progress)
+### Milestone 8 (done)
 
 Branch `feat/m8-registration-dashboard`. Backend step, then web step, per feature; a review step ends with the PR. Screens without Stitch designs (public page, registration, gallery, notifications) are built from DESIGN.md (decided Nov 18). Task comments and due-date reminders stay V2 (PRD lists them there); "task due" notifications come from a daily scan instead.
 
@@ -28,7 +27,7 @@ Branch `feat/m8-registration-dashboard`. Backend step, then web step, per featur
 | 8e | Public event page and registration web (built from DESIGN.md; Registrations tab after Stitch "DevFest Bhopal 2026 — Registrations"): `/e/{slug}` server-rendered (fetch revalidated every 60 s, metadata from the event, 404 page for nothing public) with the invite page's header, public schedule with places left and state chips, and the register form (name, email, phone, sessions with per-sub-event guests, party stepper 1–10, Cloudflare Turnstile widget via `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, Idempotency-Key per send, capacity_full re-renders the page); invite page shows "Your registration" with a two-step Cancel and "Register again" (`event.slug` added to the invite contract); Settings enables Open registration (a sub-event set to it also becomes public) and shows the public link with Copy and Open; People → Registrations tab (registered count, per-session capacity cards, searchable registrants with sessions and time, Register attendee panel → `POST E/attendance`). The API skips Cloudflare for its always-pass test secret, so dev and e2e run offline. Playwright `registration.spec.ts` (register, emailed link, cancel; organizer tab and walk-in; private event 404) | Done |
 | 8f | Media backend: `media` (migration 0010: bucket, storage_key, variants, uploaded_at, version) and `expenses.receipt_media_id` (composite FK); `POST E/uploads` (gallery: photos, gallery.upload; receipt: photos or PDF, budget.edit; scope from subEventId; 15 MB) creates the row and returns a presigned PUT (10 min); `POST E/media/{id}/complete` checks the object with HEAD (409 `not_uploaded`, 413) and queues `media.process`; worker `media` queue (concurrency 3): real type from the bytes, WebP 320/1600 px upright without EXIF/GPS, original deleted, PDF receipts kept, anything else failed and deleted; `finishMediaProcessing` sends entity.changed; `GET E/media` (ready + my own pending; albums), `GET …/{id}`, `GET …/{id}/url` (5 min signed link, receipts need budget.view there), `PATCH`/`DELETE` (gallery.manage, If-Match); daily `media-cleanup` (unconfirmed after a day, deleted after 30 days: files, then rows, clearing receipt links). S3 env on API and worker (SeaweedFS defaults); SDK checksums `WHEN_REQUIRED` so presigned PUTs work on R2 and SeaweedFS | Done |
 | 8g | Gallery web and receipts (built from DESIGN.md): Gallery page replaces the last section placeholder (the `[section]` route and `SectionPlaceholder` are gone): album chips (all, whole event, each sub-event), multi-file upload straight to storage with XHR progress (three at a time, JPEG/PNG/WebP, 15 MB), processing and failed tiles, grid of 320 px WebP thumbs that arrive live (`entity.changed` for media, plus a 5 s poll while any is processing), full-screen viewer (1600 px, previous/next and arrow keys, caption edit and two-step delete for gallery.manage); expense form gets a Receipt field (photo or PDF to the private bucket, processing state, View opens a 5-minute signed link, Remove). Playwright `gallery.spec.ts` runs the real worker: photo processed, captioned, deleted; PDF receipt attached and saved | Done |
-| 8h | Review, fixes, PR | Proposed |
+| 8h | Review, fixes, PR: receipt details (`GET E/media/{id}`, `?kind=receipt`) limited to budget viewers where they belong; deleting a photo now queues `media.purge`, which removes its files at once (a deleted photo stopped being public only after 30 days); full unit, API and Playwright suites; learning note 53; PR to `main` | Done |
 
 ### Milestone 7 (done)
 
@@ -305,6 +304,8 @@ None right now.
 ## Follow-ups
 
 - Deleting an event (202 job) is designed but not built.
+- Next.js 16.4.2 has a published security advisory (`next build` says so and stops every other run); upgrade before deploying.
+- Registration re-sends the link to someone already registered on every matching submit; Turnstile and 5/min per IP limit abuse, but a per-invitation cooldown (one resend an hour) would stop someone flooding a known address.
 - Free-plan event limits (402 plan_limit_reached) once limits are set before launch.
 - Rate limits trust the first `X-Forwarded-For` value. In production behind Cloudflare, read `CF-Connecting-IP` instead (make the header configurable), or clients can rotate the header to dodge per-IP limits; the per-email limit still holds.
 - Google sign-in before launch: publish the OAuth consent screen (Google verification; until then only test users can sign in) and add the production redirect URI `{API_URL}/v1/auth/callback/google`.
@@ -384,4 +385,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [52 Gallery and receipts in the web app](learning/frontend/52-gallery-web.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [53 Reviewing milestone 8](learning/backend/53-milestone-8-review.md).
