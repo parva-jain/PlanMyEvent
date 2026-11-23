@@ -12,7 +12,7 @@ describe('loadApiEnv', () => {
     expect(env.SENTRY_DSN).toBeUndefined();
   });
 
-  it('requires database, Redis, URLs, the auth secret and the link key in production', () => {
+  it('requires database, Redis, URLs, the auth secret, the link key and Turnstile in production', () => {
     expect(() => loadApiEnv({ NODE_ENV: 'production' })).toThrow(EnvValidationError);
     expect(() =>
       loadApiEnv({
@@ -23,6 +23,7 @@ describe('loadApiEnv', () => {
         API_URL: 'https://api.planmyevent.app',
         BETTER_AUTH_SECRET: 'x'.repeat(32),
         INVITATION_LINK_KEY: 'y'.repeat(32),
+        TURNSTILE_SECRET_KEY: '0x4AAAAAAAexample',
       }),
     ).not.toThrow();
   });

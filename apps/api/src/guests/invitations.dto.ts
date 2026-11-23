@@ -1,4 +1,5 @@
 import {
+  CreateAttendanceSchema,
   AttendanceQuerySchema,
   AttendanceSchema,
   BulkCreateInvitationsResultSchema,
@@ -34,3 +35,5 @@ export class AttendanceDto extends createZodDto(AttendanceSchema) {}
 export class AttendanceListDto extends createZodDto(listOf(AttendanceSchema)) {}
 export class AttendanceQueryDto extends createZodDto(AttendanceQuerySchema) {}
 export class UpdateAttendanceDto extends createZodDto(UpdateAttendanceSchema) {}
+
+export class CreateAttendanceDto extends createZodDto(CreateAttendanceSchema) {}

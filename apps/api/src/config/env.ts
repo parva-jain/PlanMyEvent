@@ -29,6 +29,15 @@ export function loadApiEnv(source: Record<string, string | undefined> = process.
         'local-development-invitation-key-not-for-production',
         nodeEnv,
       ),
+      /**
+       * Cloudflare Turnstile's secret for the public registration form. The default is
+       * Cloudflare's test secret, which accepts every token (development and tests only).
+       */
+      TURNSTILE_SECRET_KEY: devDefault(
+        z.string().min(1),
+        '1x0000000000000000000000000000000AA',
+        nodeEnv,
+      ),
       /** Google sign-in is on only when both are set. */
       GOOGLE_CLIENT_ID: z.string().optional(),
       GOOGLE_CLIENT_SECRET: z.string().optional(),

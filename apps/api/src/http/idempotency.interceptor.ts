@@ -58,13 +58,16 @@ export class IdempotencyInterceptor implements NestInterceptor {
     ) {
       throw new ActionError('bad_request', 'Send an Idempotency-Key with this request');
     }
-    // Members' keys are theirs; a guest's are their link's (the token, hashed).
-    const token = req.params.token;
+    // Members' keys are theirs; a guest's are their link's (the token, hashed); a visitor's
+    // registration keys are the event page's (keys are random, so visitors don't collide).
+    const { token, slug } = req.params;
     const scope = req.user
       ? `user:${req.user.id}`
       : typeof token === 'string'
         ? `invite:${createHash('sha256').update(token).digest('hex')}`
-        : null;
+        : typeof slug === 'string'
+          ? `event-page:${slug.toLowerCase()}`
+          : null;
     if (req.method !== 'POST' || typeof key !== 'string' || !scope) {
       return next.handle();
     }
