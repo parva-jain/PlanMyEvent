@@ -41,6 +41,8 @@ test.describe('gallery and receipts', () => {
     await expect(tile.locator('img')).toHaveAttribute('src', /-320\.webp$/);
     await page.screenshot({ path: testInfo.outputPath('gallery.png'), fullPage: true });
 
+    const thumbUrl = (await tile.locator('img').getAttribute('src'))!;
+    expect((await page.request.get(thumbUrl)).status()).toBe(200);
     await tile.click();
     const viewer = page.getByTestId('photo-viewer');
     await expect(viewer.locator('img')).toHaveAttribute('src', /-1600\.webp$/);
@@ -51,6 +53,12 @@ test.describe('gallery and receipts', () => {
     await viewer.getByRole('button', { name: text('gallery.viewer.confirmDelete') }).click();
     await expect(viewer).toHaveCount(0);
     await expect(page.getByTestId('gallery-empty')).toBeVisible();
+    // A deleted photo stops being public straight away (media.purge).
+    await expect
+      .poll(async () => (await page.request.get(thumbUrl)).status(), {
+        timeout: 15_000,
+      })
+      .toBe(404);
   });
 
   test('attach a PDF receipt to an expense', async ({ page }) => {

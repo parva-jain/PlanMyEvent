@@ -31,4 +31,4 @@ The first presigned PUT failed with `BadDigest: The Content-Md5 you specified di
 
 ## Deleting later
 
-Deleting a photo only soft-deletes the row, so undo and other people's screens behave like everything else. A daily job removes the files of photos deleted over 30 days ago, then their rows. The order matters: files first, rows second. If the job crashes in between, the rows are still there and the next run tries again. The other order could leave files that nothing points to.
+Deleting a photo soft-deletes the row, so the activity log and other people's screens behave like everything else. The files are a different matter: a public URL keeps working until the file is gone. So deleting also queues a `media.purge` job that removes the files at once (found in the 8h review). A daily job removes the rows of photos deleted over 30 days ago, and the files of uploads that were never confirmed. For the cleanup the order matters: files first, rows second. If the job crashes in between, the rows are still there and the next run tries again. The other order could leave files that nothing points to.

@@ -21,6 +21,7 @@ export {
   eventsWithTasksDue,
   type DueScanTarget,
   forgetMedia,
+  mediaFiles,
   mediaToRemove,
   type StoredFiles,
 } from './maintenance.js';

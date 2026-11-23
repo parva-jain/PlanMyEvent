@@ -465,7 +465,7 @@ Media rows describe files that live in R2; the activity log is append-only and s
 | uploaded\_by\_user\_id | uuid | FK users |  |
 | uploaded\_at | timestamptz |  | Set when the uploader confirms the file arrived; rows still null after a day are removed with their files |
 | version | integer | NN, default 1 | Caption and album edits use If-Match |
-| deleted\_at | timestamptz |  | File removed from R2 by a job 30 days later |
+| deleted\_at | timestamptz |  | Gallery files removed from storage at once (media.purge job); the row 30 days later |
 
 Indexes: unique(event\_id, id); unique(storage\_key); index(event\_id, kind, created\_at desc) where status = 'ready' and deleted\_at is null; index(created\_at) where uploaded\_at is null; index(deleted\_at) where deleted\_at is not null (cleanup scans).
 

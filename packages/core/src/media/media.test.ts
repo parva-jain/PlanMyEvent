@@ -114,8 +114,8 @@ describe('uploads', () => {
     ).rejects.toMatchObject({ code: 'forbidden' });
   });
 
-  it('captions, albums and deleting need gallery.manage', async () => {
-    const { run, photo, subEvent } = await wedding();
+  it('captions, albums and deleting need gallery.manage; deleting purges the files', async () => {
+    const { run, photo, subEvent, outbox } = await wedding();
     const row = await run('helper', createGalleryUpload, photo);
     await expect(
       run('helper', updateMedia, {
@@ -134,6 +134,7 @@ describe('uploads', () => {
       run('owner', deleteMedia, { mediaId: row.id, expectedVersion: 1 }),
     ).rejects.toMatchObject({ code: 'version_conflict' });
     await run('owner', deleteMedia, { mediaId: row.id, expectedVersion: 2 });
+    expect(outbox.filter((message) => message.topic === 'media.purge')).toHaveLength(1);
     await expect(
       run('owner', updateMedia, { mediaId: row.id, expectedVersion: 3, changes: { caption: 'y' } }),
     ).rejects.toMatchObject({ code: 'not_found' });

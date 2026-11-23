@@ -1,4 +1,4 @@
-import { and, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 
 import type { Database } from './client.js';
 import { expenses } from './schema/budget.js';
@@ -129,4 +129,22 @@ export async function forgetMedia(db: Database, ids: string[]): Promise<number> 
     const rows = await tx.delete(media).where(inArray(media.id, ids)).returning({ id: media.id });
     return rows.length;
   });
+}
+
+/** A media row's files, deleted or not (purging a deleted photo's files). */
+export async function mediaFiles(
+  db: Database,
+  eventId: string,
+  mediaId: string,
+): Promise<StoredFiles | null> {
+  const [row] = await db
+    .select({
+      id: media.id,
+      bucket: media.bucket,
+      storageKey: media.storageKey,
+      variants: media.variants,
+    })
+    .from(media)
+    .where(and(eq(media.eventId, eventId), eq(media.id, mediaId)));
+  return row ? filesOf(row) : null;
 }

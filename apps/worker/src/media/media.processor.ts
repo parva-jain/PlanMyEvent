@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
-import { MediaJobSchema, QUEUES } from '@pme/contracts';
+import { MediaJobSchema, OUTBOX_ROUTES, QUEUES } from '@pme/contracts';
 import {
   finishMediaProcessing,
   runAction,
@@ -9,7 +9,7 @@ import {
   type CoreTx,
   type MediaOutcome,
 } from '@pme/core';
-import { mediaForProcessing, type Database } from '@pme/db';
+import { mediaFiles, mediaForProcessing, type Database } from '@pme/db';
 import type { Job } from 'bullmq';
 
 import { DB } from '../database/database.module';
@@ -37,6 +37,7 @@ export class MediaProcessor extends WorkerHost {
 
   async process(job: Job<unknown>): Promise<void> {
     const { mediaId, eventId } = MediaJobSchema.parse(job.data);
+    if (job.name === OUTBOX_ROUTES['media.purge'].job) return this.purge(eventId, mediaId);
     const item = await mediaForProcessing(this.db, eventId, mediaId);
     if (!item || item.status !== 'pending') return;
     let outcome: MediaOutcome;
@@ -57,5 +58,12 @@ export class MediaProcessor extends WorkerHost {
     };
     await runAction(this.runtime, ctx, finishMediaProcessing, { mediaId, outcome });
     this.logger.log(`media ${mediaId} ${outcome.status}`);
+  }
+
+  /** A deleted photo: its files leave storage now; deleting missing keys is harmless. */
+  private async purge(eventId: string, mediaId: string) {
+    const files = await mediaFiles(this.db, eventId, mediaId);
+    if (files) await this.storage.remove(files.bucket, files.keys);
+    this.logger.log(`media ${mediaId} files removed`);
   }
 }

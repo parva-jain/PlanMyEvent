@@ -118,6 +118,14 @@ export const OUTBOX_ROUTES = {
     backoffMs: 10_000,
     sensitive: false,
   },
+  /** A deleted photo's files leave public storage at once (the row stays 30 days). */
+  'media.purge': {
+    queue: QUEUES.media,
+    job: 'purge',
+    attempts: 5,
+    backoffMs: 10_000,
+    sensitive: false,
+  },
   'event.guest_scope': {
     queue: QUEUES.imports,
     job: 'guest-scope',

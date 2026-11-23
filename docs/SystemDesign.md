@@ -453,7 +453,7 @@ Rules every job follows:
 2. Client uploads straight to R2; the API never handles the file bytes. The SDK's default request checksums are turned off (WHEN\_REQUIRED), since they'd be signed for an empty body.
 3. Client confirms; the API checks the object arrived (HEAD, size) and an outbox job is queued.
 4. Worker checks the real file type from the bytes, writes WebP versions (320 px thumbnail, 1600 px display) turned upright and without metadata (so no location), deletes the original, marks the row ready, and the gallery updates live. Anything that isn't a readable photo (or, for receipts, a PDF) fails and its file is deleted. HEIC needs a HEVC decoder the prebuilt sharp lacks, so the web app converts or the upload fails.
-5. A daily scheduled job removes files of uploads never confirmed (after a day) and of deleted media (after 30 days), then their rows.
+5. Deleting a gallery photo queues media.purge, which removes its files at once, so it stops being public immediately. A daily scheduled job removes files of uploads never confirmed (after a day), and the rows of deleted media after 30 days.
 6. Gallery images are served from a public R2 bucket behind Cloudflare's CDN; receipts sit in a private bucket and are shown through signed URLs valid for 5 minutes.
 
 ### 5.8 Undo

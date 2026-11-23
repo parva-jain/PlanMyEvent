@@ -156,8 +156,9 @@ export const updateMedia: ActionDefinition<
 };
 
 /**
- * DELETE E/media/{id}: a gallery photo, gallery.manage. The row is soft-deleted at once; the
- * files go from storage 30 days later (scheduled cleanup).
+ * DELETE E/media/{id}: a gallery photo, gallery.manage. The row is soft-deleted and its files
+ * leave storage straight away (media.purge), so a removed photo stops being public at once;
+ * the row itself goes 30 days later (scheduled cleanup).
  */
 export const deleteMedia: ActionDefinition<
   { mediaId: string; expectedVersion: number },
@@ -178,9 +179,12 @@ export const deleteMedia: ActionDefinition<
         current: await tx.media.find(eventId, mediaId),
       });
     }
+    // A deleted photo stops being public now, not when the row is cleaned up.
+    const job: MediaJob = { mediaId, eventId };
     return {
       result: undefined,
       activity: [{ action: 'delete', entityType: 'media', entityId: mediaId, before, after: null }],
+      outbox: [{ topic: 'media.purge', dedupeKey: jobId('media-purge', mediaId), payload: job }],
     };
   },
 };
