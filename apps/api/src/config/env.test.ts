@@ -24,6 +24,10 @@ describe('loadApiEnv', () => {
         BETTER_AUTH_SECRET: 'x'.repeat(32),
         INVITATION_LINK_KEY: 'y'.repeat(32),
         TURNSTILE_SECRET_KEY: '0x4AAAAAAAexample',
+        S3_ENDPOINT: 'https://account.r2.cloudflarestorage.com',
+        S3_ACCESS_KEY_ID: 'key',
+        S3_SECRET_ACCESS_KEY: 'secret',
+        MEDIA_PUBLIC_URL: 'https://media.planmyevent.app',
       }),
     ).not.toThrow();
   });

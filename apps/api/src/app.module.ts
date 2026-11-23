@@ -19,6 +19,7 @@ import { IdempotencyInterceptor } from './http/idempotency.interceptor';
 import { LifecycleModule } from './lifecycle/lifecycle.module';
 import { LiveModule } from './live/live.module';
 import { LoggingModule } from './logging/logging.module';
+import { MediaModule } from './media/media.module';
 import { MeModule } from './me/me.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PublicModule } from './public/public.module';
@@ -39,6 +40,7 @@ import { TeamModule } from './team/team.module';
     MeModule,
     NotificationsModule,
     DashboardModule,
+    MediaModule,
     EventsModule,
     TeamModule,
     ActivityModule,
