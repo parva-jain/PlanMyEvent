@@ -5,6 +5,7 @@ import {
   type ActionContext,
   type AttendanceStore,
   type GuestScopeStore,
+  type MediaStore,
   type NotificationStore,
   type ContactStore,
   type HouseholdStore,
@@ -38,6 +39,7 @@ import { budgetCategoryStore, expenseStore } from './stores/budget.js';
 import { eventStore, subEventStore, venueStore } from './stores/events.js';
 import { contactStore, householdStore } from './stores/guests.js';
 import { guestScopeStore } from './stores/guest-scope.js';
+import { mediaStore } from './stores/media.js';
 import { notificationStore } from './stores/notifications.js';
 import { attendanceStore, invitationStore } from './stores/invitations.js';
 import { taskStore } from './stores/tasks.js';
@@ -117,6 +119,7 @@ export class DbTx implements CoreTx {
   readonly attendance: AttendanceStore;
   readonly guestScope: GuestScopeStore;
   readonly notifications: NotificationStore;
+  readonly media: MediaStore;
 
   constructor(
     readonly db: DrizzleTx,
@@ -141,6 +144,7 @@ export class DbTx implements CoreTx {
     this.attendance = attendanceStore(db);
     this.guestScope = guestScopeStore(db);
     this.notifications = notificationStore(db);
+    this.media = mediaStore(db);
   }
 }
 

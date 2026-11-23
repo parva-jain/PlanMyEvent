@@ -32,6 +32,7 @@ export const toExpense = (row: ExpenseRow): Expense => ({
   paidOn: row.paidOn,
   paidByMemberId: row.paidByMemberId,
   transactionRef: row.transactionRef,
+  receiptMediaId: row.receiptMediaId,
   notes: row.notes,
   version: row.version,
   createdAt: row.createdAt.toISOString(),

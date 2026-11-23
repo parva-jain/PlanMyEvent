@@ -20,6 +20,9 @@ export {
   deleteReadNotifications,
   eventsWithTasksDue,
   type DueScanTarget,
+  forgetMedia,
+  mediaToRemove,
+  type StoredFiles,
 } from './maintenance.js';
 export { createActionRuntime, DbTx, type DrizzleTx, type RuntimeOptions } from './runtime.js';
 export { hashLinkToken, invitationToken } from './invitation-links.js';
@@ -39,6 +42,7 @@ export {
   type InvitationVisibility,
 } from './queries/invitations.js';
 export { loadDashboardAggregate } from './queries/dashboard.js';
+export { mediaForProcessing, mediaQueries, type MediaQueries } from './queries/media.js';
 export { notificationQueries, type NotificationQueries } from './queries/notifications.js';
 export { taskQueries, type TaskQueries, type TaskVisibility } from './queries/tasks.js';
 export { teamQueries, type TeamQueries } from './queries/team.js';

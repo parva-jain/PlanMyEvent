@@ -1,6 +1,8 @@
-import { sql } from 'drizzle-orm';
+import { and, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 
 import type { Database } from './client.js';
+import { expenses } from './schema/budget.js';
+import { media } from './schema/media.js';
 
 /*
  * Retention and scans for the scheduled queue (DatabaseDesign "Retention"). Deleting expired
@@ -78,4 +80,53 @@ export async function eventsWithTasksDue(
       )
     order by e.id`);
   return result.rows.map((row) => ({ eventId: row.event_id, dueOn: row.due_on }));
+}
+
+/** A media row's files in storage, for the worker to delete. */
+export interface StoredFiles {
+  id: string;
+  bucket: 'public' | 'private';
+  keys: string[];
+}
+
+const filesOf = (row: { id: string; bucket: string; storageKey: string; variants: unknown }) => ({
+  id: row.id,
+  bucket: row.bucket as StoredFiles['bucket'],
+  keys: [...new Set([row.storageKey, ...Object.values(row.variants as Record<string, string>)])],
+});
+
+/**
+ * Upload tickets never confirmed (the browser gave up), and files deleted over 30 days ago
+ * (DatabaseDesign "media": removed from storage 30 days later). Up to `limit` at a time; the
+ * worker deletes their files, then `forgetMedia` their rows.
+ */
+export async function mediaToRemove(db: Database, now: Date, limit = 500): Promise<StoredFiles[]> {
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const rows = await db
+    .select({
+      id: media.id,
+      bucket: media.bucket,
+      storageKey: media.storageKey,
+      variants: media.variants,
+    })
+    .from(media)
+    .where(
+      or(and(isNull(media.uploadedAt), lt(media.createdAt, dayAgo)), lt(media.deletedAt, monthAgo)),
+    )
+    .limit(limit);
+  return rows.map(filesOf);
+}
+
+/** Removes media rows whose files are gone; an expense keeping one as its receipt lets go. */
+export async function forgetMedia(db: Database, ids: string[]): Promise<number> {
+  if (!ids.length) return 0;
+  return db.transaction(async (tx) => {
+    await tx
+      .update(expenses)
+      .set({ receiptMediaId: null })
+      .where(inArray(expenses.receiptMediaId, ids));
+    const rows = await tx.delete(media).where(inArray(media.id, ids)).returning({ id: media.id });
+    return rows.length;
+  });
 }
