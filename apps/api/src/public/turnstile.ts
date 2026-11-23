@@ -4,6 +4,8 @@ import { API_ENV } from '../config/config.module';
 import type { ApiEnv } from '../config/env';
 
 const SITEVERIFY = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+/** Cloudflare's documented always-pass test secret: nothing to ask, so no network call. */
+export const TURNSTILE_TEST_SECRET = '1x0000000000000000000000000000000AA';
 const TIMEOUT_MS = 5_000;
 
 /** Checks a Turnstile token from a public form; injectable so tests can swap it. */
@@ -25,6 +27,8 @@ export class CloudflareTurnstile implements TurnstileVerifier {
   constructor(@Inject(API_ENV) private readonly env: ApiEnv) {}
 
   async verify(token: string, ip: string | undefined): Promise<boolean> {
+    // Development, CI and e2e use the test secret: they work offline.
+    if (this.env.TURNSTILE_SECRET_KEY === TURNSTILE_TEST_SECRET) return token.length > 0;
     const body = new URLSearchParams({ secret: this.env.TURNSTILE_SECRET_KEY, response: token });
     if (ip) body.set('remoteip', ip);
     const res = await fetch(SITEVERIFY, {

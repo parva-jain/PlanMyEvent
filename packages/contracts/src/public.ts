@@ -49,6 +49,8 @@ export type InviteScope = z.infer<typeof InviteScopeSchema>;
 export const PublicInviteSchema = z.object({
   event: z.object({
     name: z.string(),
+    /** For the public event page (/e/{slug}), where a registrant can register again. */
+    slug: z.string(),
     type: EventTypeSchema,
     description: z.string().nullable(),
     startsOn: DateOnlySchema,

@@ -31,7 +31,7 @@ export function loadApiEnv(source: Record<string, string | undefined> = process.
       ),
       /**
        * Cloudflare Turnstile's secret for the public registration form. The default is
-       * Cloudflare's test secret, which accepts every token (development and tests only).
+       * Cloudflare's always-pass test secret: then no call is made (development and tests).
        */
       TURNSTILE_SECRET_KEY: devDefault(
         z.string().min(1),

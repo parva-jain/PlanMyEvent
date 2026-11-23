@@ -130,6 +130,7 @@ export function publicQueries(db: Database) {
       return {
         event: {
           name: event.name,
+          slug: event.slug,
           type: event.type as PublicInvite['event']['type'],
           description: event.description,
           startsOn: event.startsOn,
