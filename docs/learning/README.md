@@ -54,6 +54,7 @@ The web app: foundation, motion, UI components and the home page.
 - [36 Subtasks in the list and adding expenses quickly](frontend/36-subtasks-inline-and-quick-expense.md)
 - [42 People in the web app](frontend/42-people-web.md)
 - [43 The guest's invitation page](frontend/43-invite-page-web.md)
+- [48 Dashboard and bell in the web app](frontend/48-dashboard-bell-web.md)
 
 ## Infra
 
