@@ -31,6 +31,7 @@ API, worker, database and the shared packages behind them.
 - [45 Reviewing milestone 7](backend/45-milestone-7-review.md)
 - [46 Notifications and scheduled jobs](backend/46-notifications-scheduled-jobs.md)
 - [47 Dashboard cache](backend/47-dashboard-cache.md)
+- [49 Open registration](backend/49-open-registration.md)
 
 ## Frontend
 

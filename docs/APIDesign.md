@@ -183,7 +183,7 @@ Two headers make writes safe: If-Match stops one organizer silently overwriting 
 | --- | --- |
 | Where | Accepted on every POST; required on public POSTs, POST /expenses, POST /invitations/bulk and every V2 AI or payment call |
 | Value | A UUID the client generates once per user action and reuses on retries |
-| Scope | Per user (or per link token on public routes); the same key from two users is two keys |
+| Scope | Per user, per link token on invite routes, or per event page on public registration; the same key from two users is two keys |
 | Window | 24 hours |
 | Same key, same body | The stored status and body are replayed; nothing runs twice |
 | Same key, different body | 422 idempotency\_key\_reused |
@@ -218,10 +218,12 @@ Validation errors add a fields array: \[{ "path": "amountPaise", "message": "Mus
 | 402 | plan\_limit\_reached | Workspace hit a free-plan limit; body names the limit |
 | 403 | forbidden | Member lacks a permission; body names it |
 | 403 | csrf\_failed | Cookie request without a matching Origin |
+| 403 | captcha\_failed | Turnstile says the public form wasn't filled in by a person |
 | 404 | not\_found | Missing, deleted, or not visible to the caller |
 | 409 | version\_conflict | If-Match did not match; body has current |
 | 409 | request\_in\_progress | Same Idempotency-Key still running |
-| 409 | capacity\_full | Sub-event is full; registration may be waitlisted instead |
+| 409 | capacity\_full | Sub-event is full (body: subEventId, spotsLeft); registration may be waitlisted instead (V2) |
+| 409 | registration\_closed | The event is completed, or doesn't take open registration |
 | 409 | conflict | Business rule clash; the code is more specific where clients act on it: role\_in\_use, duplicate\_transaction\_ref, rsvp\_closed |
 | 410 | link\_expired | Member invite expired or used up |
 | 410 | link\_revoked | Invitation or member invite revoked |
@@ -336,7 +338,7 @@ The MVP has about 75 operations across 20 resources. In the tables, E stands for
 | GET | E/invitations/{invitationId}/share | Magic link plus a ready WhatsApp message and wa.me URL | guests.invite |
 | POST | E/invitations/{invitationId}/regenerate-link | New token; the old link stops working | guests.invite |
 | GET | E/attendance | Rows with filters (subEventId, status, source) and ?q | guests.view |
-| POST | E/attendance | Organizer adds a walk-in or manual registration | guests.edit |
+| POST | E/attendance | Organizer adds a walk-in (checked in) or a manual registration; see "Walk-ins" | guests.edit in that sub-event |
 | PATCH | E/attendance/{attendanceId} | Correct status or party size on a guest's behalf | guests.edit |
 
 ### Platform
@@ -377,10 +379,15 @@ Guests and visitors use four endpoints with no account; each is cached or rate-l
 
 **Registration rules.**
 
-- The request carries name, phone and/or email, chosen sub-events and party size (default 1).
-- A contact is matched by email or phone within the event, or created.
-- Each sub-event is checked against capacity; a full one returns capacity\_full, or registers as waitlisted when the waitlist module (V2) is on.
-- Registration also creates an invitation row with delivery status sent\_digitally, so the confirmation email carries a magic link and the registrant uses the same invite page to view or cancel.
+- The request carries name, phone and/or email, chosen sub-events (empty with whole-event guests), party size (1 to 10, default 1) and the Turnstile token. Checks run in this order: per-IP limit, Turnstile (captcha\_failed), then the action.
+- Which sub-events take registrations: public visibility and response mode open\_registration (the sub-event's own with per-sub-event guests, else the event's). Completed events answer registration\_closed; draft and archived ones 404.
+- A contact is matched by email when one is given, else by phone; a phone match never takes a different email, so nobody receives someone else's link. No match creates a contact tagged registered.
+- Someone already invited or registered changes nothing: the link is emailed again to the email on file. The response is the same as for a new registration, so the form can't reveal who is on the list.
+- Capacity is checked with the sub-events locked (select … for update, in id order): confirmed, registered and checked-in party sizes plus this party must fit. With whole-event guests every sub-event with a capacity must fit. A full one returns capacity\_full, or registers as waitlisted when the waitlist module (V2) is on.
+- Registration also creates an invitation row with delivery status sent\_digitally, so the confirmation email carries a magic link and the registrant uses the same invite page to view or cancel. Cancelling is an RSVP with attending false (status cancelled; the place frees up); registering again on the event page reopens the same rows if there is room. A registrant changes party size by cancelling and registering again.
+- The response is 201 { subEventIds, confirmationEmail }.
+
+**Walk-ins.** POST E/attendance takes contactId or a new contact (name, phone, email), subEventId (null with whole-event guests), partySize and status (checked\_in, the default, or registered). If the guest or their household already has a row for that scope, that row takes the new status (an invited guest arriving is checked in on their own row); otherwise a new row with source registered and no invitation. Capacity isn't enforced: the organizer at the door decides.
 
 **Example RSVP request**
 
