@@ -3,6 +3,7 @@
 import {
   LIVE_NAMESPACE,
   type ClientToServerEvents,
+  type DashboardChanged,
   type EntityChanged,
   type JobProgress,
   type MemberRemoved,
@@ -15,8 +16,10 @@ import { io, type Socket } from 'socket.io-client';
 
 import { invalidateEntity } from './activity';
 import { API_URL, isOwnRequest } from './api';
+import { dashboardKeys } from './dashboard';
 import { eventKeys } from './events';
 import { highlight } from './live-highlights';
+import { notificationKeys } from './notifications';
 import { peopleKeys } from './people';
 
 type LiveSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -159,7 +162,19 @@ export function useLiveEvent(eventId: string, myMemberId: string | undefined): b
       void queryClient.invalidateQueries({ queryKey: peopleKeys.job(eventId, signal.jobId) });
     };
 
+    // Not on entity.changed: the relay sends this after the server's cache has moved on, so
+    // the re-fetch can't get the numbers from before the change.
+    const dashboard = (signal: DashboardChanged) => {
+      if (signal.eventId !== eventId) return;
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.dashboard(eventId) });
+    };
+    // My personal room (joined on connect): the bell's badge and list re-fetch.
+    const notification = () =>
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+
     live.on('connect', connected);
+    live.on('dashboard.changed', dashboard);
+    live.on('notification.new', notification);
     live.on('disconnect', lost);
     live.on('connect_error', lost);
     live.on('entity.changed', changed);
@@ -169,6 +184,8 @@ export function useLiveEvent(eventId: string, myMemberId: string | undefined): b
     return () => {
       clearInterval(poller);
       live.off('connect', connected);
+      live.off('dashboard.changed', dashboard);
+      live.off('notification.new', notification);
       live.off('disconnect', lost);
       live.off('connect_error', lost);
       live.off('entity.changed', changed);
