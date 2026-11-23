@@ -93,6 +93,24 @@ const OWNER = {
   permissions: { wholeEvent: [...PERMISSIONS], subEvents: {} },
 };
 const HOME = `/events/${DEVFEST.id}`;
+/** GET E/dashboard for a new event: nothing planned yet. */
+const DASHBOARD = {
+  countdown: {
+    eventStartsOn: '2026-11-14',
+    eventEndsOn: '2026-11-15',
+    timeZone: 'Asia/Kolkata',
+    daysToGo: 10,
+    nextSubEvent: null,
+  },
+  tasks: null,
+  budget: null,
+  headcounts: null,
+  subEvents: [],
+  invitations: null,
+  registrations: null,
+  team: { members: 1 },
+  generatedAt: '2026-10-27T00:00:00.000Z',
+};
 
 /**
  * These tests cover the shell, not sign-in or the API (auth.spec.ts and events.spec.ts do):
@@ -110,7 +128,13 @@ test.beforeEach(async ({ page }) => {
     await page.route(`**/v1/events/${fake.id}/*`, (route) => route.fulfill({ json: list([]) }));
     // Registered last, so it wins over the wildcard above.
     await page.route(`**/v1/events/${fake.id}/me`, (route) => route.fulfill({ json: OWNER }));
+    await page.route(`**/v1/events/${fake.id}/dashboard`, (route) =>
+      route.fulfill({ json: DASHBOARD }),
+    );
   }
+  await page.route('**/v1/notifications', (route) =>
+    route.fulfill({ json: { ...list([]), unreadCount: 0 } }),
+  );
 });
 
 function collectErrors(page: Page) {
