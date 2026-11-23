@@ -160,6 +160,8 @@ async function actorLabelOf(tx: DbTx, ctx: ActionContext): Promise<string> {
     return guest?.name ? `${guest.name} (link)` : 'Guest';
   }
   if (ctx.actor.kind === 'system') return 'System';
+  // "Anil (registration)": who registered on the public page, by the name they typed.
+  if (ctx.actor.kind === 'visitor') return `${ctx.actor.name} (registration)`;
   const [user] = await tx.db
     .select({ name: users.name, email: users.email })
     .from(users)

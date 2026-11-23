@@ -125,8 +125,13 @@ async function invite(
   eventId: string,
   invitation: { id: string; householdId: string | null; contactId: string | null },
   rows: { subEventId: string | null; partySize: number }[],
+  registeredAt?: Date,
 ) {
   if (!rows.length) return;
+  // Open registration: registering is the answer.
+  const answer = registeredAt
+    ? { source: 'registered', status: 'registered', respondedAt: registeredAt }
+    : { source: 'invited', status: 'invited', respondedAt: null };
   await db
     .insert(attendance)
     .values(
@@ -136,8 +141,7 @@ async function invite(
         householdId: invitation.householdId,
         contactId: invitation.contactId,
         invitationId: invitation.id,
-        source: 'invited',
-        status: 'invited',
+        ...answer,
         partySize: row.partySize,
       })),
     )
@@ -150,8 +154,9 @@ async function invite(
       ],
       set: {
         invitationId: sql`excluded.invitation_id`,
-        source: 'invited',
-        status: 'invited',
+        source: answer.source,
+        status: answer.status,
+        respondedAt: answer.respondedAt,
         partySize: sql`excluded.party_size`,
         version: sql`${attendance.version} + 1`,
       },
@@ -190,6 +195,9 @@ export function invitationStore(db: Queryable, key: string | undefined): Invitat
             contactId: item.contactId,
             distributorMemberId: item.distributorMemberId,
             tokenHash: hashLinkToken(invitationToken(signing, item.id, 1)),
+            ...(item.registeredAt
+              ? { deliveryStatus: 'sent_digitally', sentAt: item.registeredAt }
+              : {}),
           })),
         )
         .returning();
@@ -197,7 +205,9 @@ export function invitationStore(db: Queryable, key: string | undefined): Invitat
         item.subEventIds.map((subEventId) => ({ invitationId: item.id, eventId, subEventId })),
       );
       if (links.length) await db.insert(invitationSubEvents).values(links);
-      for (const item of prepared) await invite(db, eventId, item, item.attendance);
+      for (const item of prepared) {
+        await invite(db, eventId, item, item.attendance, item.registeredAt);
+      }
       return toInvitations(db, rows);
     },
     async find(eventId, invitationId) {
@@ -328,6 +338,13 @@ export function invitationStore(db: Queryable, key: string | undefined): Invitat
           ),
         );
     },
+    async linkToken(eventId, invitationId) {
+      const [row] = await db
+        .select({ tokenVersion: invitations.tokenVersion })
+        .from(invitations)
+        .where(liveInvitation(eventId, invitationId));
+      return row ? invitationToken(keyOrThrow(), invitationId, row.tokenVersion) : null;
+    },
     async regenerate(eventId, invitationId, expectedVersion) {
       const signing = keyOrThrow();
       const [current] = await db
@@ -372,6 +389,71 @@ export function attendanceStore(db: Queryable): AttendanceStore {
           .where(and(of(eventId, attendanceId), eq(attendance.version, expectedVersion)))
           .returning(),
       );
+    },
+    async taken(eventId, scopes) {
+      const taken = new Map<string | null, number>();
+      if (!scopes.length) return taken;
+      const ids = scopes.filter((scope): scope is string => scope !== null);
+      const rows = await db
+        .select({
+          subEventId: attendance.subEventId,
+          people: sql<string>`sum(${attendance.partySize})`,
+        })
+        .from(attendance)
+        .where(
+          and(
+            eq(attendance.eventId, eventId),
+            inArray(attendance.status, ['confirmed', 'registered', 'checked_in']),
+            or(
+              scopes.includes(null) ? isNull(attendance.subEventId) : undefined,
+              ids.length ? inArray(attendance.subEventId, ids) : undefined,
+            ),
+          ),
+        )
+        .groupBy(attendance.subEventId);
+      for (const row of rows) taken.set(row.subEventId, Number(row.people));
+      return taken;
+    },
+    async findForContact(eventId, contactId, subEventId) {
+      const [contact] = await db
+        .select({ householdId: contacts.householdId })
+        .from(contacts)
+        .where(and(eq(contacts.eventId, eventId), eq(contacts.id, contactId)));
+      const householdId = contact?.householdId ?? null;
+      return one(
+        await db
+          .select()
+          .from(attendance)
+          .where(
+            and(
+              eq(attendance.eventId, eventId),
+              subEventId === null
+                ? isNull(attendance.subEventId)
+                : eq(attendance.subEventId, subEventId),
+              or(
+                eq(attendance.contactId, contactId),
+                householdId ? eq(attendance.householdId, householdId) : undefined,
+              ),
+            ),
+          )
+          .limit(1),
+      );
+    },
+    async insert(eventId, row) {
+      const [created] = await db
+        .insert(attendance)
+        .values({
+          eventId,
+          subEventId: row.subEventId,
+          contactId: row.contactId,
+          source: 'registered',
+          status: row.status,
+          partySize: row.partySize,
+          checkedInAt: row.checkedInAt,
+          checkedInByMemberId: row.checkedInByMemberId,
+        })
+        .returning();
+      return (await toAttendance(db, [created!]))[0]!;
     },
     async respond(eventId, attendanceId, answer) {
       return one(
