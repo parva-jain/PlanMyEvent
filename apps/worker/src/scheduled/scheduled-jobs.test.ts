@@ -12,6 +12,9 @@ function deps(overrides: Partial<ScheduledDeps> = {}): ScheduledDeps {
     deleteReadNotifications: vi.fn().mockResolvedValue(1),
     eventsWithTasksDue: vi.fn().mockResolvedValue([]),
     notifyDueTasks: vi.fn().mockResolvedValue({ notified: 0 }),
+    mediaToRemove: vi.fn().mockResolvedValue([]),
+    removeFiles: vi.fn().mockResolvedValue(undefined),
+    forgetMedia: vi.fn().mockResolvedValue(0),
     ...overrides,
   };
 }
@@ -59,5 +62,22 @@ describe('scheduled jobs', () => {
       }),
       { dueOn: '2027-01-31' },
     );
+  });
+
+  it('removes old media files per bucket, then forgets their rows', async () => {
+    const removeFiles = vi.fn().mockResolvedValue(undefined);
+    const forgetMedia = vi.fn().mockResolvedValue(2);
+    const d = deps({
+      mediaToRemove: vi.fn().mockResolvedValue([
+        { id: 'a', bucket: 'public', keys: ['a-320.webp', 'a-1600.webp'] },
+        { id: 'b', bucket: 'private', keys: ['b.pdf'] },
+      ]),
+      removeFiles,
+      forgetMedia,
+    });
+    expect(await runScheduledJob('media-cleanup', d, NOW, 'req')).toBe(2);
+    expect(removeFiles).toHaveBeenCalledWith('public', ['a-320.webp', 'a-1600.webp']);
+    expect(removeFiles).toHaveBeenCalledWith('private', ['b.pdf']);
+    expect(forgetMedia).toHaveBeenCalledWith(['a', 'b']);
   });
 });

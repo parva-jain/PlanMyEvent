@@ -21,6 +21,15 @@ export function loadWorkerEnv(source: Record<string, string | undefined> = proce
       /** Repeating cleanup and reminder jobs. Every worker may register them; BullMQ keeps one schedule. */
       SCHEDULED_JOBS_ENABLED: envSchemas.bool(true),
 
+      /** Object storage: Cloudflare R2 in production, SeaweedFS locally (decision 008). */
+      S3_ENDPOINT: devDefault(envSchemas.url, 'http://localhost:8333', nodeEnv),
+      /** `auto` for R2. */
+      S3_REGION: z.string().min(1).default('us-east-1'),
+      S3_ACCESS_KEY_ID: devDefault(z.string().min(1), 'pme-local-access', nodeEnv),
+      S3_SECRET_ACCESS_KEY: devDefault(z.string().min(1), 'pme-local-secret', nodeEnv),
+      /** Gallery photos (readable by anyone, behind the CDN) and receipts (signed URLs only). */
+      S3_PUBLIC_BUCKET: z.string().min(1).default('pme-public'),
+      S3_PRIVATE_BUCKET: z.string().min(1).default('pme-private'),
       /** `smtp` locally (Mailpit) and for self-hosting; `resend` in production. */
       EMAIL_TRANSPORT: devDefault(z.enum(['smtp', 'resend']), 'smtp', nodeEnv),
       SMTP_URL: z.url({ protocol: /^smtps?$/ }).optional(),

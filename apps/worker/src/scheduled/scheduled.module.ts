@@ -4,10 +4,11 @@ import { QUEUES } from '@pme/contracts';
 import { createActionRuntime, type Database } from '@pme/db';
 
 import { DB } from '../database/database.module';
+import { MediaStorageModule } from '../media/media-storage.module';
 import { SCHEDULED_RUNTIME, ScheduledProcessor } from './scheduled.processor';
 
 @Module({
-  imports: [BullModule.registerQueue({ name: QUEUES.scheduled })],
+  imports: [BullModule.registerQueue({ name: QUEUES.scheduled }), MediaStorageModule],
   providers: [
     {
       provide: SCHEDULED_RUNTIME,

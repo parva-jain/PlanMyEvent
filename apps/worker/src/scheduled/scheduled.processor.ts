@@ -7,6 +7,8 @@ import {
   deletePublishedOutbox,
   deleteReadNotifications,
   eventsWithTasksDue,
+  forgetMedia,
+  mediaToRemove,
   type Database,
 } from '@pme/db';
 import type { Job, Queue } from 'bullmq';
@@ -14,6 +16,7 @@ import type { Job, Queue } from 'bullmq';
 import { WORKER_ENV } from '../config/config.module';
 import type { WorkerEnv } from '../config/env';
 import { DB } from '../database/database.module';
+import { WORKER_STORAGE, type WorkerStorage } from '../media/storage';
 import {
   isScheduledJob,
   runScheduledJob,
@@ -37,6 +40,7 @@ export class ScheduledProcessor extends WorkerHost implements OnApplicationBoots
     @Inject(SCHEDULED_RUNTIME) runtime: ActionRuntime<CoreTx>,
     @Inject(WORKER_ENV) private readonly env: WorkerEnv,
     @InjectQueue(QUEUES.scheduled) private readonly queue: Queue,
+    @Inject(WORKER_STORAGE) storage: WorkerStorage,
   ) {
     super();
     this.deps = {
@@ -45,6 +49,9 @@ export class ScheduledProcessor extends WorkerHost implements OnApplicationBoots
       deleteReadNotifications: (before) => deleteReadNotifications(db, before),
       eventsWithTasksDue: (now) => eventsWithTasksDue(db, now),
       notifyDueTasks: (ctx, input) => runAction(runtime, ctx, notifyDueTasks, input),
+      mediaToRemove: (now) => mediaToRemove(db, now),
+      removeFiles: (bucket, keys) => storage.remove(bucket, keys),
+      forgetMedia: (ids) => forgetMedia(db, ids),
     };
   }
 

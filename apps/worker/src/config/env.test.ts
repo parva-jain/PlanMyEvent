@@ -8,6 +8,9 @@ const production = {
   DATABASE_URL: 'postgres://u:p@db:5432/pme',
   REDIS_URL: 'rediss://cache:6380',
   EMAIL_FROM: 'Plan My Event <hello@planmyevent.app>',
+  S3_ENDPOINT: 'https://account.r2.cloudflarestorage.com',
+  S3_ACCESS_KEY_ID: 'key',
+  S3_SECRET_ACCESS_KEY: 'secret',
 };
 
 describe('loadWorkerEnv', () => {
