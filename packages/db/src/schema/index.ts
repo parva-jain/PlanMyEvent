@@ -6,6 +6,7 @@ export { eventModules, events, subEvents, venues } from './events.js';
 export { contacts, households } from './guests.js';
 export { idempotencyKeys } from './idempotency.js';
 export { attendance, invitationSubEvents, invitations } from './invitations.js';
+export { media } from './media.js';
 export { notifications } from './notifications.js';
 export { outbox } from './outbox.js';
 export { taskAssignees, tasks } from './tasks.js';

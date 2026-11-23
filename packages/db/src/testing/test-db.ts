@@ -37,6 +37,7 @@ const EVENT_TABLES = [
   'task_assignees',
   'tasks',
   'expenses',
+  'media',
   'budget_categories',
   'attendance',
   'invitation_sub_events',

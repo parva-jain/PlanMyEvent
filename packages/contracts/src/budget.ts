@@ -61,6 +61,8 @@ export const ExpenseSchema = z.object({
   /** UPI UTR or bank reference; unique in the event. */
   transactionRef: z.string().nullable(),
   notes: z.string().nullable(),
+  /** A photo or PDF of the receipt (private; GET E/media/{id}/url shows it). */
+  receiptMediaId: z.uuid().nullable(),
   version: z.number().int().positive(),
   createdAt: z.iso.datetime({ offset: true }),
 });
@@ -79,6 +81,7 @@ const expenseFields = {
   paidByMemberId: z.uuid().nullable(),
   transactionRef: z.string().trim().min(1).max(64).nullable(),
   notes: z.string().trim().max(2_000).nullable(),
+  receiptMediaId: z.uuid().nullable(),
 };
 
 /**

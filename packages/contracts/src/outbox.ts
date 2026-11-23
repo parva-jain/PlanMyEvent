@@ -11,6 +11,8 @@ export const QUEUES = {
   imports: 'imports',
   /** Repeating jobs: retention cleanup and due-date reminder scans (SystemDesign 5.3). */
   scheduled: 'scheduled',
+  /** Uploaded photos and receipts: check the type, write WebP versions (SystemDesign 5.7). */
+  media: 'media',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -75,6 +77,10 @@ export const GuestScopeJobSchema = z.object({
 });
 export type GuestScopeJob = z.infer<typeof GuestScopeJobSchema>;
 
+/** An upload to check and convert. Ids only: not sensitive. */
+export const MediaJobSchema = z.object({ mediaId: z.uuid(), eventId: z.uuid() });
+export type MediaJob = z.infer<typeof MediaJobSchema>;
+
 interface OutboxRoute {
   queue: QueueName;
   /** BullMQ job name. */
@@ -104,6 +110,13 @@ export const OUTBOX_ROUTES = {
     attempts: 3,
     backoffMs: 5_000,
     sensitive: true,
+  },
+  'media.process': {
+    queue: QUEUES.media,
+    job: 'process',
+    attempts: 3,
+    backoffMs: 10_000,
+    sensitive: false,
   },
   'event.guest_scope': {
     queue: QUEUES.imports,
