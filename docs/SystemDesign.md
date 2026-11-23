@@ -410,7 +410,7 @@ Every slow or external task runs in BullMQ, in queues separated by urgency, so a
 | notifications (later) | Digests and push; in-app notification rows are written by the action itself and notification.new goes through the outbox (step 8a) | 20 | None | 3 |
 | imports | CSV contact import, in chunks of 500 rows | 2 | None | 3, then marked failed with row errors |
 | media | Validate, compress, thumbnails | 3 | None | 3 |
-| scheduled | Task due-date reminders, retention cleanup (outbox, idempotency keys, read notifications); later RSVP reminders and digests | 2 | None | 3 |
+| scheduled | Task due-date reminders, retention cleanup (outbox, idempotency keys, read notifications, media files); later RSVP reminders and digests | 2 | None | 3 |
 | ai (V2) | Quick updates, screenshot reading | 5 | Per-workspace quota | 2, then user sees "try again" |
 | whatsapp (V2) | Inbound processing, outbound replies | 5 | Provider limit | 5 |
 
@@ -449,11 +449,12 @@ Rules every job follows:
 
 ### 5.7 Media pipeline
 
-1. Client asks POST /uploads for a presigned PUT URL with size (max 15 MB) and type limits.
-2. Client uploads straight to R2; the API never handles the file bytes.
-3. Client confirms; the media row is created with status pending and an outbox job is queued.
-4. Worker checks the real file type, strips location metadata, writes WebP versions (320 px thumbnail, 1600 px display), marks the row ready, and the gallery updates live.
-5. Gallery images are served from a public R2 bucket behind Cloudflare's CDN; receipts sit in a private bucket and are shown through signed URLs valid for 5 minutes.
+1. Client asks POST /uploads for a presigned PUT URL with size (max 15 MB) and type limits; the media row is created with status pending.
+2. Client uploads straight to R2; the API never handles the file bytes. The SDK's default request checksums are turned off (WHEN\_REQUIRED), since they'd be signed for an empty body.
+3. Client confirms; the API checks the object arrived (HEAD, size) and an outbox job is queued.
+4. Worker checks the real file type from the bytes, writes WebP versions (320 px thumbnail, 1600 px display) turned upright and without metadata (so no location), deletes the original, marks the row ready, and the gallery updates live. Anything that isn't a readable photo (or, for receipts, a PDF) fails and its file is deleted. HEIC needs a HEVC decoder the prebuilt sharp lacks, so the web app converts or the upload fails.
+5. A daily scheduled job removes files of uploads never confirmed (after a day) and of deleted media (after 30 days), then their rows.
+6. Gallery images are served from a public R2 bucket behind Cloudflare's CDN; receipts sit in a private bucket and are shown through signed URLs valid for 5 minutes.
 
 ### 5.8 Undo
 

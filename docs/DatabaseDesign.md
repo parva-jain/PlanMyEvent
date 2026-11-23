@@ -459,13 +459,17 @@ Media rows describe files that live in R2; the activity log is append-only and s
 | mime | text | NN | Verified by the worker, not trusted from the client |
 | bytes | bigint | NN, check > 0 | Counted into storage usage |
 | width, height | integer |  | Set after processing |
-| variants | jsonb | NN, default '{}' | Keys of thumbnail and display versions |
+| variants | jsonb | NN, default '{}' | Storage keys of the versions: { thumb, display } (WebP, 320 and 1600 px), or { file } for a PDF receipt |
 | sub\_event\_id | uuid | FK (event\_id, sub\_event\_id) to sub\_events | Album grouping |
 | caption | text |  |  |
 | uploaded\_by\_user\_id | uuid | FK users |  |
+| uploaded\_at | timestamptz |  | Set when the uploader confirms the file arrived; rows still null after a day are removed with their files |
+| version | integer | NN, default 1 | Caption and album edits use If-Match |
 | deleted\_at | timestamptz |  | File removed from R2 by a job 30 days later |
 
-Indexes: unique(event\_id, id); unique(storage\_key); index(event\_id, kind, created\_at desc) where status = 'ready' and deleted\_at is null.
+Indexes: unique(event\_id, id); unique(storage\_key); index(event\_id, kind, created\_at desc) where status = 'ready' and deleted\_at is null; index(created\_at) where uploaded\_at is null; index(deleted\_at) where deleted\_at is not null (cleanup scans).
+
+The row is made when the upload URL is handed out (status pending); confirming sets uploaded\_at and queues the worker, which sets ready or failed. The worker deletes the original once its WebP versions exist, so no file with camera metadata stays in storage; PDF receipts are kept as they are. expenses.receipt\_media\_id references (event\_id, receipt\_media\_id); the daily cleanup clears it before removing a media row.
 
 ### activity\_log
 

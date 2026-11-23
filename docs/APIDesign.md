@@ -347,9 +347,9 @@ The MVP has about 75 operations across 20 resources. In the tables, E stands for
 | --- | --- | --- | --- |
 | GET | E/activity | Activity feed; filters entityType, entityId, actor | activity.view |
 | POST | E/activity/{entryId}/undo | Undo one change; 409 if the entity changed since | Author of the change, or event.settings |
-| POST | E/uploads | Presigned upload URL for gallery, receipt or cover | gallery.upload, budget.edit or event.settings by kind |
-| POST | E/media/{mediaId}/complete | Confirm upload; starts processing | Uploader |
-| GET | E/media | Gallery list, filter subEventId | event.view |
+| POST | E/uploads | Presigned upload URL (10 min) for kind gallery (photos) or receipt (photos or PDF), max 15 MB; creates the media row (pending). Cover arrives with event covers | gallery.upload or budget.edit by kind, in subEventId's scope |
+| POST | E/media/{mediaId}/complete | Confirm upload (409 conflict, reason not\_uploaded, until the file is in storage); starts processing; repeat calls change nothing | Uploader |
+| GET | E/media | Newest first, cursor-paginated; kind gallery (default) or receipt (budget.view); subEventId or 'event' for an album; ready files plus my own still processing | event.view |
 | GET | E/media/{mediaId}/url | Short-lived signed URL for a private file | budget.view for receipts |
 | PATCH / DELETE | E/media/{mediaId} | Caption, album; delete | gallery.manage |
 | GET | /v1/notifications | My notifications, newest first; ?unread=true; returns unreadCount for the bell | Signed in |
