@@ -14,18 +14,18 @@ import {
  * their own answers. Never other guests, headcounts, organizers' details or tasks.
  */
 
-const VenueSchema = z.object({
+export const PublicVenueSchema = z.object({
   name: z.string(),
   address: z.string().nullable(),
   mapUrl: z.string().nullable(),
 });
 
-const ScheduleItemSchema = z.object({
+export const ScheduleItemSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   startsAt: z.iso.datetime({ offset: true }),
   endsAt: z.iso.datetime({ offset: true }),
-  venue: VenueSchema.nullable(),
+  venue: PublicVenueSchema.nullable(),
 });
 
 /** One thing the guest answers: the whole event, or one sub-event. */
@@ -37,6 +37,8 @@ export const InviteScopeSchema = z.object({
   responseMode: ResponseModeSchema,
   /** Invite + RSVP: the guest may answer; invite only: shown, not answered. */
   canRespond: z.boolean(),
+  /** Open registration: a registrant may cancel through their link (re-registering is on the event page). */
+  canCancel: z.boolean(),
   status: AttendanceStatusSchema,
   /** How many are coming: the organizer's estimate until the guest answers. */
   partySize: z.number().int(),
@@ -68,6 +70,7 @@ export const RsvpSchema = z.object({
     .array(
       z.object({
         subEventId: z.uuid().nullable(),
+        /** False cancels a registration (open registration scopes). */
         attending: z.boolean(),
         /** Required when attending; checked 1 to 50, not against the expected count. */
         partySize: z.number().int().min(1, 'At least 1').max(50, 'At most 50').optional(),

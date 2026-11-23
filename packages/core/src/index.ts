@@ -34,6 +34,13 @@ export {
   startGuestScopeSwitch,
   switchGuestScope,
 } from './events/guest-scope-actions.js';
+export {
+  createAttendance,
+  isOpenForRegistration,
+  modeOf,
+  registerForEvent,
+  type RegisterInput,
+} from './guests/registration-actions.js';
 export { liveSignals, permissionsChanged } from './live.js';
 export {
   markNotificationsRead,

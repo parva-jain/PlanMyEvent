@@ -34,9 +34,25 @@ export const MemberInviteEmailSchema = z.object({
   expiresAt: z.iso.datetime({ offset: true }),
 });
 
+/** Open registration's confirmation, with the magic link to view or cancel: sensitive too. */
+export const RegistrationConfirmedEmailSchema = z.object({
+  template: z.literal('registration-confirmed'),
+  to: z.email(),
+  eventName: z.string(),
+  guestName: z.string(),
+  url: z.url(),
+  partySize: z.number().int().positive(),
+  timeZone: z.string(),
+  /** What they registered for; the event's dates when it is the whole event. */
+  items: z.array(z.object({ name: z.string(), startsAt: z.iso.datetime({ offset: true }) })),
+  eventStartsOn: z.iso.date(),
+  eventEndsOn: z.iso.date(),
+});
+
 export const EmailJobSchema = z.discriminatedUnion('template', [
   SignInCodeEmailSchema,
   MemberInviteEmailSchema,
+  RegistrationConfirmedEmailSchema,
 ]);
 export type EmailJob = z.infer<typeof EmailJobSchema>;
 

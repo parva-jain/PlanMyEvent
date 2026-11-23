@@ -308,6 +308,18 @@ export function memoryRuntime() {
         Object.assign(subEvent, { deleted: false, version: subEvent.version + 1 });
         return Promise.resolve(strip({ ...subEvent }));
       },
+      lockForCapacity: (eventId, ids) =>
+        Promise.resolve(
+          [...subEvents.values()]
+            .filter(
+              (item) =>
+                item.eventId === eventId &&
+                !item.deleted &&
+                (ids === 'all' || ids.includes(item.id)),
+            )
+            .sort((a, b) => a.id.localeCompare(b.id))
+            .map((item) => strip({ ...item })),
+        ),
     },
   };
   const tx = base as CoreTx;
@@ -762,7 +774,15 @@ export function memoryRuntime() {
     invitation: InvitationRow,
     subEventId: string | null,
     partySize: number,
+    registeredAt?: Date,
   ) => {
+    const answer = registeredAt
+      ? {
+          source: 'registered' as const,
+          status: 'registered' as const,
+          respondedAt: registeredAt.toISOString(),
+        }
+      : { source: 'invited' as const, status: 'invited' as const };
     const existing = [...attendanceRows.values()].find(
       (item) =>
         item.eventId === eventId &&
@@ -773,8 +793,7 @@ export function memoryRuntime() {
     if (existing) {
       Object.assign(existing, {
         invitationId: invitation.id,
-        source: 'invited',
-        status: 'invited',
+        ...answer,
         partySize,
         version: existing.version + 1,
       });
@@ -787,12 +806,11 @@ export function memoryRuntime() {
       householdId: invitation.householdId,
       contactId: invitation.contactId,
       invitationId: invitation.id,
-      source: 'invited',
-      status: 'invited',
       partySize,
       respondedAt: null,
       checkedInAt: null,
       version: 1,
+      ...answer,
     };
     attendanceRows.set(row.id, row);
   };
@@ -808,9 +826,9 @@ export function memoryRuntime() {
             eventId,
             householdId: input.householdId,
             contactId: input.contactId,
-            deliveryStatus: 'not_sent',
+            deliveryStatus: input.registeredAt ? 'sent_digitally' : 'not_sent',
             distributorMemberId: input.distributorMemberId,
-            sentAt: null,
+            sentAt: input.registeredAt?.toISOString() ?? null,
             deliveredAt: null,
             lastOpenedAt: null,
             subEventIds: [...input.subEventIds],
@@ -820,7 +838,7 @@ export function memoryRuntime() {
           };
           invitations.set(row.id, row);
           for (const item of input.attendance)
-            invite(eventId, row, item.subEventId, item.partySize);
+            invite(eventId, row, item.subEventId, item.partySize, input.registeredAt);
           return toInvitation(row);
         }),
       ),
@@ -896,6 +914,10 @@ export function memoryRuntime() {
       }
       return Promise.resolve();
     },
+    linkToken: (eventId, id) => {
+      const row = liveInvitation(eventId, id);
+      return Promise.resolve(row ? `token-${row.id}-${row.tokenVersion}` : null);
+    },
     regenerate: (eventId, id, expected) => {
       const row = liveInvitation(eventId, id);
       if (!row || row.version !== expected) return Promise.resolve(null);
@@ -912,7 +934,46 @@ export function memoryRuntime() {
     update: (eventId, id, expected, changes) => {
       const row = attendanceRows.get(id);
       if (!row || row.eventId !== eventId || row.version !== expected) return Promise.resolve(null);
-      Object.assign(row, changes, { version: row.version + 1 });
+      const { checkedInAt, checkedInByMemberId: _by, ...rest } = changes;
+      Object.assign(row, rest, { version: row.version + 1 });
+      if (checkedInAt !== undefined) row.checkedInAt = checkedInAt?.toISOString() ?? null;
+      return Promise.resolve(toAttendance(row));
+    },
+    taken: (eventId, scopes) => {
+      const taken = new Map<string | null, number>();
+      for (const row of attendanceRows.values()) {
+        if (row.eventId !== eventId || !scopes.includes(row.subEventId)) continue;
+        if (!['confirmed', 'registered', 'checked_in'].includes(row.status)) continue;
+        taken.set(row.subEventId, (taken.get(row.subEventId) ?? 0) + row.partySize);
+      }
+      return Promise.resolve(taken);
+    },
+    findForContact: (eventId, contactId, subEventId) => {
+      const householdId = contacts.get(contactId)?.householdId ?? null;
+      const row = [...attendanceRows.values()].find(
+        (item) =>
+          item.eventId === eventId &&
+          item.subEventId === subEventId &&
+          (item.contactId === contactId || (householdId && item.householdId === householdId)),
+      );
+      return Promise.resolve(row ? toAttendance(row) : null);
+    },
+    insert: (eventId, input) => {
+      const row: AttendanceRow = {
+        id: nextId(),
+        eventId,
+        subEventId: input.subEventId,
+        householdId: null,
+        contactId: input.contactId,
+        invitationId: null,
+        source: 'registered',
+        status: input.status,
+        partySize: input.partySize,
+        respondedAt: null,
+        checkedInAt: input.checkedInAt?.toISOString() ?? null,
+        version: 1,
+      };
+      attendanceRows.set(row.id, row);
       return Promise.resolve(toAttendance(row));
     },
     respond: (eventId, id, { status, partySize, respondedAt }) => {

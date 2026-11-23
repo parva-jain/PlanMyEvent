@@ -65,15 +65,30 @@ export const respondToInvitation: ActionDefinition<Rsvp, Attendance[], CoreTx> =
         ? await tx.subEvents.find(eventId, response.subEventId)
         : null;
       const mode = subEvent?.responseMode ?? event.responseMode;
-      if (mode !== 'invite_rsvp') throw fieldError(path, "This part doesn't take replies");
-      if (response.attending && response.partySize === undefined) {
-        throw fieldError(`${path}.partySize`, 'Say how many are coming');
-      }
-      const answer = {
-        status: response.attending ? ('confirmed' as const) : ('declined' as const),
-        partySize: response.attending ? response.partySize! : row.partySize,
-        respondedAt: ctx.now,
+      const full = await tx.attendance.find(eventId, row.id);
+      let answer: {
+        status: 'confirmed' | 'declined' | 'cancelled';
+        partySize: number;
+        respondedAt: Date;
       };
+      if (mode === 'open_registration' && full?.source === 'registered') {
+        // A registrant can only cancel here; registering again goes through the event page,
+        // which checks capacity.
+        if (response.attending) {
+          throw fieldError(path, 'To register again, use the event page');
+        }
+        answer = { status: 'cancelled', partySize: row.partySize, respondedAt: ctx.now };
+      } else {
+        if (mode !== 'invite_rsvp') throw fieldError(path, "This part doesn't take replies");
+        if (response.attending && response.partySize === undefined) {
+          throw fieldError(`${path}.partySize`, 'Say how many are coming');
+        }
+        answer = {
+          status: response.attending ? 'confirmed' : 'declined',
+          partySize: response.attending ? response.partySize! : row.partySize,
+          respondedAt: ctx.now,
+        };
+      }
       const after = await tx.attendance.respond(eventId, row.id, answer);
       if (!after) throw new ActionError('not_found', 'Attendance not found');
       answered.push(after);

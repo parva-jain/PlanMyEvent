@@ -16,6 +16,7 @@ import type { ActionContext } from './context.js';
 const OPS: Record<string, EntityOp> = {
   create: 'created',
   join: 'created',
+  register: 'created',
   restore: 'created',
   delete: 'deleted',
   remove: 'deleted',

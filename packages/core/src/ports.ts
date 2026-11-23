@@ -132,6 +132,11 @@ export interface SubEventStore {
   softDelete(eventId: string, subEventId: string, expectedVersion: number): Promise<boolean>;
   /** Undoes a soft delete (bumping the version); null when the sub-event isn't deleted. */
   restore(eventId: string, subEventId: string): Promise<SubEvent | null>;
+  /**
+   * Live sub-events (these, or all of the event's), locked for update in id order: two
+   * registrations for the same places queue here, so capacity checks can't both pass.
+   */
+  lockForCapacity(eventId: string, subEventIds: string[] | 'all'): Promise<SubEvent[]>;
 }
 
 export interface NewRole {
@@ -435,6 +440,11 @@ export interface NewInvitation {
   subEventIds: string[];
   /** Attendance rows to start (or reopen) as invited: null for the whole event. */
   attendance: { subEventId: string | null; partySize: number }[];
+  /**
+   * Open registration: the invitation starts sent digitally (the confirmation email carries
+   * its link) and its attendance rows as registered, answered at this time.
+   */
+  registeredAt?: Date;
 }
 
 export interface InvitationChanges {
@@ -489,6 +499,8 @@ export interface InvitationStore {
    * an organizer edits changed.
    */
   markOpened(eventId: string, invitationId: string, at: Date): Promise<void>;
+  /** The magic link's token for a live invitation, at its current version (never stored). */
+  linkToken(eventId: string, invitationId: string): Promise<string | null>;
   /** A new token (token_version + 1): the old link stops working. */
   regenerate(
     eventId: string,
@@ -497,19 +509,51 @@ export interface InvitationStore {
   ): Promise<Invitation | null>;
 }
 
+export interface NewAttendance {
+  contactId: string;
+  subEventId: string | null;
+  partySize: number;
+  status: 'registered' | 'checked_in';
+  checkedInAt: Date | null;
+  checkedInByMemberId: string | null;
+}
+
 export interface AttendanceStore {
   find(eventId: string, attendanceId: string): Promise<Attendance | null>;
   update(
     eventId: string,
     attendanceId: string,
     expectedVersion: number,
-    changes: { status?: Attendance['status']; partySize?: number },
+    changes: {
+      status?: Attendance['status'];
+      partySize?: number;
+      source?: 'invited' | 'registered';
+      checkedInAt?: Date | null;
+      checkedInByMemberId?: string | null;
+    },
   ): Promise<Attendance | null>;
+  /**
+   * People holding a place per scope (null: the whole event): party sizes of rows confirmed,
+   * registered or checked in. Scopes with none are left out.
+   */
+  taken(eventId: string, scopes: (string | null)[]): Promise<Map<string | null, number>>;
+  /** A contact's row for one scope, cancelled ones included. */
+  findForContact(
+    eventId: string,
+    contactId: string,
+    subEventId: string | null,
+  ): Promise<Attendance | null>;
+  /** An organizer's walk-in or manual registration: a new row with no invitation. */
+  insert(eventId: string, row: NewAttendance): Promise<Attendance>;
   /** A guest's own answer: last one wins, so no version guard. */
   respond(
     eventId: string,
     attendanceId: string,
-    answer: { status: 'confirmed' | 'declined'; partySize: number; respondedAt: Date },
+    answer: {
+      status: 'confirmed' | 'declined' | 'cancelled';
+      partySize: number;
+      respondedAt: Date;
+    },
   ): Promise<Attendance | null>;
 }
 
