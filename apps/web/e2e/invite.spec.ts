@@ -19,6 +19,7 @@ function invitePage(overrides: Partial<PublicInvite> = {}): PublicInvite {
   return {
     event: {
       name: 'Sharma Wedding',
+      slug: 'sharma-wedding-abcd',
       type: 'wedding',
       description: null,
       startsOn: '2026-12-10',
@@ -33,6 +34,7 @@ function invitePage(overrides: Partial<PublicInvite> = {}): PublicInvite {
         subEvent: null,
         responseMode: 'invite_rsvp',
         canRespond: true,
+        canCancel: false,
         status: 'invited',
         partySize: 2,
         respondedAt: null,
@@ -200,6 +202,7 @@ test.describe('guest invitation', () => {
       },
       responseMode: canRespond ? ('invite_rsvp' as const) : ('invite_only' as const),
       canRespond,
+      canCancel: false,
       status: 'invited' as const,
       partySize: 4,
       respondedAt: null,

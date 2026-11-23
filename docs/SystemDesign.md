@@ -388,7 +388,7 @@ Redis is a speed layer only. Every cache read falls back to Postgres if Redis is
 | --- | --- | --- | --- |
 | Effective permissions per member | perm:{eventId}:{userId}:{rolesVersion} | 10 min | events.roles\_version increments on any role or assignment change, so old keys are never read again |
 | Session lookup | sess:{sessionId} | 5 min | Deleted on sign-out or revoke |
-| Dashboard aggregates | dash:{eventId} | 30 s | Deleted by the outbox relay on relevant changes; recomputed on next read |
+| Dashboard aggregates | dash:v1:{eventId}:{generation} | 30 s | The outbox relay increments dash-gen:{eventId} on relevant changes, so the next read misses and recomputes; a value computed before a change lands under the old generation and is never read. Stored per event split by sub-event; each member's view is filtered from it on read |
 | Invitation page data | inv:{tokenHash} | 5 min | Includes the event's content version, bumped when event or sub-event details change |
 | Public event page | CDN and Next.js page cache | 60 s | On-demand revalidation when the event page is edited |
 | Rate-limit counters | rl:{scope}:{id}:{window} | Window length | Expire naturally |
@@ -396,7 +396,7 @@ Redis is a speed layer only. Every cache read falls back to Postgres if Redis is
 
 Two safeguards:
 
-- **Stampede protection.** When a hot key expires (a dashboard 50 people are watching), only one request recomputes it, using a short Redis lock; the others wait briefly or get the stale value.
+- **Stampede protection.** When a hot key expires (a dashboard 50 people are watching), only one request recomputes it, using a short Redis lock; the others wait up to half a second for it, then compute it themselves.
 - **No caching of money or permissions decisions without a version in the key.** Stale counts are acceptable; stale permissions or amounts are not.
 
 ### 5.3 Queues and workers
@@ -407,10 +407,10 @@ Every slow or external task runs in BullMQ, in queues separated by urgency, so a
 | --- | --- | --- | --- | --- |
 | email-critical | Sign-in OTP, member invites | 10 | Provider limit, highest priority | 5, exponential from 5 s |
 | email-bulk (V2) | Invitations, reminders, announcements | 5 | Below provider limit, shared with critical | 8, exponential from 30 s |
-| notifications | In-app notifications, live signals for assignees | 20 | None | 3 |
+| notifications (later) | Digests and push; in-app notification rows are written by the action itself and notification.new goes through the outbox (step 8a) | 20 | None | 3 |
 | imports | CSV contact import, in chunks of 500 rows | 2 | None | 3, then marked failed with row errors |
 | media | Validate, compress, thumbnails | 3 | None | 3 |
-| scheduled | RSVP reminders, digests, retention cleanup, outbox cleanup | 2 | None | 3 |
+| scheduled | Task due-date reminders, retention cleanup (outbox, idempotency keys, read notifications, media files); later RSVP reminders and digests | 2 | None | 3 |
 | ai (V2) | Quick updates, screenshot reading | 5 | Per-workspace quota | 2, then user sees "try again" |
 | whatsapp (V2) | Inbound processing, outbound replies | 5 | Provider limit | 5 |
 
@@ -427,7 +427,7 @@ Rules every job follows:
 - Socket.io runs inside the API containers with the **Redis adapter**, so a message published by any instance reaches clients connected to every instance.
 - Clients authenticate on connect (session cookie or token) and join room event:{id} after an event.view check; personal notifications go to room user:{id}.
 - The outbox relay publishes entity.changed; the client uses TanStack Query to invalidate that entity and re-fetch through the API, which re-applies permissions and sub-event scope.
-- dashboard.changed is throttled to one per second per event, so a check-in rush sends one refresh signal per second instead of hundreds.
+- dashboard.changed is throttled to one per second per event, so a check-in rush sends one refresh signal per second instead of hundreds. The window is claimed in Redis (SET NX, 1 s), so it holds across worker instances; changes inside a claimed window leave one trailing signal for when it ends, so the last change is always signalled.
 - On reconnect (phones drop connections often), the client re-fetches everything on screen, so missed messages do not matter.
 - WebSocket-only transport avoids sticky sessions behind the load balancer; clients fall back to polling every 30 s if sockets fail entirely.
 
@@ -449,11 +449,12 @@ Rules every job follows:
 
 ### 5.7 Media pipeline
 
-1. Client asks POST /uploads for a presigned PUT URL with size (max 15 MB) and type limits.
-2. Client uploads straight to R2; the API never handles the file bytes.
-3. Client confirms; the media row is created with status pending and an outbox job is queued.
-4. Worker checks the real file type, strips location metadata, writes WebP versions (320 px thumbnail, 1600 px display), marks the row ready, and the gallery updates live.
-5. Gallery images are served from a public R2 bucket behind Cloudflare's CDN; receipts sit in a private bucket and are shown through signed URLs valid for 5 minutes.
+1. Client asks POST /uploads for a presigned PUT URL with size (max 15 MB) and type limits; the media row is created with status pending.
+2. Client uploads straight to R2; the API never handles the file bytes. The SDK's default request checksums are turned off (WHEN\_REQUIRED), since they'd be signed for an empty body.
+3. Client confirms; the API checks the object arrived (HEAD, size) and an outbox job is queued.
+4. Worker checks the real file type from the bytes, writes WebP versions (320 px thumbnail, 1600 px display) turned upright and without metadata (so no location), deletes the original, marks the row ready, and the gallery updates live. Anything that isn't a readable photo (or, for receipts, a PDF) fails and its file is deleted. HEIC needs a HEVC decoder the prebuilt sharp lacks, so the web app converts or the upload fails.
+5. Deleting a gallery photo queues media.purge, which removes its files at once, so it stops being public immediately. A daily scheduled job removes files of uploads never confirmed (after a day), and the rows of deleted media after 30 days.
+6. Gallery images are served from a public R2 bucket behind Cloudflare's CDN; receipts sit in a private bucket and are shown through signed URLs valid for 5 minutes.
 
 ### 5.8 Undo
 

@@ -29,6 +29,11 @@ API, worker, database and the shared packages behind them.
 - [41 The guest's side: public invite and RSVP](backend/41-public-invite-rsvp.md)
 - [44 Switching guest scope](backend/44-guest-scope-switch.md)
 - [45 Reviewing milestone 7](backend/45-milestone-7-review.md)
+- [46 Notifications and scheduled jobs](backend/46-notifications-scheduled-jobs.md)
+- [47 Dashboard cache](backend/47-dashboard-cache.md)
+- [49 Open registration](backend/49-open-registration.md)
+- [51 Media uploads](backend/51-media-uploads.md)
+- [53 Reviewing milestone 8](backend/53-milestone-8-review.md)
 
 ## Frontend
 
@@ -52,6 +57,9 @@ The web app: foundation, motion, UI components and the home page.
 - [36 Subtasks in the list and adding expenses quickly](frontend/36-subtasks-inline-and-quick-expense.md)
 - [42 People in the web app](frontend/42-people-web.md)
 - [43 The guest's invitation page](frontend/43-invite-page-web.md)
+- [48 Dashboard and bell in the web app](frontend/48-dashboard-bell-web.md)
+- [50 Public page and registration in the web app](frontend/50-public-registration-web.md)
+- [52 Gallery and receipts in the web app](frontend/52-gallery-web.md)
 
 ## Infra
 

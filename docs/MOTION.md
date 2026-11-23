@@ -352,7 +352,9 @@ Also follow WCAG 2.2.2: anything that moves or auto-updates for more than 5 seco
 
 ### 6.16 Later sections (apply the same patterns)
 
-Gallery, notifications, profile and public pages use the patterns in section 4: `ListPresence` for list changes, `SidePanel`/`Sheet` for details, `CountUp` and `ProgressFill` for totals, `LiveHighlight` for others' changes, `Confetti` only for real milestones. Add their specific rows to this file when they're designed.
+Notifications (8c): the bell's badge pops in with `overshoot` and the bell wiggles once when the unread count rises (6.1); the list opens in `EditPanel` (side panel on desktop, sheet on phone), rows change with `ListPresence`, unread rows have a primary tint that fades when read.
+
+Gallery, profile and public pages use the patterns in section 4: `ListPresence` for list changes, `SidePanel`/`Sheet` for details, `CountUp` and `ProgressFill` for totals, `LiveHighlight` for others' changes, `Confetti` only for real milestones. Add their specific rows to this file when they're designed.
 
 ## 7. Quality checks
 

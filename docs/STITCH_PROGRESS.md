@@ -1,6 +1,6 @@
 # Stitch design progress
 
-Last updated: Oct 27, 2026. Tracks which screens have Stitch designs and where to continue. Prompts were written in the planning chat; each batch below names its screens.
+Last updated: Nov 18, 2026. Tracks which screens have Stitch designs and where to continue. Stitch project: **Plan My Event Design System** (id 3683353658768786482). Prompts were written in the planning chat; each batch below names its screens.
 
 ## Done
 
@@ -12,14 +12,15 @@ Last updated: Oct 27, 2026. Tracks which screens have Stitch designs and where t
 | Core screens | Event dashboard (conference + wedding), Tasks (list, board, detail, quick add, empty, helper "My tasks"), guest invitation and RSVP page (5 states) |
 | A. Team | Team, invite people (email and link), member detail, roles list, role editor, invite opened while signed in |
 | B. Shell and states | My events (populated), event switcher, phone "More" menu, activity log and undo, live-update and conflict states, global states (404, no access, error, offline, session expired, plan limit, skeleton) |
-| C. Budget | Prompts given; designs status to confirm |
-| D. People | Prompts given; designs status to confirm |
+| C. Budget | Budget overview (desktop, mobile, set your budget), expenses (desktop, mobile), add expense (side panel, mobile sheet), expense detail |
+| D. People | People (desktop, mobile, empty), guest detail, add guests panel, send invitation, invitations by distributor, WhatsApp sending, cards to deliver, responses, CSV import (4 steps), per-function RSVP, link inactive |
+| Milestone 8 (partial) | Event dashboard (DevFest desktop and mobile, Sharma Wedding), Registrations (DevFest, organizer view), Volunteer home (desktop, mobile) |
 
 ## Continue from here
 
 | Batch | Screens | Needed for |
 | --- | --- | --- |
-| E | Public event page, public registration form, registration confirmation, gallery, notifications, profile and settings | Milestone 8 |
+| E | Public event page, public registration form, registration confirmation, gallery, notifications, profile and settings. Not designed; milestone 8 builds these from DESIGN.md (decided Nov 18) | Milestone 8 |
 | F | Email templates (sign-in code, team invite, guest invitation, registration confirmation), privacy and terms pages, pricing page | Before launch |
 
 ## Notes for the next batches

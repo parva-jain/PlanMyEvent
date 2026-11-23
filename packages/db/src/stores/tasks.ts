@@ -192,5 +192,30 @@ export function taskStore(db: Queryable): TaskStore {
       }
       return (await withDetails(db, [row]))[0] ?? null;
     },
+    async listDue(eventId, dueOn) {
+      const rows = await db
+        .select({
+          taskId: tasks.id,
+          title: tasks.title,
+          userIds: sql<string[]>`array_agg(${members.userId} order by ${members.userId})`,
+        })
+        .from(tasks)
+        .innerJoin(taskAssignees, eq(taskAssignees.taskId, tasks.id))
+        .innerJoin(
+          members,
+          and(eq(members.id, taskAssignees.memberId), eq(members.status, 'active')),
+        )
+        .where(
+          and(
+            eq(tasks.eventId, eventId),
+            eq(tasks.dueOn, dueOn),
+            sql`${tasks.status} <> 'done'`,
+            isNull(tasks.deletedAt),
+          ),
+        )
+        .groupBy(tasks.id, tasks.title)
+        .orderBy(tasks.id);
+      return rows;
+    },
   };
 }

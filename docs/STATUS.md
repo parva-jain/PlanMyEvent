@@ -1,19 +1,33 @@
 # Project status
 
-Last updated: Nov 2, 2026 · Updated at the end of every working step.
+Last updated: Nov 23, 2026 · Updated at the end of every working step.
 
 ## Current focus
 
-**Next: milestone 8 — open registration; dashboard aggregates; notifications; basic gallery.** Not started; no branch yet (create `feat/m8-…` from `main`). Milestones 1–7 are merged to `main` (PRs #1 and #2 squashed, #3–#8 rebase-merged).
+**Now: milestone 9 — seed data ("Sharma Wedding" and "DevFest Bhopal 2026" demo events).** Milestone 8 is done on `feat/m8-registration-dashboard` and open as a PR to `main` (rebase-merge). Milestones 1–7 are merged (PRs #1 and #2 squashed, #3–#8 rebase-merged).
 
 ### Start here (next session)
 
-1. `git checkout main && git pull`, then `docker compose -f infra/docker-compose.yml up -d --wait`, `pnpm install`, `pnpm db:migrate`.
-2. Read the milestone 8 parts of `docs/PRD.md` (open registration, dashboard, notifications, gallery), then `docs/APIDesign.md`, `docs/DatabaseDesign.md` and `docs/MOTION.md` for those screens, and the Stitch screens for them. `docs/STITCH_PROGRESS.md` lists batch E (public event page, registration, gallery, notifications, profile) as not designed yet; design those first or build from DESIGN.md.
-3. Propose 8a, 8b, … in this file before building, same pattern as milestone 7: backend step, then web step, then a review step that ends with the PR.
-4. Pieces already waiting for milestone 8 (see Follow-ups): `open_registration` response mode (shown disabled in Settings, refused by the API), `POST E/attendance` for walk-ins, `dashboard.changed` socket signal, `notification.new`, media table (expense receipts, gallery), task comments and reminders, the scheduled queue (outbox and idempotency cleanup).
+1. Once the milestone 8 PR is merged: `git checkout main && git pull`, then `docker compose -f infra/docker-compose.yml up -d --wait`, `pnpm install`, `pnpm db:migrate` (0010 adds `media`).
+2. Milestone 9 is `pnpm db:seed`: the two demo events from the PRD and Stitch (a wedding with households, invitations, RSVPs, tasks and budget; a conference with open registration, sessions with capacity, registrations, a gallery). Read DatabaseDesign "Seed data" and the Stitch dashboards for the numbers they show.
+3. Propose 9a, 9b, … here before building. Before launch, also see Follow-ups (Next.js security upgrade, Turnstile and R2 setup, CORS on the R2 buckets).
 
 Working style: a step at a time with a pause for the go-ahead; one learning note per step in `docs/learning/`; STATUS updated every step; one-line commits staged by file name; PRs rebase-merged.
+
+### Milestone 8 (done)
+
+Branch `feat/m8-registration-dashboard`. Backend step, then web step, per feature; a review step ends with the PR. Screens without Stitch designs (public page, registration, gallery, notifications) are built from DESIGN.md (decided Nov 18). Task comments and due-date reminders stay V2 (PRD lists them there); "task due" notifications come from a daily scan instead.
+
+| Step | What | Status |
+| --- | --- | --- |
+| 8a | Notifications and the scheduled queue: `notifications` (migration 0009, `dedupe_key` with a partial unique index); actions write the rows in their own transaction through core's `notify()` (task assigned on create and on new assignees, role changed when the roles really change; never to the person acting) and `notification.new` to `user:{id}` through the outbox; `GET /v1/notifications` (cursor, `unread`, `unreadCount`) and `POST /v1/notifications/read` (`ids` or `all`); worker `scheduled` queue with `upsertJobScheduler`: outbox cleanup (published over 7 days) and idempotency cleanup hourly, read notifications over 90 days daily, and a 30-minute `task_due` scan (events past 08:00 local with assigned unfinished tasks due on the local date, one transaction per event, deduped per task and day); `SCHEDULED_JOBS_ENABLED` | Done |
+| 8b | Dashboard backend: `GET E/dashboard` (route needs `event.view` anywhere): countdown (days to go in the event's time zone, next sub-event), tasks (top-level counts, overdue, due this week, 5 upcoming), budget (totals, payments due within 6 days, by category), headcounts per scope, sub-events with capacity and `taken`, invitation distribution, registrations (people, waitlist, 14 days by day), team size; each section null without its permission and filtered to the caller's sub-event scope. One aggregate per event split by sub-event (`loadDashboardAggregate`), projected per member by core's `dashboardFor`; cached at `dash:v1:{eventId}:{generation}` for 30 s with a stampede lock (others wait up to 0.5 s) and Postgres fallback. The relay bumps `dash-gen:{eventId}` on task, expense, category, invitation, attendance, sub-event, event and member changes and sends `dashboard.changed`, throttled across workers to once a second per event with a trailing signal. "Needs your attention" is derived on the web | Done |
+| 8c | Dashboard and notifications web: event home is the dashboard (Stitch dashboards; MOTION.md 6.5): countdown chip and next sub-event; "Needs your attention" derived on the web (overdue tasks, payments due this week, sub-events at 90% of capacity) with ListPresence; stat cards (tasks ring, budget committed, guests confirmed of expected, team) in a RevealGroup with CountUp and ProgressFill; upcoming deadlines with All / This week / Overdue and tick-off (row collapses out, API refusal brings it back); sub-events with capacity fill; budget by category (top 5, BudgetBar); registrations this week (7-day bars, hidden table) or invitation distribution when there are no registrations; each card only when the API sent its section. `dashboard.changed` and `notification.new` handled in `useLiveEvent`. Bell in the event top bar (unread badge pops with `overshoot`, one 8° wiggle when the count rises) opens notifications in a side panel or sheet: newest first, unread tint, mark one by opening it, mark all, show older; links to the task or the team page. Playwright `dashboard.spec.ts` (two people; desktop and phone) | Done |
+| 8d | Open registration backend: `GET /v1/public/events/{slug}` (`publicEventPage`: public sub-events with venues, capacity, places left and registration state open/full/closed/not_open; whole-event guests get one event-level state with the fewest places left; 404 for draft, archived, unknown, or nothing public; `Cache-Control: public, max-age=60`, 120/min per IP) and `POST …/registrations` (5/min per IP, Cloudflare Turnstile via `TURNSTILE_VERIFIER` → `captcha_failed`, Idempotency-Key scoped per event page; core `registerForEvent` as a new `visitor` actor: contact matched by email, else phone (a phone match never takes a typed email), already-listed people get the link re-sent with the same response, capacity checked with sub-events locked `for update` in id order, invitation `sent_digitally` with rows `registered`, `registration-confirmed` email with the magic link through the outbox). Registrants cancel through their link (RSVP attending false → cancelled, `canCancel` on the invite page) and registering again reopens the same rows. `POST E/attendance` walk-ins (`createAttendance`: new or existing contact, an existing row for the guest or their household takes the new status, no capacity check). Error codes `captcha_failed`, `registration_closed`; `TURNSTILE_SECRET_KEY` (dev default: Cloudflare's always-pass test secret) | Done |
+| 8e | Public event page and registration web (built from DESIGN.md; Registrations tab after Stitch "DevFest Bhopal 2026 — Registrations"): `/e/{slug}` server-rendered (fetch revalidated every 60 s, metadata from the event, 404 page for nothing public) with the invite page's header, public schedule with places left and state chips, and the register form (name, email, phone, sessions with per-sub-event guests, party stepper 1–10, Cloudflare Turnstile widget via `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, Idempotency-Key per send, capacity_full re-renders the page); invite page shows "Your registration" with a two-step Cancel and "Register again" (`event.slug` added to the invite contract); Settings enables Open registration (a sub-event set to it also becomes public) and shows the public link with Copy and Open; People → Registrations tab (registered count, per-session capacity cards, searchable registrants with sessions and time, Register attendee panel → `POST E/attendance`). The API skips Cloudflare for its always-pass test secret, so dev and e2e run offline. Playwright `registration.spec.ts` (register, emailed link, cancel; organizer tab and walk-in; private event 404) | Done |
+| 8f | Media backend: `media` (migration 0010: bucket, storage_key, variants, uploaded_at, version) and `expenses.receipt_media_id` (composite FK); `POST E/uploads` (gallery: photos, gallery.upload; receipt: photos or PDF, budget.edit; scope from subEventId; 15 MB) creates the row and returns a presigned PUT (10 min); `POST E/media/{id}/complete` checks the object with HEAD (409 `not_uploaded`, 413) and queues `media.process`; worker `media` queue (concurrency 3): real type from the bytes, WebP 320/1600 px upright without EXIF/GPS, original deleted, PDF receipts kept, anything else failed and deleted; `finishMediaProcessing` sends entity.changed; `GET E/media` (ready + my own pending; albums), `GET …/{id}`, `GET …/{id}/url` (5 min signed link, receipts need budget.view there), `PATCH`/`DELETE` (gallery.manage, If-Match); daily `media-cleanup` (unconfirmed after a day, deleted after 30 days: files, then rows, clearing receipt links). S3 env on API and worker (SeaweedFS defaults); SDK checksums `WHEN_REQUIRED` so presigned PUTs work on R2 and SeaweedFS | Done |
+| 8g | Gallery web and receipts (built from DESIGN.md): Gallery page replaces the last section placeholder (the `[section]` route and `SectionPlaceholder` are gone): album chips (all, whole event, each sub-event), multi-file upload straight to storage with XHR progress (three at a time, JPEG/PNG/WebP, 15 MB), processing and failed tiles, grid of 320 px WebP thumbs that arrive live (`entity.changed` for media, plus a 5 s poll while any is processing), full-screen viewer (1600 px, previous/next and arrow keys, caption edit and two-step delete for gallery.manage); expense form gets a Receipt field (photo or PDF to the private bucket, processing state, View opens a 5-minute signed link, Remove). Playwright `gallery.spec.ts` runs the real worker: photo processed, captioned, deleted; PDF receipt attached and saved | Done |
+| 8h | Review, fixes, PR: receipt details (`GET E/media/{id}`, `?kind=receipt`) limited to budget viewers where they belong; deleting a photo now queues `media.purge`, which removes its files at once (a deleted photo stopped being public only after 30 days); full unit, API and Playwright suites; learning note 53; PR to `main` | Done |
 
 ### Milestone 7 (done)
 
@@ -290,12 +304,12 @@ None right now.
 ## Follow-ups
 
 - Deleting an event (202 job) is designed but not built.
+- Next.js 16.4.2 has a published security advisory (`next build` says so and stops every other run); upgrade before deploying.
+- Registration re-sends the link to someone already registered on every matching submit; Turnstile and 5/min per IP limit abuse, but a per-invitation cooldown (one resend an hour) would stop someone flooding a known address.
 - Free-plan event limits (402 plan_limit_reached) once limits are set before launch.
-- Idempotency-key cleanup job for expired rows (scheduled queue, milestone 5).
 - Rate limits trust the first `X-Forwarded-For` value. In production behind Cloudflare, read `CF-Connecting-IP` instead (make the header configurable), or clients can rotate the header to dodge per-IP limits; the per-email limit still holds.
 - Google sign-in before launch: publish the OAuth consent screen (Google verification; until then only test users can sign in) and add the production redirect URI `{API_URL}/v1/auth/callback/google`.
 - Google linked to an existing email account doesn't copy the profile photo (Better Auth leaves user info alone on linking). Fill `avatar_url` on link only when it's empty, without overwriting the name.
-- Outbox cleanup job for published rows older than 7 days (milestone 5 with the scheduled queue).
 - Only home-page messages need to reach the browser; today all namespaces (including `devUi`) are sent. Trim if step G needs the bytes.
 - Footer privacy and terms links once those pages exist.
 - Rate limits on `GET /v1/member-invites/{token}` and accept (APIDesign lists none for member invites; tokens are 32 random bytes).
@@ -337,7 +351,12 @@ None right now.
 - CSV import: the full error list as a downloadable CSV (APIDesign) waits for file storage; the job keeps the first 100 errors with line numbers. Imports can't be undone in one step.
 - An import retried after a crash resumes after its last finished chunk only while Redis holds the status; otherwise it reruns from the start, where phone and email matching avoid most duplicates (contacts with neither could repeat).
 - The activity feed's entity filter takes any string; restrict to `ACTIVITY_ENTITY_TYPES` once every module records its type.
-- `dashboard.changed` (throttled to once a second per event) arrives with the dashboard in milestone 8; `job.progress` and `notification.new` with jobs and notifications.
+- Deploy: the R2 buckets need a CORS rule allowing PUT (and GET) from the web origin with the Content-Type header, or browser uploads fail; SeaweedFS allows it locally. The gallery has no bulk delete or download-all yet.
+- Media: event covers (`kind: cover`, `events.cover_media_id`) and free-plan photo limits per event aren't built; HEIC uploads fail in the worker (the prebuilt sharp has no HEVC decoder), so the web converts or asks for JPEG.
+- Registration: someone already invited who registers for a sub-event not on their invitation gets their link re-sent, not the extra sub-event (adding to an invitation stays the organizer's job). Registrants change party size by cancelling and registering again. Confirmation emails go through `email-critical` until `email-bulk` exists (V2).
+- The bell lives in the event shell only; My events (`/app`) has no top bar yet, and notifications there arrive only on the next visit to an event. Socket-less fallback polling refreshes event data, not the bell.
+- `next build` prints a Next.js security advisory for 16.4.2 and fails every other run ("retry to continue"); upgrading Next is a separate step.
+- Dashboard: an event-wide `whole_event` guest list counts toward every sub-event's `taken`; registration counts are 0 until open registration lands (8d). If many events are busy at once each change costs a Redis INCR and a SET NX; fine at MVP scale.
 - Presence ("Vikram is viewing") from MOTION.md 6.12 isn't in the socket contract yet.
 - Receipts on expenses (`receipt_media_id`, uploads) arrive with the media table in milestone 8.
 - Budget by sub-event has no endpoint; the web adds it up from the expense list (fine at MVP sizes).
@@ -349,12 +368,11 @@ None right now.
 - The task panel's checklist shares one save for all its subtasks, so ticking two quickly can send a stale version on the second (409, rolled back). The row's subtasks wait for the save in flight.
 - Assignees who leave or are removed stay in `task_assignees` (hidden while inactive) and reappear if they rejoin.
 - The activity feed shows every task change to anyone with `activity.view`, even ones outside their sub-event scope; filter the feed by scope.
-- Task comments, due-date reminders and "task assigned" notifications (milestone 8).
+- Task comments and mentions (V2). Due-date reminders and "task assigned" notifications are done (8a); a `job_failed` notification type exists but nothing sends it yet.
 - Undo bar for team changes (revoke invite, remove member) once those are undoable; MOTION.md 6.10 asks for it.
 - The polling fallback has no Playwright test (it needs 30 s with the socket blocked); the reconnect re-fetch is untested end to end too.
 - MOTION.md 6.12's "Item deleted by someone else" (the open panel fades and offers Restore) and the conflict banner's "Use theirs / Keep mine" aren't built; an edit panel still shows the latest version with a note.
 - Activity entries show the actor's initials; their photo needs `avatarUrl` in the feed.
-- Published `live.signal` rows pile up in the outbox until the 7-day cleanup job exists (milestone 5 scheduled queue item above).
 - Socket bearer-token sign-in (`auth: { token }`) for the mobile app.
 - Logo SVG/PNG files and app icons still use the warm ink #1F1B16 and warm white #FAF8F5 (BRAND.md note); regenerate in a brand pass.
 
@@ -367,4 +385,4 @@ None right now.
 
 ## Learning notes
 
-Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [45 Reviewing milestone 7](learning/backend/45-milestone-7-review.md).
+Index by topic: [`docs/learning/README.md`](learning/README.md) (backend, frontend, infra). Latest: [53 Reviewing milestone 8](learning/backend/53-milestone-8-review.md).

@@ -5,15 +5,17 @@ import type { Redis } from 'ioredis';
 import { createRateLimiter } from '../auth/rate-limit';
 import { DB } from '../database/database.module';
 import { REDIS } from '../redis/redis.module';
+import { PublicEventsController } from './public-events.controller';
 import { PublicInvitesController } from './public-invites.controller';
 import { PUBLIC_QUERIES, PUBLIC_READ_LIMITER, PUBLIC_WRITE_LIMITER } from './public.tokens';
+import { CloudflareTurnstile, TURNSTILE_VERIFIER } from './turnstile';
 
 /**
  * Public routes under /v1/public (CLAUDE.md rule 10). If Redis can't count, reads still go
  * through and writes are refused (SystemDesign "Failure modes").
  */
 @Module({
-  controllers: [PublicInvitesController],
+  controllers: [PublicInvitesController, PublicEventsController],
   providers: [
     { provide: PUBLIC_QUERIES, inject: [DB], useFactory: (db: Database) => publicQueries(db) },
     {
@@ -21,6 +23,7 @@ import { PUBLIC_QUERIES, PUBLIC_READ_LIMITER, PUBLIC_WRITE_LIMITER } from './pub
       inject: [REDIS],
       useFactory: (redis: Redis) => createRateLimiter(redis, 'ratelimit', { failOpen: true }),
     },
+    { provide: TURNSTILE_VERIFIER, useClass: CloudflareTurnstile },
     {
       provide: PUBLIC_WRITE_LIMITER,
       inject: [REDIS],

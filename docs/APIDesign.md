@@ -183,7 +183,7 @@ Two headers make writes safe: If-Match stops one organizer silently overwriting 
 | --- | --- |
 | Where | Accepted on every POST; required on public POSTs, POST /expenses, POST /invitations/bulk and every V2 AI or payment call |
 | Value | A UUID the client generates once per user action and reuses on retries |
-| Scope | Per user (or per link token on public routes); the same key from two users is two keys |
+| Scope | Per user, per link token on invite routes, or per event page on public registration; the same key from two users is two keys |
 | Window | 24 hours |
 | Same key, same body | The stored status and body are replayed; nothing runs twice |
 | Same key, different body | 422 idempotency\_key\_reused |
@@ -218,10 +218,12 @@ Validation errors add a fields array: \[{ "path": "amountPaise", "message": "Mus
 | 402 | plan\_limit\_reached | Workspace hit a free-plan limit; body names the limit |
 | 403 | forbidden | Member lacks a permission; body names it |
 | 403 | csrf\_failed | Cookie request without a matching Origin |
+| 403 | captcha\_failed | Turnstile says the public form wasn't filled in by a person |
 | 404 | not\_found | Missing, deleted, or not visible to the caller |
 | 409 | version\_conflict | If-Match did not match; body has current |
 | 409 | request\_in\_progress | Same Idempotency-Key still running |
-| 409 | capacity\_full | Sub-event is full; registration may be waitlisted instead |
+| 409 | capacity\_full | Sub-event is full (body: subEventId, spotsLeft); registration may be waitlisted instead (V2) |
+| 409 | registration\_closed | The event is completed, or doesn't take open registration |
 | 409 | conflict | Business rule clash; the code is more specific where clients act on it: role\_in\_use, duplicate\_transaction\_ref, rsvp\_closed |
 | 410 | link\_expired | Member invite expired or used up |
 | 410 | link\_revoked | Invitation or member invite revoked |
@@ -282,7 +284,7 @@ The MVP has about 75 operations across 20 resources. In the tables, E stands for
 | PATCH | E | Name, dates, time zone, status, budgetPaise, description, cover, responseMode (used while guests belong to the whole event) | event.settings |
 | DELETE | E | Delete event and all data; 202 job | event.delete |
 | GET | E/me | My member record and effective permissions by scope | Member |
-| GET | E/dashboard | Countdown, task progress, budget totals, headcounts, delivery progress | event.view |
+| GET | E/dashboard | Countdown, task progress and upcoming deadlines, budget by category and payments due, headcounts, sub-event fill, delivery progress, registrations per day, team size; each section null without its permission, filtered to the caller's sub-event scope | event.view (anywhere) |
 | POST | E/guest-scope | Switch whole\_event and per\_sub\_event; 202 job | event.settings |
 | POST | E/transfer-ownership | Make another member the Owner | Owner only |
 | GET / PUT | E/modules | Read or replace enabled modules and their config | event.view / event.settings |
@@ -336,7 +338,7 @@ The MVP has about 75 operations across 20 resources. In the tables, E stands for
 | GET | E/invitations/{invitationId}/share | Magic link plus a ready WhatsApp message and wa.me URL | guests.invite |
 | POST | E/invitations/{invitationId}/regenerate-link | New token; the old link stops working | guests.invite |
 | GET | E/attendance | Rows with filters (subEventId, status, source) and ?q | guests.view |
-| POST | E/attendance | Organizer adds a walk-in or manual registration | guests.edit |
+| POST | E/attendance | Organizer adds a walk-in (checked in) or a manual registration; see "Walk-ins" | guests.edit in that sub-event |
 | PATCH | E/attendance/{attendanceId} | Correct status or party size on a guest's behalf | guests.edit |
 
 ### Platform
@@ -345,13 +347,13 @@ The MVP has about 75 operations across 20 resources. In the tables, E stands for
 | --- | --- | --- | --- |
 | GET | E/activity | Activity feed; filters entityType, entityId, actor | activity.view |
 | POST | E/activity/{entryId}/undo | Undo one change; 409 if the entity changed since | Author of the change, or event.settings |
-| POST | E/uploads | Presigned upload URL for gallery, receipt or cover | gallery.upload, budget.edit or event.settings by kind |
-| POST | E/media/{mediaId}/complete | Confirm upload; starts processing | Uploader |
-| GET | E/media | Gallery list, filter subEventId | event.view |
+| POST | E/uploads | Presigned upload URL (10 min) for kind gallery (photos) or receipt (photos or PDF), max 15 MB; creates the media row (pending). Cover arrives with event covers | gallery.upload or budget.edit by kind, in subEventId's scope |
+| POST | E/media/{mediaId}/complete | Confirm upload (409 conflict, reason not\_uploaded, until the file is in storage); starts processing; repeat calls change nothing | Uploader |
+| GET | E/media | Newest first, cursor-paginated; kind gallery (default) or receipt (budget.view); subEventId or 'event' for an album; ready files plus my own still processing | event.view |
 | GET | E/media/{mediaId}/url | Short-lived signed URL for a private file | budget.view for receipts |
 | PATCH / DELETE | E/media/{mediaId} | Caption, album; delete | gallery.manage |
-| GET | /v1/notifications | My notifications, newest first | Signed in |
-| POST | /v1/notifications/read | Mark ids, or all, as read | Signed in |
+| GET | /v1/notifications | My notifications, newest first; ?unread=true; returns unreadCount for the bell | Signed in |
+| POST | /v1/notifications/read | { ids } or { all: true }; returns updated and unreadCount | Signed in |
 | GET | /v1/jobs/{jobId} | Status of a job I started | Starter of the job |
 | GET | /v1/health/live, /v1/health/ready | Liveness and readiness | Internal |
 
@@ -377,10 +379,15 @@ Guests and visitors use four endpoints with no account; each is cached or rate-l
 
 **Registration rules.**
 
-- The request carries name, phone and/or email, chosen sub-events and party size (default 1).
-- A contact is matched by email or phone within the event, or created.
-- Each sub-event is checked against capacity; a full one returns capacity\_full, or registers as waitlisted when the waitlist module (V2) is on.
-- Registration also creates an invitation row with delivery status sent\_digitally, so the confirmation email carries a magic link and the registrant uses the same invite page to view or cancel.
+- The request carries name, phone and/or email, chosen sub-events (empty with whole-event guests), party size (1 to 10, default 1) and the Turnstile token. Checks run in this order: per-IP limit, Turnstile (captcha\_failed), then the action.
+- Which sub-events take registrations: public visibility and response mode open\_registration (the sub-event's own with per-sub-event guests, else the event's). Completed events answer registration\_closed; draft and archived ones 404.
+- A contact is matched by email when one is given, else by phone; a phone match never takes a different email, so nobody receives someone else's link. No match creates a contact tagged registered.
+- Someone already invited or registered changes nothing: the link is emailed again to the email on file. The response is the same as for a new registration, so the form can't reveal who is on the list.
+- Capacity is checked with the sub-events locked (select … for update, in id order): confirmed, registered and checked-in party sizes plus this party must fit. With whole-event guests every sub-event with a capacity must fit. A full one returns capacity\_full, or registers as waitlisted when the waitlist module (V2) is on.
+- Registration also creates an invitation row with delivery status sent\_digitally, so the confirmation email carries a magic link and the registrant uses the same invite page to view or cancel. Cancelling is an RSVP with attending false (status cancelled; the place frees up); registering again on the event page reopens the same rows if there is room. A registrant changes party size by cancelling and registering again.
+- The response is 201 { subEventIds, confirmationEmail }.
+
+**Walk-ins.** POST E/attendance takes contactId or a new contact (name, phone, email), subEventId (null with whole-event guests), partySize and status (checked\_in, the default, or registered). If the guest or their household already has a row for that scope, that row takes the new status (an invited guest arriving is checked in on their own row); otherwise a new row with source registered and no invitation. Capacity isn't enforced: the organizer at the door decides.
 
 **Example RSVP request**
 
@@ -495,14 +502,19 @@ The server re-checks that amounts match the status and that transactionRef is un
 GET /v1/events/0192f6c1-.../dashboard
 
 {
-  "countdown": { "eventStartsOn": "2026-12-10", "nextSubEvent": { "id": "...", "name": "Haldi", "startsAt": "2026-12-10T04:30:00Z" } },
-  "tasks": { "total": 42, "done": 17, "overdue": 3 },
-  "budget": { "budgetPaise": 250000000, "plannedPaise": 238000000, "committedPaise": 121000000, "paidPaise": 43000000 },
-  "headcounts": [ { "subEventId": null, "expected": 412, "confirmed": 0, "checkedIn": 0 } ],
+  "countdown": { "eventStartsOn": "2026-12-10", "eventEndsOn": "2026-12-12", "timeZone": "Asia/Kolkata", "daysToGo": 9, "nextSubEvent": { "id": "...", "name": "Haldi", "startsAt": "2026-12-10T04:30:00Z" } },
+  "tasks": { "total": 42, "done": 17, "inProgress": 6, "blocked": 1, "overdue": 3, "dueThisWeek": 5, "upcoming": [ { "id": "...", "title": "Book the band", "dueOn": "2026-12-02", "...": "a full Task" } ] },
+  "budget": { "budgetPaise": 250000000, "plannedPaise": 238000000, "committedPaise": 121000000, "paidPaise": 43000000, "paymentsDue": { "count": 2, "outstandingPaise": 8500000 }, "categories": [ { "id": "...", "name": "Venue", "plannedPaise": 80000000, "committedPaise": 64000000, "paidPaise": 20000000 } ] },
+  "headcounts": [ { "subEventId": null, "expected": 412, "confirmed": 0, "registered": 0, "waitlisted": 0, "declined": 0, "checkedIn": 0 } ],
+  "subEvents": [ { "id": "...", "name": "Haldi", "startsAt": "...", "endsAt": "...", "groupLabel": null, "capacity": 150, "taken": 96 } ],
   "invitations": { "total": 340, "notSent": 60, "sentDigitally": 68, "deliveredInPerson": 212 },
+  "registrations": null,
+  "team": { "members": 6 },
   "generatedAt": "2026-10-20T08:13:02Z"
 }
 ```
+
+Sections and the permission each needs: tasks (tasks.view), budget (budget.view; categories' planned amounts are event-wide, committed and paid cover the expenses the caller can see), headcounts and each sub-event's taken (guests.view or registrations.view), invitations (guests.view; an invitation counts if it covers one of the caller's sub-events), registrations (registrations.view: people registered or checked in, the waitlist, and people per day for the last 14 days), team (members.view for the whole event). Counts are of top-level tasks; "needs your attention" on the web is derived from tasks.overdue, budget.paymentsDue and sub-events at 90% of capacity.
 
 The dashboard is served from the 30-second cache; generatedAt tells the client how fresh it is, and dashboard.changed prompts a re-fetch.
 

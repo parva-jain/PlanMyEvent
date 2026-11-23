@@ -29,6 +29,26 @@ export function loadApiEnv(source: Record<string, string | undefined> = process.
         'local-development-invitation-key-not-for-production',
         nodeEnv,
       ),
+      /**
+       * Cloudflare Turnstile's secret for the public registration form. The default is
+       * Cloudflare's always-pass test secret: then no call is made (development and tests).
+       */
+      TURNSTILE_SECRET_KEY: devDefault(
+        z.string().min(1),
+        '1x0000000000000000000000000000000AA',
+        nodeEnv,
+      ),
+      /** Object storage: Cloudflare R2 in production, SeaweedFS locally (decision 008). */
+      S3_ENDPOINT: devDefault(envSchemas.url, 'http://localhost:8333', nodeEnv),
+      /** `auto` for R2. */
+      S3_REGION: z.string().min(1).default('us-east-1'),
+      S3_ACCESS_KEY_ID: devDefault(z.string().min(1), 'pme-local-access', nodeEnv),
+      S3_SECRET_ACCESS_KEY: devDefault(z.string().min(1), 'pme-local-secret', nodeEnv),
+      /** Gallery photos (readable by anyone, behind the CDN) and receipts (signed URLs only). */
+      S3_PUBLIC_BUCKET: z.string().min(1).default('pme-public'),
+      S3_PRIVATE_BUCKET: z.string().min(1).default('pme-private'),
+      /** Where public files are read from: the CDN in front of the public bucket. */
+      MEDIA_PUBLIC_URL: devDefault(envSchemas.url, 'http://localhost:8333/pme-public', nodeEnv),
       /** Google sign-in is on only when both are set. */
       GOOGLE_CLIENT_ID: z.string().optional(),
       GOOGLE_CLIENT_SECRET: z.string().optional(),

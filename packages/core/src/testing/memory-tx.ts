@@ -19,7 +19,15 @@ import {
 
 import type { ActionRuntime, OutboxMessage } from '../action.js';
 import { ActionError } from '../errors.js';
-import type { CoreTx, LockedMemberInvite, PersonalWorkspace, StoredActivity } from '../ports.js';
+import type {
+  CoreTx,
+  LockedMemberInvite,
+  MediaRow,
+  NewNotification,
+  PersonalWorkspace,
+  StoredActivity,
+  StoredNotification,
+} from '../ports.js';
 import { resolvePermissions } from '../team/access.js';
 
 export interface MemoryMember {
@@ -76,6 +84,7 @@ export function memoryRuntime() {
   type AttendanceRow = Omit<Attendance, 'guestName'> & { eventId: string };
   const attendanceRows = new Map<string, AttendanceRow>();
   const outbox: OutboxMessage[] = [];
+  const notifications: (NewNotification & { id: string; readAt: Date | null })[] = [];
   const activity: StoredActivity[] = [];
   const takenSlugs = new Set<string>();
 
@@ -138,6 +147,8 @@ export function memoryRuntime() {
   // Team stores are attached below, once the helpers they share are defined.
   const base: Omit<
     CoreTx,
+    | 'notifications'
+    | 'media'
     | 'roles'
     | 'members'
     | 'access'
@@ -299,6 +310,18 @@ export function memoryRuntime() {
         Object.assign(subEvent, { deleted: false, version: subEvent.version + 1 });
         return Promise.resolve(strip({ ...subEvent }));
       },
+      lockForCapacity: (eventId, ids) =>
+        Promise.resolve(
+          [...subEvents.values()]
+            .filter(
+              (item) =>
+                item.eventId === eventId &&
+                !item.deleted &&
+                (ids === 'all' || ids.includes(item.id)),
+            )
+            .sort((a, b) => a.id.localeCompare(b.id))
+            .map((item) => strip({ ...item })),
+        ),
     },
   };
   const tx = base as CoreTx;
@@ -426,6 +449,104 @@ export function memoryRuntime() {
       Object.assign(task, { assigneeIds: [...memberIds], version: task.version + 1 });
       return Promise.resolve(toTask(task));
     },
+    listDue: (eventId, dueOn) =>
+      Promise.resolve(
+        [...tasks.values()]
+          .filter(
+            (task) =>
+              task.eventId === eventId &&
+              !task.deletedAt &&
+              task.dueOn === dueOn &&
+              task.status !== 'done',
+          )
+          .map((task) => ({
+            taskId: task.id,
+            title: task.title,
+            userIds: toTask(task).assignees.map((assignee) => assignee.userId),
+          }))
+          .filter((task) => task.userIds.length > 0),
+      ),
+  };
+
+  const mediaRows = new Map<string, MediaRow & { eventId: string; deleted?: boolean }>();
+  const liveMedia = (eventId: string, id: string) => liveIn(mediaRows, eventId, id);
+  tx.media = {
+    insert: (eventId, input) => {
+      const id = nextId();
+      const { extension, ...rest } = input;
+      const row = {
+        ...rest,
+        id,
+        eventId,
+        status: 'pending' as const,
+        storageKey: `events/${eventId}/${input.kind}/${id}${extension}`,
+        width: null,
+        height: null,
+        variants: {},
+        uploadedAt: null,
+        version: 1,
+        createdAt: new Date().toISOString(),
+      };
+      mediaRows.set(id, row);
+      return Promise.resolve(strip({ ...row }));
+    },
+    find: (eventId, id) => {
+      const row = liveMedia(eventId, id);
+      return Promise.resolve(row ? strip({ ...row }) : null);
+    },
+    markUploaded: (eventId, id, at) => {
+      const row = liveMedia(eventId, id);
+      if (!row || row.uploadedAt) return Promise.resolve(null);
+      Object.assign(row, { uploadedAt: at.toISOString(), version: row.version + 1 });
+      return Promise.resolve(strip({ ...row }));
+    },
+    finish: (eventId, id, outcome) => {
+      const row = liveMedia(eventId, id);
+      if (!row || row.status !== 'pending') return Promise.resolve(null);
+      Object.assign(row, outcome, { version: row.version + 1 });
+      return Promise.resolve(strip({ ...row }));
+    },
+    update: (eventId, id, expected, changes) => {
+      const row = liveMedia(eventId, id);
+      if (!row || row.version !== expected) return Promise.resolve(null);
+      Object.assign(row, changes, { version: row.version + 1 });
+      return Promise.resolve(strip({ ...row }));
+    },
+    softDelete: (eventId, id, expected) => {
+      const row = liveMedia(eventId, id);
+      if (!row || row.version !== expected) return Promise.resolve(false);
+      Object.assign(row, { deleted: true, version: row.version + 1 });
+      return Promise.resolve(true);
+    },
+  };
+
+  tx.notifications = {
+    insert: (list) => {
+      const written: StoredNotification[] = [];
+      for (const item of list) {
+        const repeated =
+          item.dedupeKey &&
+          notifications.some(
+            (row) => row.userId === item.userId && row.dedupeKey === item.dedupeKey,
+          );
+        if (repeated) continue;
+        const row = { ...item, id: nextId(), readAt: null as Date | null };
+        notifications.push(row);
+        written.push({ id: row.id, userId: row.userId, type: row.type });
+      }
+      return Promise.resolve(written);
+    },
+    markRead: (userId, ids, now) => {
+      let updated = 0;
+      for (const row of notifications) {
+        if (row.userId !== userId || row.readAt || (ids && !ids.includes(row.id))) continue;
+        row.readAt = now;
+        updated += 1;
+      }
+      return Promise.resolve(updated);
+    },
+    unreadCount: (userId) =>
+      Promise.resolve(notifications.filter((row) => row.userId === userId && !row.readAt).length),
   };
 
   const categoryNameTaken = (eventId: string, name: string, except?: string) =>
@@ -707,7 +828,15 @@ export function memoryRuntime() {
     invitation: InvitationRow,
     subEventId: string | null,
     partySize: number,
+    registeredAt?: Date,
   ) => {
+    const answer = registeredAt
+      ? {
+          source: 'registered' as const,
+          status: 'registered' as const,
+          respondedAt: registeredAt.toISOString(),
+        }
+      : { source: 'invited' as const, status: 'invited' as const };
     const existing = [...attendanceRows.values()].find(
       (item) =>
         item.eventId === eventId &&
@@ -718,8 +847,7 @@ export function memoryRuntime() {
     if (existing) {
       Object.assign(existing, {
         invitationId: invitation.id,
-        source: 'invited',
-        status: 'invited',
+        ...answer,
         partySize,
         version: existing.version + 1,
       });
@@ -732,12 +860,11 @@ export function memoryRuntime() {
       householdId: invitation.householdId,
       contactId: invitation.contactId,
       invitationId: invitation.id,
-      source: 'invited',
-      status: 'invited',
       partySize,
       respondedAt: null,
       checkedInAt: null,
       version: 1,
+      ...answer,
     };
     attendanceRows.set(row.id, row);
   };
@@ -753,9 +880,9 @@ export function memoryRuntime() {
             eventId,
             householdId: input.householdId,
             contactId: input.contactId,
-            deliveryStatus: 'not_sent',
+            deliveryStatus: input.registeredAt ? 'sent_digitally' : 'not_sent',
             distributorMemberId: input.distributorMemberId,
-            sentAt: null,
+            sentAt: input.registeredAt?.toISOString() ?? null,
             deliveredAt: null,
             lastOpenedAt: null,
             subEventIds: [...input.subEventIds],
@@ -765,7 +892,7 @@ export function memoryRuntime() {
           };
           invitations.set(row.id, row);
           for (const item of input.attendance)
-            invite(eventId, row, item.subEventId, item.partySize);
+            invite(eventId, row, item.subEventId, item.partySize, input.registeredAt);
           return toInvitation(row);
         }),
       ),
@@ -841,6 +968,10 @@ export function memoryRuntime() {
       }
       return Promise.resolve();
     },
+    linkToken: (eventId, id) => {
+      const row = liveInvitation(eventId, id);
+      return Promise.resolve(row ? `token-${row.id}-${row.tokenVersion}` : null);
+    },
     regenerate: (eventId, id, expected) => {
       const row = liveInvitation(eventId, id);
       if (!row || row.version !== expected) return Promise.resolve(null);
@@ -857,7 +988,46 @@ export function memoryRuntime() {
     update: (eventId, id, expected, changes) => {
       const row = attendanceRows.get(id);
       if (!row || row.eventId !== eventId || row.version !== expected) return Promise.resolve(null);
-      Object.assign(row, changes, { version: row.version + 1 });
+      const { checkedInAt, checkedInByMemberId: _by, ...rest } = changes;
+      Object.assign(row, rest, { version: row.version + 1 });
+      if (checkedInAt !== undefined) row.checkedInAt = checkedInAt?.toISOString() ?? null;
+      return Promise.resolve(toAttendance(row));
+    },
+    taken: (eventId, scopes) => {
+      const taken = new Map<string | null, number>();
+      for (const row of attendanceRows.values()) {
+        if (row.eventId !== eventId || !scopes.includes(row.subEventId)) continue;
+        if (!['confirmed', 'registered', 'checked_in'].includes(row.status)) continue;
+        taken.set(row.subEventId, (taken.get(row.subEventId) ?? 0) + row.partySize);
+      }
+      return Promise.resolve(taken);
+    },
+    findForContact: (eventId, contactId, subEventId) => {
+      const householdId = contacts.get(contactId)?.householdId ?? null;
+      const row = [...attendanceRows.values()].find(
+        (item) =>
+          item.eventId === eventId &&
+          item.subEventId === subEventId &&
+          (item.contactId === contactId || (householdId && item.householdId === householdId)),
+      );
+      return Promise.resolve(row ? toAttendance(row) : null);
+    },
+    insert: (eventId, input) => {
+      const row: AttendanceRow = {
+        id: nextId(),
+        eventId,
+        subEventId: input.subEventId,
+        householdId: null,
+        contactId: input.contactId,
+        invitationId: null,
+        source: 'registered',
+        status: input.status,
+        partySize: input.partySize,
+        respondedAt: null,
+        checkedInAt: input.checkedInAt?.toISOString() ?? null,
+        version: 1,
+      };
+      attendanceRows.set(row.id, row);
       return Promise.resolve(toAttendance(row));
     },
     respond: (eventId, id, { status, partySize, respondedAt }) => {
@@ -1222,6 +1392,8 @@ export function memoryRuntime() {
     attendance: attendanceRows,
     modules,
     outbox,
+    notifications,
+    media: mediaRows,
     activity,
     takenSlugs,
   };

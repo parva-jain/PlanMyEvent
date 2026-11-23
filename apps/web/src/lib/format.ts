@@ -73,3 +73,24 @@ export const INR_FORMAT = {
 const inr = new Intl.NumberFormat('en-IN', INR_FORMAT);
 
 export const formatInr = (paise: number) => inr.format(Math.round(paise / 100));
+
+const relative = new Intl.RelativeTimeFormat('en-IN', { numeric: 'auto', style: 'short' });
+const STEPS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ['second', 60],
+  ['minute', 60],
+  ['hour', 24],
+  ['day', 7],
+  ['week', 4.35],
+  ['month', 12],
+  ['year', Infinity],
+];
+
+/** "5 min. ago", "yesterday": how long ago an ISO time was, for lists like notifications. */
+export function timeAgo(iso: string, now = Date.now()): string {
+  let value = (Date.parse(iso) - now) / 1000;
+  for (const [unit, size] of STEPS) {
+    if (Math.abs(value) < size) return relative.format(Math.round(value), unit);
+    value /= size;
+  }
+  return relative.format(Math.round(value), 'year');
+}

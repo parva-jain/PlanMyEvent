@@ -51,11 +51,24 @@ export const JobProgressSchema = z.object({
 });
 export type JobProgress = z.infer<typeof JobProgressSchema>;
 
+/** A new notification for me (APIDesign "Real-time contract"): update the bell badge. */
+export const NotificationNewSchema = z.object({
+  notificationId: z.uuid(),
+  type: z.string(),
+});
+export type NotificationNew = z.infer<typeof NotificationNewSchema>;
+
+/** The dashboard's numbers moved: re-fetch E/dashboard. At most once a second per event. */
+export const DashboardChangedSchema = z.object({ eventId: z.uuid() });
+export type DashboardChanged = z.infer<typeof DashboardChangedSchema>;
+
 export interface ServerToClientEvents {
   'entity.changed': (signal: EntityChanged) => void;
+  'dashboard.changed': (signal: DashboardChanged) => void;
   'job.progress': (signal: JobProgress) => void;
   'permissions.changed': (signal: PermissionsChanged) => void;
   'member.removed': (signal: MemberRemoved) => void;
+  'notification.new': (signal: NotificationNew) => void;
 }
 
 export const EventJoinSchema = z.object({ eventId: z.uuid() });
@@ -75,7 +88,14 @@ export const LiveSignalSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('emit'),
     room: z.string(),
-    event: z.enum(['entity.changed', 'permissions.changed', 'member.removed', 'job.progress']),
+    event: z.enum([
+      'entity.changed',
+      'permissions.changed',
+      'member.removed',
+      'job.progress',
+      'notification.new',
+      'dashboard.changed',
+    ]),
     data: z.record(z.string(), z.unknown()),
   }),
   z.object({ kind: z.literal('leave'), userId: z.uuid(), eventId: z.uuid() }),

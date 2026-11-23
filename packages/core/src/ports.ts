@@ -14,6 +14,8 @@ import type {
   Invitation,
   Member,
   MemberInvite,
+  NotificationData,
+  NotificationType,
   Permission,
   ResponseMode,
   Role,
@@ -130,6 +132,11 @@ export interface SubEventStore {
   softDelete(eventId: string, subEventId: string, expectedVersion: number): Promise<boolean>;
   /** Undoes a soft delete (bumping the version); null when the sub-event isn't deleted. */
   restore(eventId: string, subEventId: string): Promise<SubEvent | null>;
+  /**
+   * Live sub-events (these, or all of the event's), locked for update in id order: two
+   * registrations for the same places queue here, so capacity checks can't both pass.
+   */
+  lockForCapacity(eventId: string, subEventIds: string[] | 'all'): Promise<SubEvent[]>;
 }
 
 export interface NewRole {
@@ -287,6 +294,89 @@ export interface TaskStore {
     expectedVersion: number,
     memberIds: string[],
   ): Promise<Task | null>;
+  /** Unfinished live tasks due on that date, with their active assignees' user ids. */
+  listDue(
+    eventId: string,
+    dueOn: string,
+  ): Promise<{ taskId: string; title: string; userIds: string[] }[]>;
+}
+
+/** A notification to write: who it's for, the event, and its typed payload. */
+export type NewNotification = NotificationData & {
+  userId: string;
+  eventId: string | null;
+  /** Makes a repeated send a no-op (unique per user). */
+  dedupeKey?: string | null;
+};
+
+export interface StoredNotification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+}
+
+export interface NotificationStore {
+  /** Inserts them, skipping repeated dedupe keys; returns the rows written. */
+  insert(list: readonly NewNotification[]): Promise<StoredNotification[]>;
+  /** Marks the user's unread ones (these ids, or all with null) read; returns how many. */
+  markRead(userId: string, ids: readonly string[] | null, now: Date): Promise<number>;
+  unreadCount(userId: string): Promise<number>;
+}
+
+/** A media row as core sees it (DatabaseDesign "media"); the API adds URLs and names. */
+export interface MediaRow {
+  id: string;
+  kind: 'gallery' | 'receipt' | 'cover';
+  status: 'pending' | 'ready' | 'failed';
+  bucket: 'public' | 'private';
+  storageKey: string;
+  mime: string;
+  bytes: number;
+  width: number | null;
+  height: number | null;
+  /** Storage keys: { thumb, display } for images, { file } for a PDF. */
+  variants: Record<string, string>;
+  subEventId: string | null;
+  caption: string | null;
+  uploadedByUserId: string | null;
+  uploadedAt: string | null;
+  version: number;
+  createdAt: string;
+}
+
+/** The store makes the id and the storage key (events/<eventId>/<kind>/<id><extension>). */
+export type NewMedia = Pick<
+  MediaRow,
+  'kind' | 'bucket' | 'mime' | 'bytes' | 'subEventId' | 'caption' | 'uploadedByUserId'
+> & { extension: string };
+
+/** What the worker found: a usable file and its versions, or not. */
+export type MediaOutcome =
+  | {
+      status: 'ready';
+      mime: string;
+      bytes: number;
+      width: number | null;
+      height: number | null;
+      variants: Record<string, string>;
+    }
+  | { status: 'failed' };
+
+/** Media skip soft-deleted rows. */
+export interface MediaStore {
+  insert(eventId: string, row: NewMedia): Promise<MediaRow>;
+  find(eventId: string, mediaId: string): Promise<MediaRow | null>;
+  /** Notes the upload was confirmed; null when it already was (or the row is gone). */
+  markUploaded(eventId: string, mediaId: string, at: Date): Promise<MediaRow | null>;
+  /** The worker's outcome, while still pending. Bumps the version. */
+  finish(eventId: string, mediaId: string, outcome: MediaOutcome): Promise<MediaRow | null>;
+  update(
+    eventId: string,
+    mediaId: string,
+    expectedVersion: number,
+    changes: { caption?: string | null; subEventId?: string | null },
+  ): Promise<MediaRow | null>;
+  softDelete(eventId: string, mediaId: string, expectedVersion: number): Promise<boolean>;
 }
 
 export interface NewBudgetCategory {
@@ -328,6 +418,7 @@ export interface NewExpense {
   paidByMemberId: string | null;
   transactionRef: string | null;
   notes: string | null;
+  receiptMediaId: string | null;
 }
 
 /** Expenses skip soft-deleted rows; 'duplicate_ref' when another live expense has the reference. */
@@ -406,6 +497,11 @@ export interface NewInvitation {
   subEventIds: string[];
   /** Attendance rows to start (or reopen) as invited: null for the whole event. */
   attendance: { subEventId: string | null; partySize: number }[];
+  /**
+   * Open registration: the invitation starts sent digitally (the confirmation email carries
+   * its link) and its attendance rows as registered, answered at this time.
+   */
+  registeredAt?: Date;
 }
 
 export interface InvitationChanges {
@@ -460,6 +556,8 @@ export interface InvitationStore {
    * an organizer edits changed.
    */
   markOpened(eventId: string, invitationId: string, at: Date): Promise<void>;
+  /** The magic link's token for a live invitation, at its current version (never stored). */
+  linkToken(eventId: string, invitationId: string): Promise<string | null>;
   /** A new token (token_version + 1): the old link stops working. */
   regenerate(
     eventId: string,
@@ -468,19 +566,51 @@ export interface InvitationStore {
   ): Promise<Invitation | null>;
 }
 
+export interface NewAttendance {
+  contactId: string;
+  subEventId: string | null;
+  partySize: number;
+  status: 'registered' | 'checked_in';
+  checkedInAt: Date | null;
+  checkedInByMemberId: string | null;
+}
+
 export interface AttendanceStore {
   find(eventId: string, attendanceId: string): Promise<Attendance | null>;
   update(
     eventId: string,
     attendanceId: string,
     expectedVersion: number,
-    changes: { status?: Attendance['status']; partySize?: number },
+    changes: {
+      status?: Attendance['status'];
+      partySize?: number;
+      source?: 'invited' | 'registered';
+      checkedInAt?: Date | null;
+      checkedInByMemberId?: string | null;
+    },
   ): Promise<Attendance | null>;
+  /**
+   * People holding a place per scope (null: the whole event): party sizes of rows confirmed,
+   * registered or checked in. Scopes with none are left out.
+   */
+  taken(eventId: string, scopes: (string | null)[]): Promise<Map<string | null, number>>;
+  /** A contact's row for one scope, cancelled ones included. */
+  findForContact(
+    eventId: string,
+    contactId: string,
+    subEventId: string | null,
+  ): Promise<Attendance | null>;
+  /** An organizer's walk-in or manual registration: a new row with no invitation. */
+  insert(eventId: string, row: NewAttendance): Promise<Attendance>;
   /** A guest's own answer: last one wins, so no version guard. */
   respond(
     eventId: string,
     attendanceId: string,
-    answer: { status: 'confirmed' | 'declined'; partySize: number; respondedAt: Date },
+    answer: {
+      status: 'confirmed' | 'declined' | 'cancelled';
+      partySize: number;
+      respondedAt: Date;
+    },
   ): Promise<Attendance | null>;
 }
 
@@ -578,4 +708,6 @@ export interface CoreTx {
   invitations: InvitationStore;
   attendance: AttendanceStore;
   guestScope: GuestScopeStore;
+  notifications: NotificationStore;
+  media: MediaStore;
 }

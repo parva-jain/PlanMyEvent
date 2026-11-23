@@ -2,7 +2,7 @@
 
 import type { GuestScope, ResponseMode, SubEvent } from '@pme/contracts';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftRight, CircleCheck, Users } from 'lucide-react';
+import { ArrowLeftRight, CircleCheck, Copy, ExternalLink, Globe, Users } from 'lucide-react';
 import { AnimatePresence, m } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -26,11 +26,10 @@ import { duration, ease } from '@/lib/motion';
 import { useJobStatus } from '@/lib/people';
 import { cn } from '@/lib/utils';
 
-/** Open registration arrives with the public registration page (milestone 8). */
 const MODES: { mode: ResponseMode; available: boolean }[] = [
   { mode: 'invite_only', available: true },
   { mode: 'invite_rsvp', available: true },
-  { mode: 'open_registration', available: false },
+  { mode: 'open_registration', available: true },
 ];
 
 /**
@@ -85,12 +84,65 @@ export function GuestSettings() {
         {perSubEvent ? <SubEventModes /> : <EventMode />}
       </section>
 
+      <PublicLink />
+
       <SwitchDialog
         open={switching}
         target={perSubEvent ? 'whole_event' : 'per_sub_event'}
         onClose={() => setSwitching(false)}
       />
     </Card>
+  );
+}
+
+/**
+ * The event's public page (/e/{slug}) once anything takes registrations: the link to share and
+ * a copy button. Sub-events show on it when their visibility is public (Schedule).
+ */
+function PublicLink() {
+  const t = useTranslations('settings.guests');
+  const { eventId, event } = useCurrentEvent();
+  const { data: subEvents = [] } = useSubEvents(eventId);
+  const [copied, setCopied] = useState(false);
+  const open =
+    event.guestScope === 'per_sub_event'
+      ? subEvents.some((item) => item.responseMode === 'open_registration')
+      : event.responseMode === 'open_registration';
+  if (!open) return null;
+  const url = `${typeof window === 'undefined' ? '' : window.location.origin}/e/${event.slug}`;
+  const copy = () =>
+    void navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+
+  return (
+    <section
+      className="flex flex-col gap-3 rounded-control bg-surface-muted p-4"
+      aria-labelledby="public-link-heading"
+      data-testid="public-link"
+    >
+      <h3 id="public-link-heading" className="flex items-center gap-2 text-label">
+        <Globe aria-hidden className="size-4" />
+        {t('publicLink')}
+      </h3>
+      <p className="text-small text-fg-secondary">{t('publicLinkHelp')}</p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <code className="min-w-0 flex-1 truncate rounded-control border border-border bg-surface px-3 py-2.5 text-small">
+          {url}
+        </code>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" icon={<Copy aria-hidden />} onClick={copy}>
+            {copied ? t('copied') : t('copy')}
+          </Button>
+          <Button asChild variant="secondary" size="sm" icon={<ExternalLink aria-hidden />}>
+            <a href={url} target="_blank" rel="noreferrer noopener">
+              {t('openPage')}
+            </a>
+          </Button>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -166,8 +218,13 @@ function SubEventModes() {
 
   const choose = (subEvent: SubEvent, mode: ResponseMode) => {
     setFailed(false);
+    // Registration happens on the public page, so an open sub-event has to be public.
+    const changes =
+      mode === 'open_registration'
+        ? { responseMode: mode, visibility: 'public' as const }
+        : { responseMode: mode };
     save.mutate(
-      { id: subEvent.id, version: subEvent.version, changes: { responseMode: mode } },
+      { id: subEvent.id, version: subEvent.version, changes },
       { onError: () => setFailed(true) },
     );
   };

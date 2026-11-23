@@ -29,6 +29,7 @@ import { membersQuery } from '@/lib/team';
 import { cn } from '@/lib/utils';
 
 import { Expand, MoneyInput } from './budget-bits';
+import { ReceiptField } from './receipt-field';
 
 interface FormState {
   title: string;
@@ -44,6 +45,7 @@ interface FormState {
   paidByMemberId: string;
   transactionRef: string;
   notes: string;
+  receiptMediaId: string | null;
 }
 
 const partial = (status: PaymentStatus) => status === 'advance_paid' || status === 'partially_paid';
@@ -61,6 +63,7 @@ const fromExpense = (expense: Expense): FormState => ({
   paidByMemberId: expense.paidByMemberId ?? '',
   transactionRef: expense.transactionRef ?? '',
   notes: expense.notes ?? '',
+  receiptMediaId: expense.receiptMediaId,
 });
 
 /**
@@ -83,6 +86,7 @@ function body(form: FormState) {
     paidByMemberId: planned ? null : form.paidByMemberId || null,
     transactionRef: planned ? null : form.transactionRef.trim() || null,
     notes: form.notes.trim() || null,
+    receiptMediaId: form.receiptMediaId,
   };
 }
 
@@ -163,6 +167,7 @@ export function ExpenseForm({
           paidByMemberId: '',
           transactionRef: '',
           notes: '',
+          receiptMediaId: null,
         },
   );
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -432,6 +437,12 @@ export function ExpenseForm({
             onChange={(e) => set({ notes: e.target.value })}
           />
         </Field>
+        <ReceiptField
+          mediaId={form.receiptMediaId}
+          subEventId={place || null}
+          disabled={!editable}
+          onChange={(receiptMediaId) => set({ receiptMediaId })}
+        />
       </fieldset>
 
       {error && (

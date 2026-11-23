@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 
 import { EventSwitcherSheet } from './event-switcher';
+import { NotificationBell } from './notification-bell';
 import { QuickAddButton } from './quick-add';
 import { StatusWidget } from './status-widget';
 
@@ -10,6 +11,7 @@ import { StatusWidget } from './status-widget';
  * Phone and tablet: event switcher (the sidebar holds it on desktop); phone also shows the API
  * status dot (the rail shows it on tablet).
  * Desktop: status and the "+ Add" button (DESIGN.md "Quick add").
+ * Everywhere: the notifications bell.
  */
 export function TopBar() {
   const t = useTranslations('app');
@@ -26,6 +28,7 @@ export function TopBar() {
       </div>
       <div className="ml-auto flex items-center gap-4">
         <StatusWidget compact className="sm:hidden" />
+        <NotificationBell />
         <div className="hidden lg:block">
           <QuickAddButton />
         </div>

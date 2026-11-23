@@ -1,6 +1,6 @@
 import type { Event, EventModule, SubEvent, Venue } from '@pme/contracts';
 import type { EventStore, SubEventStore, VenueStore } from '@pme/core';
-import { and, asc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 
 import { eventModules, events, subEvents, venues } from '../schema/events.js';
 import type { Database } from '../client.js';
@@ -220,6 +220,23 @@ export function subEventStore(db: Queryable): SubEventStore {
         )
         .returning();
       return row ? toSubEvent(row) : null;
+    },
+    async lockForCapacity(eventId, subEventIds) {
+      if (subEventIds !== 'all' && !subEventIds.length) return [];
+      const rows = await db
+        .select()
+        .from(subEvents)
+        .where(
+          and(
+            eq(subEvents.eventId, eventId),
+            isNull(subEvents.deletedAt),
+            subEventIds === 'all' ? undefined : inArray(subEvents.id, subEventIds),
+          ),
+        )
+        // One order everywhere, so two registrations never wait on each other in a circle.
+        .orderBy(asc(subEvents.id))
+        .for('update');
+      return rows.map(toSubEvent);
     },
   };
 }

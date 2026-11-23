@@ -12,7 +12,7 @@ describe('loadApiEnv', () => {
     expect(env.SENTRY_DSN).toBeUndefined();
   });
 
-  it('requires database, Redis, URLs, the auth secret and the link key in production', () => {
+  it('requires database, Redis, URLs, the auth secret, the link key and Turnstile in production', () => {
     expect(() => loadApiEnv({ NODE_ENV: 'production' })).toThrow(EnvValidationError);
     expect(() =>
       loadApiEnv({
@@ -23,6 +23,11 @@ describe('loadApiEnv', () => {
         API_URL: 'https://api.planmyevent.app',
         BETTER_AUTH_SECRET: 'x'.repeat(32),
         INVITATION_LINK_KEY: 'y'.repeat(32),
+        TURNSTILE_SECRET_KEY: '0x4AAAAAAAexample',
+        S3_ENDPOINT: 'https://account.r2.cloudflarestorage.com',
+        S3_ACCESS_KEY_ID: 'key',
+        S3_SECRET_ACCESS_KEY: 'secret',
+        MEDIA_PUBLIC_URL: 'https://media.planmyevent.app',
       }),
     ).not.toThrow();
   });

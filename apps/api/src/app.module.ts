@@ -7,6 +7,7 @@ import { ActivityModule } from './activity/activity.module';
 import { AuthModule } from './auth/auth.module';
 import { BudgetModule } from './budget/budget.module';
 import { ConfigModule } from './config/config.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { DatabaseModule } from './database/database.module';
 import { ProblemFilter } from './errors/problem.filter';
 import { EventsModule } from './events/events.module';
@@ -18,7 +19,9 @@ import { IdempotencyInterceptor } from './http/idempotency.interceptor';
 import { LifecycleModule } from './lifecycle/lifecycle.module';
 import { LiveModule } from './live/live.module';
 import { LoggingModule } from './logging/logging.module';
+import { MediaModule } from './media/media.module';
 import { MeModule } from './me/me.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PublicModule } from './public/public.module';
 import { RedisModule } from './redis/redis.module';
 import { TasksModule } from './tasks/tasks.module';
@@ -35,6 +38,9 @@ import { TeamModule } from './team/team.module';
     AuthModule,
     HealthModule,
     MeModule,
+    NotificationsModule,
+    DashboardModule,
+    MediaModule,
     EventsModule,
     TeamModule,
     ActivityModule,

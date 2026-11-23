@@ -147,6 +147,12 @@ function Invitation({ token, page }: { token: string; page: PublicInvite }) {
   // Set once a reply goes through on this visit: only then does the confirmation celebrate.
   const [justSent, setJustSent] = useState(false);
   const open = page.scopes.filter((scope) => scope.canRespond);
+  // Open registration: they registered on the event page, and may cancel here.
+  const registration = page.scopes.filter(
+    (scope) =>
+      scope.responseMode === 'open_registration' &&
+      (scope.canCancel || scope.status === 'cancelled'),
+  );
   // What's on the program: the invitation's own sub-events, or the event's schedule.
   const program =
     page.guestScope === 'per_sub_event'
@@ -170,7 +176,7 @@ function Invitation({ token, page }: { token: string; page: PublicInvite }) {
             accent.text,
           )}
         >
-          {t('youreInvited')}
+          {registration.some((scope) => scope.canCancel) ? t('youreRegistered') : t('youreInvited')}
         </span>
         <m.h1
           className="font-display text-display-phone sm:text-display"
@@ -241,7 +247,9 @@ function Invitation({ token, page }: { token: string; page: PublicInvite }) {
         )}
 
         <Reveal>
-          {open.length === 0 ? (
+          {registration.length > 0 ? (
+            <Registration token={token} page={page} scopes={registration} />
+          ) : open.length === 0 ? (
             <Card className="gap-1" data-testid="invite-only">
               <h2 className="text-h3">{t('noReplyTitle')}</h2>
               <p className="text-body text-fg-secondary">{t('noReplyBody')}</p>
@@ -309,6 +317,99 @@ function Invitation({ token, page }: { token: string; page: PublicInvite }) {
         )}
       </RevealGroup>
     </Frame>
+  );
+}
+
+/**
+ * A registrant's own registration: what they registered for and for how many, and Cancel
+ * (asked twice, since a freed place can go to someone else). Registering again happens on the
+ * event page, which checks capacity.
+ */
+function Registration({
+  token,
+  page,
+  scopes,
+}: {
+  token: string;
+  page: PublicInvite;
+  scopes: InviteScope[];
+}) {
+  const t = useTranslations('invite.registration');
+  const rsvp = useRsvp(token);
+  const [confirming, setConfirming] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const active = scopes.filter((scope) => scope.canCancel);
+
+  const cancel = () => {
+    setFailed(false);
+    rsvp.mutate(
+      {
+        idempotencyKey: crypto.randomUUID(),
+        body: {
+          responses: active.map((scope) => ({ subEventId: scope.subEventId, attending: false })),
+        },
+      },
+      { onSuccess: () => setConfirming(false), onError: () => setFailed(true) },
+    );
+  };
+
+  return (
+    <Card className="gap-4" data-testid="registration">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-h2">{active.length ? t('title') : t('cancelledTitle')}</h2>
+        <p className="text-small text-fg-secondary">
+          {active.length ? t('body') : t('cancelledBody')}
+        </p>
+      </div>
+      <ul className="flex flex-col gap-2">
+        {scopes.map((scope) => (
+          <li
+            key={scopeKey(scope)}
+            className="flex items-center gap-3 rounded-control bg-surface-muted p-3"
+          >
+            {scope.canCancel ? (
+              <CircleCheck aria-hidden className="size-5 shrink-0 text-success-text" />
+            ) : (
+              <CircleX aria-hidden className="size-5 shrink-0 text-fg-muted" />
+            )}
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-label">{scope.subEvent?.name ?? page.event.name}</span>
+              <span className="text-small text-fg-secondary">
+                {scope.canCancel ? t('people', { count: scope.partySize }) : t('cancelled')}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {failed && (
+        <p role="alert" className="text-small text-danger-text">
+          {t('failed')}
+        </p>
+      )}
+      {active.length > 0 ? (
+        confirming ? (
+          <div className="flex flex-col gap-2 rounded-control border border-danger/40 p-3">
+            <p className="text-small">{t('confirm')}</p>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setConfirming(false)}>
+                {t('keep')}
+              </Button>
+              <Button variant="destructive" loading={rsvp.isPending} onClick={cancel}>
+                {t('yesCancel')}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button variant="secondary" onClick={() => setConfirming(true)}>
+            {t('cancel')}
+          </Button>
+        )
+      ) : (
+        <Button asChild>
+          <a href={`/e/${page.event.slug}`}>{t('registerAgain')}</a>
+        </Button>
+      )}
+    </Card>
   );
 }
 

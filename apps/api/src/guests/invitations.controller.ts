@@ -14,6 +14,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { subEventsWith, type Invitation } from '@pme/contracts';
 import {
   ActionError,
+  createAttendance,
   createInvitation,
   createInvitations,
   deleteInvitation,
@@ -46,6 +47,7 @@ import {
   BulkCreateInvitationsResultDto,
   BulkUpdateInvitationsDto,
   BulkUpdateInvitationsResultDto,
+  CreateAttendanceDto,
   CreateInvitationDto,
   InvitationDto,
   InvitationQueryDto,
@@ -220,6 +222,17 @@ export class InvitationsController {
     @EventAccess() access: MemberAccess,
   ) {
     return this.queries.listAttendance(eventId, query, subEventsWith(access, 'guests.view'));
+  }
+
+  /**
+   * A walk-in (checked in) or a manual registration. guests.edit in that sub-event; a guest
+   * already listed there gets the new status on their own row.
+   */
+  @Post('attendance')
+  @EventRoute('guests.edit', 'list')
+  @ZodResponse({ status: 201, type: AttendanceDto })
+  createAttendance(@EventContext() ctx: ActionContext, @Body() body: CreateAttendanceDto) {
+    return runAction(this.runtime, ctx, createAttendance, body);
   }
 
   @Patch('attendance/:attendanceId')

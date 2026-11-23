@@ -27,13 +27,35 @@ export {
   updateExpense,
 } from './budget/budget-actions.js';
 export type { ActionContext, Actor } from './context.js';
+export { dashboardFor, type DashboardAggregate } from './dashboard/dashboard.js';
 export { createEvent, replaceModules, updateEvent } from './events/event-actions.js';
 export {
   mergeRows,
   startGuestScopeSwitch,
   switchGuestScope,
 } from './events/guest-scope-actions.js';
+export {
+  createAttendance,
+  isOpenForRegistration,
+  modeOf,
+  registerForEvent,
+  type RegisterInput,
+} from './guests/registration-actions.js';
 export { liveSignals, permissionsChanged } from './live.js';
+export {
+  completeUpload,
+  createGalleryUpload,
+  createReceiptUpload,
+  deleteMedia,
+  finishMediaProcessing,
+  updateMedia,
+} from './media/media-actions.js';
+export {
+  markNotificationsRead,
+  notificationSignals,
+  notify,
+  notifyDueTasks,
+} from './notifications/notification-actions.js';
 export {
   createSubEvent,
   createVenue,
@@ -110,6 +132,9 @@ export type {
   MemberInviteStore,
   MemberStore,
   NewMemberInvite,
+  NewNotification,
+  NotificationStore,
+  StoredNotification,
   NewRole,
   RoleChanges,
   ScopedAttendance,
@@ -131,6 +156,10 @@ export type {
   GuestScopeStore,
   HouseholdChanges,
   HouseholdStore,
+  MediaOutcome,
+  MediaRow,
+  MediaStore,
+  NewMedia,
   NewContact,
   NewHousehold,
   NewBudgetCategory,

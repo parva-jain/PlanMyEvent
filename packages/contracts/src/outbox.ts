@@ -9,6 +9,10 @@ export const QUEUES = {
   emailCritical: 'email-critical',
   /** CSV contact imports (in chunks of 500 rows) and guest-scope switches. */
   imports: 'imports',
+  /** Repeating jobs: retention cleanup and due-date reminder scans (SystemDesign 5.3). */
+  scheduled: 'scheduled',
+  /** Uploaded photos and receipts: check the type, write WebP versions (SystemDesign 5.7). */
+  media: 'media',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -32,9 +36,25 @@ export const MemberInviteEmailSchema = z.object({
   expiresAt: z.iso.datetime({ offset: true }),
 });
 
+/** Open registration's confirmation, with the magic link to view or cancel: sensitive too. */
+export const RegistrationConfirmedEmailSchema = z.object({
+  template: z.literal('registration-confirmed'),
+  to: z.email(),
+  eventName: z.string(),
+  guestName: z.string(),
+  url: z.url(),
+  partySize: z.number().int().positive(),
+  timeZone: z.string(),
+  /** What they registered for; the event's dates when it is the whole event. */
+  items: z.array(z.object({ name: z.string(), startsAt: z.iso.datetime({ offset: true }) })),
+  eventStartsOn: z.iso.date(),
+  eventEndsOn: z.iso.date(),
+});
+
 export const EmailJobSchema = z.discriminatedUnion('template', [
   SignInCodeEmailSchema,
   MemberInviteEmailSchema,
+  RegistrationConfirmedEmailSchema,
 ]);
 export type EmailJob = z.infer<typeof EmailJobSchema>;
 
@@ -56,6 +76,10 @@ export const GuestScopeJobSchema = z.object({
   guestScope: GuestScopeSchema,
 });
 export type GuestScopeJob = z.infer<typeof GuestScopeJobSchema>;
+
+/** An upload to check and convert. Ids only: not sensitive. */
+export const MediaJobSchema = z.object({ mediaId: z.uuid(), eventId: z.uuid() });
+export type MediaJob = z.infer<typeof MediaJobSchema>;
 
 interface OutboxRoute {
   queue: QueueName;
@@ -86,6 +110,21 @@ export const OUTBOX_ROUTES = {
     attempts: 3,
     backoffMs: 5_000,
     sensitive: true,
+  },
+  'media.process': {
+    queue: QUEUES.media,
+    job: 'process',
+    attempts: 3,
+    backoffMs: 10_000,
+    sensitive: false,
+  },
+  /** A deleted photo's files leave public storage at once (the row stays 30 days). */
+  'media.purge': {
+    queue: QUEUES.media,
+    job: 'purge',
+    attempts: 5,
+    backoffMs: 10_000,
+    sensitive: false,
   },
   'event.guest_scope': {
     queue: QUEUES.imports,

@@ -6,7 +6,7 @@ Context for AI coding sessions. Read this first. Before designing or changing an
 
 Plan My Event: a web app where a team plans and runs one event together (sub-events, tasks, budget, guests, invitations, attendance) with live updates. Generic across weddings, conferences, college fests, fairs and celebrations. Portfolio project intended to launch as a freemium product. Solo developer, India-first (INR, Indian phone numbers, Hindi later).
 
-Status: milestones 1–7 merged to `main`; milestone 8 is next. `docs/STATUS.md` says where to start.
+Status: milestones 1–7 merged to `main`; milestone 8 done (PR from `feat/m8-registration-dashboard`); milestone 9 (seed data) is next. `docs/STATUS.md` says where to start.
 
 ## Source of truth
 

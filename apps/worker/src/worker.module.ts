@@ -8,8 +8,10 @@ import { redisConnection } from './config/redis-connection';
 import { DatabaseModule } from './database/database.module';
 import { EmailModule } from './email/email.module';
 import { ImportsModule } from './imports/imports.module';
+import { MediaModule } from './media/media.module';
 import { LifecycleService } from './lifecycle/lifecycle.service';
 import { OutboxModule } from './outbox/outbox.module';
+import { ScheduledModule } from './scheduled/scheduled.module';
 import { SampleModule } from './queues/sample/sample.module';
 
 @Module({
@@ -35,6 +37,8 @@ import { SampleModule } from './queues/sample/sample.module';
     OutboxModule,
     EmailModule,
     ImportsModule,
+    MediaModule,
+    ScheduledModule,
     SampleModule,
   ],
   providers: [LifecycleService],

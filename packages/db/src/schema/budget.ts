@@ -17,6 +17,7 @@ import {
 import { valueSetCheck } from '../check.js';
 import { id, timestamps } from './columns.js';
 import { events, subEvents } from './events.js';
+import { media } from './media.js';
 import { members } from './team.js';
 
 /** DatabaseDesign "budget_categories". */
@@ -43,10 +44,7 @@ export const budgetCategories = pgTable(
   ],
 );
 
-/**
- * DatabaseDesign "expenses". receipt_media_id arrives with the media table (milestone 8);
- * vendor_name gives way to vendor_id in V2.
- */
+/** DatabaseDesign "expenses". vendor_name gives way to vendor_id in V2. */
 export const expenses = pgTable(
   'expenses',
   {
@@ -66,6 +64,8 @@ export const expenses = pgTable(
     paidByMemberId: uuid(),
     transactionRef: text(),
     notes: text(),
+    /** A receipt photo or PDF (private media). */
+    receiptMediaId: uuid(),
     version: integer().notNull().default(1),
     deletedAt: timestamp({ withTimezone: true }),
     ...timestamps(),
@@ -91,6 +91,11 @@ export const expenses = pgTable(
       name: 'expenses_sub_event_fk',
       columns: [t.eventId, t.subEventId],
       foreignColumns: [subEvents.eventId, subEvents.id],
+    }),
+    foreignKey({
+      name: 'expenses_receipt_media_fk',
+      columns: [t.eventId, t.receiptMediaId],
+      foreignColumns: [media.eventId, media.id],
     }),
     foreignKey({
       name: 'expenses_paid_by_member_fk',
