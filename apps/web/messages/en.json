@@ -1878,5 +1878,116 @@
     "sendBusy": "The hosts are updating the invitation right now. Try again in a moment.",
     "retry": "Try again",
     "sentWith": "Sent with Plan My Event"
+  },
+  "dashboard": {
+    "loadFailed": "We couldn't load the dashboard.",
+    "retry": "Try again",
+    "updatedAt": "Numbers as of {time}",
+    "countdown": {
+      "daysToGo": "{count, plural, one {# day to go} other {# days to go}}",
+      "today": "It's today",
+      "started": "Event has started",
+      "next": "Next: {name}, {time}"
+    },
+    "attention": {
+      "title": "Needs your attention",
+      "count": "{count, plural, one {# item} other {# items}}",
+      "overdue": "{count, plural, one {# task is overdue} other {# tasks are overdue}}",
+      "overdueDetail": "Past their due date",
+      "view": "View",
+      "payments": "{count, plural, one {# payment due this week} other {# payments due this week}}",
+      "paymentsDetail": "{amount} still to pay",
+      "review": "Review",
+      "full": "{name} is full",
+      "nearlyFull": "{name} is nearly full",
+      "capacityDetail": "{taken} of {capacity} places taken",
+      "manage": "Manage"
+    },
+    "stats": {
+      "tasks": "Tasks progress",
+      "inProgress": "{count} in progress",
+      "overdue": "{count} overdue",
+      "done": "{percent}% done",
+      "tasksDone": "Tasks done",
+      "committed": "Budget committed",
+      "paid": "{amount} paid",
+      "over": "{amount} over",
+      "left": "{amount} left",
+      "ofBudget": "Budget: {amount}",
+      "ofPlanned": "Planned: {amount}",
+      "guests": "Guests",
+      "confirmed": "Confirmed of expected",
+      "delivered": "{delivered} of {total} invitations out",
+      "declined": "{count} declined",
+      "team": "Team",
+      "members": "{count, plural, one {member organising} other {members organising}}"
+    },
+    "deadlines": {
+      "title": "Upcoming deadlines",
+      "count": "{count} upcoming",
+      "filter": "Show",
+      "all": "All",
+      "week": "Due this week",
+      "overdue": "Overdue ({count})",
+      "empty": "Nothing due here. Nice.",
+      "viewAll": "View all {count} open tasks",
+      "saveFailed": "Couldn't complete that task. Try again."
+    },
+    "subEvents": {
+      "title": "Sub-events",
+      "count": "{count} total",
+      "full": "Full",
+      "nearlyFull": "Almost full",
+      "capacity": "Capacity",
+      "fill": "{name} capacity filled",
+      "viewSchedule": "View schedule ({count})"
+    },
+    "budget": {
+      "title": "Budget by category",
+      "summary": "Committed against planned (total planned {planned})",
+      "empty": "No amounts planned or spent yet.",
+      "bar": "{name}: {committed} committed of {planned} planned",
+      "manage": "Manage full budget",
+      "noPlan": "no plan yet"
+    },
+    "registrations": {
+      "title": "Registrations this week",
+      "total": "{total} registered, {waitlisted} waitlisted",
+      "change": "{change}% vs last week",
+      "pastWeek": "registered in the past 7 days",
+      "day": "{count, plural, one {# person} other {# people}}",
+      "tableCaption": "People registered per day",
+      "date": "Date",
+      "people": "People"
+    },
+    "invitations": {
+      "title": "Invitations",
+      "summary": "{delivered} of {total} sent or handed over",
+      "empty": "No invitations yet.",
+      "deliveredInPerson": "Handed over",
+      "sentDigitally": "Sent online",
+      "notSent": "Not sent",
+      "manage": "Manage guests"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "open": "Notifications",
+    "openUnread": "{count, plural, one {Notifications, # unread} other {Notifications, # unread}}",
+    "loadFailed": "We couldn't load your notifications.",
+    "retry": "Try again",
+    "empty": "You're all caught up.",
+    "unread": "{count, plural, =0 {No unread notifications} one {# unread} other {# unread}}",
+    "markAll": "Mark all as read",
+    "unreadLabel": "Unread",
+    "more": "Show older",
+    "types": {
+      "someone": "Someone",
+      "taskAssigned": "{actor} assigned you “{title}”",
+      "taskDue": "“{title}” is due today ({date})",
+      "roleChanged": "{actor} changed your role to {roles}",
+      "rolesRemoved": "{actor} removed your roles",
+      "jobFailed": "A background job failed"
+    }
   }
 }
