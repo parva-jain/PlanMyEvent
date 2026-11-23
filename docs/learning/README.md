@@ -56,6 +56,7 @@ The web app: foundation, motion, UI components and the home page.
 - [42 People in the web app](frontend/42-people-web.md)
 - [43 The guest's invitation page](frontend/43-invite-page-web.md)
 - [48 Dashboard and bell in the web app](frontend/48-dashboard-bell-web.md)
+- [50 Public page and registration in the web app](frontend/50-public-registration-web.md)
 
 ## Infra
 
