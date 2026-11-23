@@ -43,6 +43,14 @@ export {
 } from './guests/registration-actions.js';
 export { liveSignals, permissionsChanged } from './live.js';
 export {
+  completeUpload,
+  createGalleryUpload,
+  createReceiptUpload,
+  deleteMedia,
+  finishMediaProcessing,
+  updateMedia,
+} from './media/media-actions.js';
+export {
   markNotificationsRead,
   notificationSignals,
   notify,
@@ -148,6 +156,10 @@ export type {
   GuestScopeStore,
   HouseholdChanges,
   HouseholdStore,
+  MediaOutcome,
+  MediaRow,
+  MediaStore,
+  NewMedia,
   NewContact,
   NewHousehold,
   NewBudgetCategory,

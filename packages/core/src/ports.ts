@@ -323,6 +323,62 @@ export interface NotificationStore {
   unreadCount(userId: string): Promise<number>;
 }
 
+/** A media row as core sees it (DatabaseDesign "media"); the API adds URLs and names. */
+export interface MediaRow {
+  id: string;
+  kind: 'gallery' | 'receipt' | 'cover';
+  status: 'pending' | 'ready' | 'failed';
+  bucket: 'public' | 'private';
+  storageKey: string;
+  mime: string;
+  bytes: number;
+  width: number | null;
+  height: number | null;
+  /** Storage keys: { thumb, display } for images, { file } for a PDF. */
+  variants: Record<string, string>;
+  subEventId: string | null;
+  caption: string | null;
+  uploadedByUserId: string | null;
+  uploadedAt: string | null;
+  version: number;
+  createdAt: string;
+}
+
+/** The store makes the id and the storage key (events/<eventId>/<kind>/<id><extension>). */
+export type NewMedia = Pick<
+  MediaRow,
+  'kind' | 'bucket' | 'mime' | 'bytes' | 'subEventId' | 'caption' | 'uploadedByUserId'
+> & { extension: string };
+
+/** What the worker found: a usable file and its versions, or not. */
+export type MediaOutcome =
+  | {
+      status: 'ready';
+      mime: string;
+      bytes: number;
+      width: number | null;
+      height: number | null;
+      variants: Record<string, string>;
+    }
+  | { status: 'failed' };
+
+/** Media skip soft-deleted rows. */
+export interface MediaStore {
+  insert(eventId: string, row: NewMedia): Promise<MediaRow>;
+  find(eventId: string, mediaId: string): Promise<MediaRow | null>;
+  /** Notes the upload was confirmed; null when it already was (or the row is gone). */
+  markUploaded(eventId: string, mediaId: string, at: Date): Promise<MediaRow | null>;
+  /** The worker's outcome, while still pending. Bumps the version. */
+  finish(eventId: string, mediaId: string, outcome: MediaOutcome): Promise<MediaRow | null>;
+  update(
+    eventId: string,
+    mediaId: string,
+    expectedVersion: number,
+    changes: { caption?: string | null; subEventId?: string | null },
+  ): Promise<MediaRow | null>;
+  softDelete(eventId: string, mediaId: string, expectedVersion: number): Promise<boolean>;
+}
+
 export interface NewBudgetCategory {
   name: string;
   plannedPaise?: number;
@@ -362,6 +418,7 @@ export interface NewExpense {
   paidByMemberId: string | null;
   transactionRef: string | null;
   notes: string | null;
+  receiptMediaId: string | null;
 }
 
 /** Expenses skip soft-deleted rows; 'duplicate_ref' when another live expense has the reference. */
@@ -652,4 +709,5 @@ export interface CoreTx {
   attendance: AttendanceStore;
   guestScope: GuestScopeStore;
   notifications: NotificationStore;
+  media: MediaStore;
 }

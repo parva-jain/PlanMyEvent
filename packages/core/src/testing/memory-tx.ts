@@ -22,6 +22,7 @@ import { ActionError } from '../errors.js';
 import type {
   CoreTx,
   LockedMemberInvite,
+  MediaRow,
   NewNotification,
   PersonalWorkspace,
   StoredActivity,
@@ -147,6 +148,7 @@ export function memoryRuntime() {
   const base: Omit<
     CoreTx,
     | 'notifications'
+    | 'media'
     | 'roles'
     | 'members'
     | 'access'
@@ -464,6 +466,58 @@ export function memoryRuntime() {
           }))
           .filter((task) => task.userIds.length > 0),
       ),
+  };
+
+  const mediaRows = new Map<string, MediaRow & { eventId: string; deleted?: boolean }>();
+  const liveMedia = (eventId: string, id: string) => liveIn(mediaRows, eventId, id);
+  tx.media = {
+    insert: (eventId, input) => {
+      const id = nextId();
+      const { extension, ...rest } = input;
+      const row = {
+        ...rest,
+        id,
+        eventId,
+        status: 'pending' as const,
+        storageKey: `events/${eventId}/${input.kind}/${id}${extension}`,
+        width: null,
+        height: null,
+        variants: {},
+        uploadedAt: null,
+        version: 1,
+        createdAt: new Date().toISOString(),
+      };
+      mediaRows.set(id, row);
+      return Promise.resolve(strip({ ...row }));
+    },
+    find: (eventId, id) => {
+      const row = liveMedia(eventId, id);
+      return Promise.resolve(row ? strip({ ...row }) : null);
+    },
+    markUploaded: (eventId, id, at) => {
+      const row = liveMedia(eventId, id);
+      if (!row || row.uploadedAt) return Promise.resolve(null);
+      Object.assign(row, { uploadedAt: at.toISOString(), version: row.version + 1 });
+      return Promise.resolve(strip({ ...row }));
+    },
+    finish: (eventId, id, outcome) => {
+      const row = liveMedia(eventId, id);
+      if (!row || row.status !== 'pending') return Promise.resolve(null);
+      Object.assign(row, outcome, { version: row.version + 1 });
+      return Promise.resolve(strip({ ...row }));
+    },
+    update: (eventId, id, expected, changes) => {
+      const row = liveMedia(eventId, id);
+      if (!row || row.version !== expected) return Promise.resolve(null);
+      Object.assign(row, changes, { version: row.version + 1 });
+      return Promise.resolve(strip({ ...row }));
+    },
+    softDelete: (eventId, id, expected) => {
+      const row = liveMedia(eventId, id);
+      if (!row || row.version !== expected) return Promise.resolve(false);
+      Object.assign(row, { deleted: true, version: row.version + 1 });
+      return Promise.resolve(true);
+    },
   };
 
   tx.notifications = {
@@ -1339,6 +1393,7 @@ export function memoryRuntime() {
     modules,
     outbox,
     notifications,
+    media: mediaRows,
     activity,
     takenSlugs,
   };

@@ -146,7 +146,12 @@ export const restoreBudgetCategory: ActionDefinition<
 async function assertReferences(
   tx: CoreTx,
   eventId: string,
-  refs: { categoryId?: string; subEventId?: string | null; paidByMemberId?: string | null },
+  refs: {
+    categoryId?: string;
+    subEventId?: string | null;
+    paidByMemberId?: string | null;
+    receiptMediaId?: string | null;
+  },
 ) {
   if (refs.categoryId && !(await tx.budgetCategories.find(eventId, refs.categoryId))) {
     throw fieldError('categoryId', 'Category not found in this event');
@@ -158,6 +163,12 @@ async function assertReferences(
     const member = await tx.members.find(eventId, refs.paidByMemberId);
     if (member?.status !== 'active')
       throw fieldError('paidByMemberId', 'Not a member of this event');
+  }
+  if (refs.receiptMediaId) {
+    const receipt = await tx.media.find(eventId, refs.receiptMediaId);
+    if (receipt?.kind !== 'receipt' || receipt.status === 'failed') {
+      throw fieldError('receiptMediaId', 'Receipt not found in this event');
+    }
   }
 }
 
@@ -194,6 +205,7 @@ export const createExpense: ActionDefinition<CreateExpense, Expense, CoreTx> = {
       paidByMemberId: input.paidByMemberId ?? null,
       transactionRef: input.transactionRef ?? null,
       notes: input.notes ?? null,
+      receiptMediaId: input.receiptMediaId ?? null,
     });
     if (expense === 'duplicate_ref') throw duplicateRef();
     return {
