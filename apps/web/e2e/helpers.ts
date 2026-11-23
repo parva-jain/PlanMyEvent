@@ -39,6 +39,27 @@ export async function codeFromMailpit(email: string): Promise<string> {
   throw new Error(`No sign-in code for ${email} in Mailpit`);
 }
 
+/** The first link to this path (e.g. '/i/') in the newest email to this address. */
+export async function linkFromMailpit(email: string, path: string): Promise<string> {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const res = await fetch(
+      `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`,
+    );
+    const { messages: found } = (await res.json()) as { messages: { ID: string }[] };
+    if (found[0]) {
+      const message = (await (
+        await fetch(`${MAILPIT_URL}/api/v1/message/${found[0].ID}`)
+      ).json()) as {
+        Text: string;
+      };
+      const link = message.Text.match(new RegExp(`https?://\\S+${path}\\S+`))?.[0];
+      if (link) return link;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error(`No ${path} link for ${email} in Mailpit`);
+}
+
 /**
  * Signs a new user in through the API with the page's own cookie jar (no UI), names them,
  * and returns a request context that writes like the web app (Origin set). For tests about

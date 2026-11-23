@@ -19,6 +19,7 @@ function invitePage(overrides: Partial<PublicInvite> = {}): PublicInvite {
   return {
     event: {
       name: 'Sharma Wedding',
+      slug: 'sharma-wedding-abcd',
       type: 'wedding',
       description: null,
       startsOn: '2026-12-10',
