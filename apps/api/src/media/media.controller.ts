@@ -11,7 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { can, canSomewhere, MAX_UPLOAD_BYTES } from '@pme/contracts';
+import { can, MAX_UPLOAD_BYTES } from '@pme/contracts';
 import {
   ActionError,
   completeUpload,
@@ -107,7 +107,9 @@ export class MediaController {
     @EventContext() ctx: ActionContext,
     @EventAccess() access: MemberAccess,
   ) {
-    if (query.kind === 'receipt' && !canSomewhere(access, 'budget.view')) {
+    // Receipts listed only for the whole event: a scoped budget viewer reaches each receipt
+    // through its expense instead.
+    if (query.kind === 'receipt' && !can(access, 'budget.view')) {
       throw new ActionError('forbidden', 'You need the budget.view permission', {
         permission: 'budget.view',
       });
@@ -119,8 +121,17 @@ export class MediaController {
   @Get('media/:mediaId')
   @EventRoute('event.view', 'list')
   @ZodResponse({ type: MediaDto })
-  one(@Param('eventId', UuidPipe) eventId: string, @Param('mediaId', UuidPipe) mediaId: string) {
-    return this.found(eventId, mediaId);
+  async one(
+    @Param('eventId', UuidPipe) eventId: string,
+    @Param('mediaId', UuidPipe) mediaId: string,
+    @EventAccess() access: MemberAccess,
+  ) {
+    const media = await this.found(eventId, mediaId);
+    // A receipt is the budget's: budget.view where it belongs, else it doesn't exist for you.
+    if (media.kind === 'receipt' && !can(access, 'budget.view', media.subEventId)) {
+      throw new ActionError('not_found', 'File not found');
+    }
+    return media;
   }
 
   /** A link valid 5 minutes; receipts need budget.view where the receipt's expense is. */

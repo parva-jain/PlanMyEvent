@@ -120,6 +120,15 @@ describe('media API with storage', () => {
       .send({ kind: 'gallery', mime: 'image/jpeg', bytes: 16 * 1024 * 1024 })
       .expect(422);
     await helper.get(`${E}/media?kind=receipt`).expect(403);
+    // A receipt's details are the budget's too.
+    const receipt = (
+      await owner
+        .post(`${E}/uploads`)
+        .send({ kind: 'receipt', mime: 'image/png', bytes: 2000 })
+        .expect(201)
+    ).body as UploadTicket;
+    await helper.get(`${E}/media/${receipt.mediaId}`).expect(404);
+    await owner.get(`${E}/media/${receipt.mediaId}`).expect(200);
     const stranger = as((await users.signIn()).cookie);
     await stranger
       .post(`${E}/uploads`)
