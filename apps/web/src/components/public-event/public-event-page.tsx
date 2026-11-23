@@ -228,6 +228,7 @@ function RegisterForm({
   );
   const [partySize, setPartySize] = useState(1);
   const [token, setToken] = useState<string | null>(null);
+  const [waiting, setWaiting] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [done, setDone] = useState<{ email: boolean } | null>(null);
   const turnstile = useRef<TurnstileHandle>(null);
@@ -243,10 +244,23 @@ function RegisterForm({
     if (!name.trim()) next.name = t('nameRequired');
     if (!email.trim() && !phone.trim()) next.email = t('contactRequired');
     if (perSubEvent && chosen.length === 0) next.subEventIds = t('chooseOne');
-    if (!token) next.form = t('waitForCheck');
     setErrors(next);
     if (Object.keys(next).length) return;
+    // The check may still be running: register as soon as it has finished.
+    if (!token) return setWaiting(true);
+    send(token);
+  }
 
+  /** Turnstile finished (or expired): a register click waiting for it goes ahead now. */
+  function onToken(next: string | null) {
+    setToken(next);
+    if (next && waiting) {
+      setWaiting(false);
+      send(next);
+    }
+  }
+
+  function send(turnstileToken: string) {
     register.mutate(
       {
         idempotencyKey: crypto.randomUUID(),
@@ -256,7 +270,7 @@ function RegisterForm({
           ...(phone.trim() && { phone: phone.trim() }),
           subEventIds: perSubEvent ? chosen : [],
           partySize,
-          turnstileToken: token!,
+          turnstileToken,
         },
       },
       {
@@ -393,7 +407,12 @@ function RegisterForm({
 
             <PartySize value={partySize} onChange={setPartySize} />
 
-            <Turnstile ref={turnstile} onToken={setToken} />
+            <Turnstile ref={turnstile} onToken={onToken} />
+            {waiting && (
+              <p role="status" className="text-small text-fg-secondary">
+                {t('waitForCheck')}
+              </p>
+            )}
 
             {errors.form && (
               <p role="alert" className="text-small text-danger-text">
@@ -403,7 +422,7 @@ function RegisterForm({
             <Button
               type="submit"
               icon={<Send aria-hidden />}
-              loading={register.isPending}
+              loading={register.isPending || waiting}
               className="w-full"
             >
               {t('submit')}

@@ -2117,7 +2117,7 @@
       "nameRequired": "Enter your name",
       "contactRequired": "Enter an email or a phone number",
       "chooseOne": "Choose at least one",
-      "waitForCheck": "One moment: we're checking you're not a robot.",
+      "waitForCheck": "One moment: checking you're not a robot, then registering.",
       "full": "Sorry, that just filled up. The page now shows what's still open.",
       "closed": "Registration has just closed.",
       "captcha": "The check didn't go through. Please try again.",
